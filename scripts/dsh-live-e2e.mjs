@@ -14,12 +14,14 @@ assert.ok(basename(home).startsWith('form-fill-native-'));assert.ok(port>1024&&p
 assert.equal(JSON.parse(await readFile(join(home,'profiles/web/package.json'),'utf8')).name,'synthetic-native-test');
 const input=createInterface({input:process.stdin,terminal:false});
 const [line]=await once(input,'line');input.close();process.stdin.pause();
-const {authorization,company}=JSON.parse(line);
-assert.match(authorization,/^Bearer [A-Za-z0-9._~+\/-]+=*$/);assert.ok(typeof company==='string'&&company.length>3);
+const {authorization,company,bridgeKey}=JSON.parse(line);
+const multiDomain=process.env.FORM_FILL_LIVE_DOMAINS==='1';
+if(multiDomain)assert.match(bridgeKey,/^[a-f0-9]{64}$/);else assert.match(authorization,/^Bearer [A-Za-z0-9._~+\/-]+=*$/);
+assert.ok(typeof company==='string'&&company.length>3);
 const origin='http://127.0.0.1:'+port;
 const version=execFileSync(process.execPath,[bin,'--version'],{encoding:'utf8'}).trim();
 const child=spawn(process.execPath,[bin,'--profile','web','--port',String(port),'--no-open'],{
- cwd:join(home,'synthetic-workspace'),env:{PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:process.env.TMPDIR,DSH_HOME:home,NO_COLOR:'1',QCC_MCP_TOKEN:authorization.slice(7)},stdio:['ignore','pipe','pipe']
+ cwd:join(home,'synthetic-workspace'),env:{PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:process.env.TMPDIR,DSH_HOME:home,NO_COLOR:'1',...(multiDomain?{FORM_FILL_BRIDGE_KEY:bridgeKey}:{QCC_MCP_TOKEN:authorization.slice(7)})},stdio:['ignore','pipe','pipe']
 });
 let startup='',browser,phase='startup';
 const collect=b=>{startup=(startup+b.toString()).slice(-65536)};child.stdout.on('data',collect);child.stderr.on('data',collect);
@@ -54,8 +56,8 @@ try{
   await page.waitForFunction(previous=>{const id=document.querySelector('[data-form-fill-session]')?.getAttribute('data-form-fill-session');return id&&id!==previous},previousSession);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe[title="AI填表任务"]');
- const extended=process.env.FORM_FILL_LIVE_EXTENDED==='1',expectedCount=extended?4:6;
- const headers=extended?['企业名称','企查查行业','企业简介','开票地址','开户行']:['企业名称','信用代码','法定代表人','成立日期','注册地址','登记状态','登记机关'];
+ const extended=process.env.FORM_FILL_LIVE_EXTENDED==='1',expectedCount=multiDomain||extended?4:6;
+ const headers=multiDomain?['企业名称','所在地海关','风险有记录因子数','风险无记录因子数','有风险关联方数']:extended?['企业名称','企查查行业','企业简介','开票地址','开户行']:['企业名称','信用代码','法定代表人','成立日期','注册地址','登记状态','登记机关'];
  const bytes=fixtureBytes('工商验证',headers,[[company,...Array(expectedCount).fill('')]]);
  await frame.locator('#file').setInputFiles({name:'工商验证.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await frame.getByRole('button',{name:'分析表格',exact:true}).click();
@@ -76,7 +78,7 @@ try{
  await page.getByRole('button',{name:'发送消息',exact:true}).click();
  console.log(JSON.stringify({phase:'native-message-sent',taskIdIncluded:true,companyInPrompt:false}));
  let preview;
- for(let i=0;i<90;i++){
+ for(let i=0;i<(multiDomain?180:90);i++){
   const response=await page.request.get(origin+'/form-fill/task/'+taskId);
   if(response.ok())preview=await response.json();
   if(preview?.revision>1&&preview.state!=='enriching')break;
@@ -89,6 +91,7 @@ try{
  assert.ok(preview?.revision>1,'model must invoke form_fill_enrich');
  assert.equal(preview.changeSet.changes.length,expectedCount,'real selected fields');
  assert.ok(preview.changeSet.changes.every(c=>c.source.startsWith('qcc://')));
+ if(multiDomain)for(const tool of ['get_import_export_credit','get_company_risk_scan','get_company_related_risk_scan'])assert.ok(preview.changeSet.changes.some(c=>c.source.startsWith('qcc://'+tool+'/')),'required real domain source: '+tool);
  phase='preview';
  await frame.locator('#changes tr').nth(expectedCount-1).waitFor();
  assert.equal(await frame.locator('#changes tr').count(),expectedCount);
@@ -98,7 +101,7 @@ try{
  const download=await page.request.get(origin+await link.getAttribute('href'));assert.equal(download.status(),200);
  const output=await download.body();assert.ok(parseWorkbook(output).sheets.length);
  assert.equal((await previewBytes(output)).changeSet.changes.length,0);
- console.log(JSON.stringify({kind:'real-dsh-model-qcc-e2e',version,result:'PASS',extended,filled:expectedCount,secondPassChanges:0,nativeSend:true,mockProviderUsedForFacts:false,realDataWrittenToRepository:false}));
+ console.log(JSON.stringify({kind:'real-dsh-model-qcc-e2e',version,result:'PASS',extended,multiDomain,filled:expectedCount,secondPassChanges:0,nativeSend:true,mockProviderUsedForFacts:false,realDataWrittenToRepository:false}));
 }catch(error){
  if(browser){
   const page=browser.contexts()[0]?.pages()[0];

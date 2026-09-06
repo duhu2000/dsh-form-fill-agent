@@ -16,6 +16,8 @@
 | P2 用户验收 | 自动化浏览器矩阵、异常恢复、大表性能 | 非技术用户本人验收尚不能代签；见 UAT 清单 |
 | 外部流程 | 市场 PR #4487 已投稿 | Submission gate / 维护者审核未完成，尚未上架 |
 
+后续验收收口（2026-09-07）：两版 DSH 已补齐经营、风控三个真实工具的模型→填写预览→下载端到端，每版四格、二次分析新增零；测试使用已认证连接器经临时 stdio 桥，不代表生产 HTTP/OAuth 配置验收。用户验收清单已更新 alpha.11，四套合成原表/预期副本已生成。完整证据与剩余外部条件见 [U7-ACCEPTANCE.md](U7-ACCEPTANCE.md)。
+
 当前持久任务写入 **schema 5**：schema 4 的字段范围、任务历史与访问边界保留，新增完整候选和执行检查点；读取 schema 1–5。核心 Analysis / FillPlan / ChangeSet schema 仍为 1，不能与任务存储 schema 混淆。回退旧插件应使用升级前目录副本或新目录。
 
 本轮详细命令、结果和发布清单：[alpha.8 验收](U5-ACCEPTANCE.md)及 [alpha.9 验收](U6-ACCEPTANCE.md)。安全及访问边界：[security.md](security.md)。最新兼容证据：[compatibility.md](compatibility.md)。
