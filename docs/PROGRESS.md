@@ -1,6 +1,6 @@
 # AI填表开发进度
 
-更新：2026-09-07。主包及内核当前版本 **0.1.0-alpha.10**，Provider 保持 **0.1.0-alpha.9**。alpha.10 修复正常 XLSX 空目录及文档属性/计算元数据导入兼容，已发布 npm；98 项测试、六组 CI、registry 完整性、README、三模板独立安装及双宿主隔离安装/卸载验收通过。发布回执见 [RELEASE-alpha10.md](RELEASE-alpha10.md)。
+更新：2026-09-07。主包当前版本 **0.1.0-alpha.11**，内核保持 **0.1.0-alpha.10**，Provider 保持 **0.1.0-alpha.9**。alpha.11 统一工作台阶段菜单为图标与短标题等宽分栏，已发布 npm；98 项测试、十组菜单布局、六组 CI、registry 完整性、README、三模板独立安装及双宿主隔离安装/卸载验收通过。发布回执见 [RELEASE-alpha11.md](RELEASE-alpha11.md)。alpha.10 的 XLSX 导入兼容修复继续保留。
 
 | 优先级 | 当前交付 | 验收与边界 |
 |---|---|---|
