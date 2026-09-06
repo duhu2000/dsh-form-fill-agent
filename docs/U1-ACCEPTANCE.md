@@ -20,6 +20,7 @@
 | 命令 | 结果 |
 |---|---|
 | npm run check | 49 tests：49 pass、0 fail、0 skip；三个 tarball 检查通过 |
+| Node 22.19.0 / 24.19.0 的 node --test test/*.test.mjs | 各 49 pass、0 fail、0 skip |
 | node scripts/native-ui-smoke.mjs | React / Chromium 业务会话、导航、草稿回填、关闭恢复、宽窄屏、普通新会话通过；page errors 0 |
 | node scripts/dsh-smoke.mjs | rc.2 / alpha.2 各三套 HTTP + 浏览器闭环、零变更二次填写、重启恢复、卸载组成检查通过 |
 | LEGACY_REPO=../dsh-data-cleaning-agent-form-fill-compat-v086 npm run test:consumer | 旧插件 211 tests + 24 golden 通过；独立 tarball 三模板 E2E 3/3，无 workspace 链接 |
@@ -27,6 +28,17 @@
 浏览器覆盖浅/深色及四组向导视口，真实文件上传、任务历史、来源和下载访问守卫。原生 UI 自动测试使用复刻宿主槽位的真实 React，不能代替真实宿主原生入口和模型对话全链路验收。
 
 core 和 Provider 源码未改变，tarball SHA256 分别为 dda92ed32460d2d669bd8b80f1d3107f6736e2d3f13e37e10ef1240cd379635d、a60c924827819fa1714e37037ef936af3a1609d64c2be85e893414ec92c8e3cb。旧发布主线未修改；0.8.7 共享 core 接入不在已测范围内。
+
+GitHub CI [34031515244](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34031515244)：Linux/macOS/Windows × Node 22/24，六组全部通过，针对提交 4f74b41。
+
+## 修改文件
+
+- packages/dsh-form-fill-agent/lib/client.js、http.js、index.js、task-store.js、ui.html 和 package.json：本轮运行时代码。
+- package.json、package-lock.json：版本与原生组件测试依赖。
+- test/http.test.mjs、test/task-store.test.mjs：访问范围、revision、逐格写回、本地上传与迁移测试。
+- scripts/native-ui-smoke.mjs、web-smoke.mjs：原生 React 契约及五步工作台浏览器回归。
+- scripts/consumer-contract.mjs、dsh-smoke.mjs、registry-smoke.mjs、dsh-registry-install.mjs：按各包实际版本验证 tarball 与注册表消费。
+- CHANGELOG.md、README.md、docs/PROGRESS.md、docs/UI-UPGRADE-PLAN.md、docs/U1-ACCEPTANCE.md：升级、安装、验收及后续边界。
 
 ## 演示
 
@@ -45,5 +57,5 @@ DSH 安装后从 AI填表入口创建业务会话，打开工作台导入，生�
 
 ## 发布状态
 
-代码验证通过，准备提交并发布 dsh-form-fill-agent@0.1.0-alpha.2 至 next。form-fill-core 和 qcc-form-fill-provider 保持已发布 alpha.1，不重复发布。
+代码 4f74b41 已提交并推送；v0.1.0-alpha.2 标签及 [GitHub 预览 Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.2) 已发布。npm alpha.2 发布请求正在等待 npm 账户验证；尚不能视为公开可安装。form-fill-core 和 qcc-form-fill-provider 保持已发布 alpha.1，不重复发布。
 市场草稿 PR #4487 仍受仓库年龄和维护者审核约束；此版不代表市场已上架。
