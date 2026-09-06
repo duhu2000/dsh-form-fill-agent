@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { applyChangeSet } from 'form-fill-core';
+import { applyChangeSet, parseWorkbook } from 'form-fill-core';
+import { FIELD_CATALOG, isCompleteAnchor } from 'qcc-form-fill-provider';
 import { previewBytes } from './workflow.js';
 import { createTaskStore } from './task-store.js';
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -12,6 +13,14 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   const validOwner = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
   const visible = (task, owner) => task && (!task.owner || task.owner === owner);
   const metadata = (id, task) => ({ id, filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
+  const settings = task => ({
+    configuration: task.configuration ?? {},
+    catalog: FIELD_CATALOG,
+    structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
+      name: s.name,
+      rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value })) })),
+    })),
+  });
   const sweep = () => { for (const [id, task] of tasks) if (now() - task.created >= ttlMs) tasks.delete(id); };
   const timer = setInterval(sweep, Math.min(ttlMs, 60000)); timer.unref();
   const handler = async (request, response) => {
@@ -32,7 +41,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       if (url.pathname !== basePath && !url.pathname.startsWith(basePath + '/')) return send(404, { message: '路径不存在' });
       const path = url.pathname.slice(basePath.length) || '/';
       if (request.method === 'GET' && path === '/') return send(200, await readFile(new URL('./ui.html', import.meta.url)), 'text/html; charset=utf-8');
-      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.3', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
+      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.5', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
       if (request.method === 'GET' && path === '/tasks') {
         if (!validOwner(owner)) return send(403, { message: '需要本地任务访问凭据' });
         return send(200, [...tasks].filter(([, t]) => t.owner === owner).map(([id,t]) => metadata(id,t)).sort((a,b) => b.updatedAt-a.updatedAt));
@@ -40,7 +49,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       if (request.method === 'GET' && path.startsWith('/task/')) {
         const id = path.slice(6), task = tasks.get(id);
         if (!visible(task, owner)) return send(404, { message: '任务不存在或已过期' });
-        return send(200, { ...task.preview, ...metadata(id,task) });
+        return send(200, { ...task.preview, ...metadata(id,task), ...settings(task) });
       }
       if (request.method === 'GET' && path.startsWith('/fixture/')) {
         const name = decodeURIComponent(path.slice(9));
@@ -55,7 +64,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         if (kind === 'incomplete') return send(200, task.result.incomplete);
         return send(404, { message: '制品不存在' });
       }
-      if (request.method !== 'POST' || !['/preview', '/confirm', '/discard', '/select'].includes(path)) return send(404, { message: '路径不存在' });
+      if (request.method !== 'POST' || !['/preview', '/confirm', '/discard', '/select', '/configure', '/resolve'].includes(path)) return send(404, { message: '路径不存在' });
       if (request.headers.origin !== origin || request.headers['content-type'] !== 'application/json') return send(403, { message: '请求需来自本页' });
       if (path === '/preview') {
         if (tasks.size + inFlight >= maxTasks) return send(429, { message: '预览数量已达上限，请先释放旧预览' });
@@ -64,7 +73,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       const chunks = []; let length = 0;
       for await (const chunk of request) {
         length += chunk.length;
-        if (length > (['/preview','/select'].includes(path) ? 12 * 1024 * 1024 : 4096)) return send(413, { message: '请求过大' });
+        if (length > (['/preview','/select'].includes(path) ? 12 * 1024 * 1024 : path === '/configure' ? 1024 * 1024 : 4096)) return send(413, { message: '请求过大' });
         chunks.push(chunk);
       }
       let body; try { body = JSON.parse(Buffer.concat(chunks).toString()); } catch { return send(400, { message: '请求格式无效' }); }
@@ -73,19 +82,39 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         if (typeof body.base64 !== 'string' || !body.base64 || !/^[A-Za-z0-9+/]*={0,2}$/.test(body.base64) || body.base64.length % 4) return send(400, { message: '文件编码无效' });
         const bytes = Buffer.from(body.base64, 'base64');
         if (bytes.toString('base64') !== body.base64) return send(400, { message: '文件编码无效' });
-        const preview = await previewBytes(bytes, body.analyzeOnly ? { provider: { mode: 'mock', version: '0.1.0-alpha.1', capabilities: [], lookup: async () => ({ status: 'not-found' }) } } : {}), id = randomUUID();
+        const preview = await previewBytes(bytes, body.analyzeOnly ? { provider: { mode: 'mock', version: '0.1.0-alpha.5', capabilities: [], lookup: async () => ({ status: 'not-found' }) } } : {}), id = randomUUID();
         if (disposed) return send(503, { message: '插件已卸载' });
         const filename = typeof body.filename === 'string' ? body.filename.replace(/[\\/\x00-\x1f]/g,'').slice(0,180) : '未命名表格.xlsx';
         if (owner && !validOwner(owner)) return send(400, { message: '任务访问凭据无效' });
-        const task = { bytes, preview, created: now(), updatedAt: now(), revision: 1, state: 'preview_ready', owner, filename, sessionId: typeof body.sessionId === 'string' ? body.sessionId.slice(0,160) : undefined };
+        const task = { bytes, preview, analyzeOnly: !!body.analyzeOnly, created: now(), updatedAt: now(), revision: 1, state: 'preview_ready', owner, filename, sessionId: typeof body.sessionId === 'string' ? body.sessionId.slice(0,160) : undefined };
         tasks.set(id, task);
-        return send(200, { ...preview, ...metadata(id,task) });
+        return send(200, { ...preview, ...metadata(id,task), ...settings(task) });
       }
       const task = tasks.get(body.id);
       if (!visible(task, owner)) return send(404, { message: '预览已过期，请重新上传' });
       if ((task.owner || body.expectedRevision !== undefined) && body.expectedRevision !== (task.revision ?? 1)) return send(409, { code: 'REVISION_CONFLICT', message: '任务已更新，请刷新后重试' });
       if (running.has(body.id)) return send(409, { message: '任务正在查询，请稍后再操作' });
       if (path === '/discard') { tasks.delete(body.id); return send(200, { discarded: true }); }
+      if (path === '/configure' || path === '/resolve') {
+        if (task.result) return send(409, { message: '已确认任务不能修改，请新建任务' });
+        let configuration;
+        if (path === '/configure') {
+          if (!body.configuration || Object.keys(body.configuration).some(k => !['sheets','headers','mappings'].includes(k))) return send(400, { message: '字段设置无效' });
+          configuration = body.configuration;
+        } else {
+          const item = task.preview.changeSet.incomplete.find(i => i.sheet === body.sheet && i.row === body.row && i.reason === 'candidate-review-required');
+          if (!item) return send(400, { message: '当前记录不需要候选确认' });
+          const candidate = item.candidates?.find(c => c.id === body.candidateId);
+          const value = body.candidateId ? candidate?.company_name : body.value;
+          if (!isCompleteAnchor(value)) return send(400, { message: '请选择当前候选或输入完整登记名称/信用代码' });
+          configuration = { ...task.configuration, anchors: [...(task.configuration?.anchors ?? []).filter(x => x.sheet !== body.sheet || x.row !== body.row), { sheet: body.sheet, row: body.row, value }] };
+        }
+        const preview = await previewBytes(task.bytes, { configuration, ...(task.analyzeOnly !== false ? { provider: { mode: 'mock', version: '0.1.0-alpha.5', capabilities: [], lookup: async () => ({ status: 'not-found' }) } } : {}) });
+        if (disposed || tasks.get(body.id) !== task || running.has(body.id)) return send(409, { message: '任务已更新，请刷新后重试' });
+        const updated = { ...task, configuration, preview, revision: (task.revision ?? 1)+1, updatedAt: now(), state: 'preview_ready' };
+        tasks.set(body.id,updated);
+        return send(200, { ...preview, ...metadata(body.id,updated), ...settings(updated) });
+      }
       if (path === '/select') {
         if (task.result) return send(409, { message: '已确认任务不能修改' });
         const original = task.preview.changeSet, selected = body.selectedIds;
@@ -96,7 +125,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         const changeSet = { ...body_, changeSetId: createHash('sha256').update(JSON.stringify(body_)).digest('hex') };
         const updated = { ...task, preview: { ...task.preview, changeSet }, revision: (task.revision ?? 1) + 1, updatedAt: now() };
         tasks.set(body.id,updated);
-        return send(200, { ...updated.preview, ...metadata(body.id,updated) });
+        return send(200, { ...updated.preview, ...metadata(body.id,updated), ...settings(updated) });
       }
       if (body.confirmChangeSetId !== task.preview.changeSet.changeSetId) return send(409, { message: '请确认当前预览' });
       const result = task.result ?? applyChangeSet(task.bytes, task.preview.plan, task.preview.changeSet, { confirmChangeSetId: body.confirmChangeSetId });
@@ -117,7 +146,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       const active = { ...task, state: 'enriching', updatedAt: now(), revision: (task.revision ?? 1) + 1 };
       try {
         tasks.set(id, active);
-        const preview = await previewBytes(task.bytes, { provider, confirmPaidCalls: true });
+        const preview = await previewBytes(task.bytes, { provider, confirmPaidCalls: true, configuration: task.configuration });
         if (disposed || tasks.get(id) !== active) throw Error('任务已过期或被替换');
         tasks.set(id, { ...active, preview, state: preview.changeSet.incomplete.some(i => i.reason === 'provider-error') ? 'partial' : 'preview_ready', updatedAt: now(), revision: active.revision + 1 });
         return { taskId: id, filled: preview.changeSet.changes.length, incomplete: preview.changeSet.incomplete.length, previewPath: basePath + '/#task=' + id };

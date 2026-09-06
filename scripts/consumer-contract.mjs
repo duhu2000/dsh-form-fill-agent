@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, cp, readFile, lstat } from 'node:fs/promises';
+import { mkdtemp, mkdir, cp, readFile, writeFile, lstat } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -28,7 +28,11 @@ for (const file of files) {
   await cp(join(legacy, file), target);
 }
 const npmArgs = ['install', '--offline', '--ignore-scripts', '--legacy-peer-deps', '--no-audit', '--no-fund', '--package-lock=false'];
+const legacyManifest=JSON.parse(await readFile(join(oldConsumer,'package.json')));
+legacyManifest.dependencies['form-fill-core']='file:'+tarballs[0];
+await writeFile(join(oldConsumer,'package.json'),JSON.stringify(legacyManifest,null,2));
 execFileSync('npm', npmArgs, { cwd: oldConsumer, stdio: 'inherit' });
+assert.equal(JSON.parse(await readFile(join(oldConsumer,'node_modules/form-fill-core/package.json'))).version,versions['form-fill-core']);
 assert.equal((await lstat(join(oldConsumer, 'node_modules/form-fill-core'))).isSymbolicLink(), false);
 const oldLog = execFileSync('npm', ['run', 'check'], { cwd: oldConsumer, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
 console.log(oldLog);

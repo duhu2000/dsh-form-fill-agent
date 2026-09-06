@@ -44,7 +44,7 @@ export function createQccProvider({ callTool, timeoutMs = 30000, now = () => new
         const data = decodeRegistration(result);
         if (!data) return { status: 'error', code: 'qcc-response-invalid' };
         if (data.无匹配项 !== undefined) return { status: 'not-found' };
-        if (data['企业名称'] !== searchKey && data['统一社会信用代码'] !== searchKey) return { status: 'ambiguous', code: 'entity-mismatch' };
+        if (data['企业名称'] !== searchKey && data['统一社会信用代码'] !== searchKey) return { status: 'ambiguous', code: 'entity-mismatch', candidates: isCompleteAnchor(data['企业名称']) ? [{ company_name: data['企业名称'], credit_no: typeof data['统一社会信用代码'] === 'string' ? data['统一社会信用代码'].slice(0,32) : '' }] : [] };
         const acquiredAt = now();
         const values = {};
         for (const key of request.fields) {

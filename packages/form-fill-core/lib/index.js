@@ -1,7 +1,7 @@
 import { digest, parseWorkbook, isBlank, address, inRange, writeWorkbook } from './workbook.js';
 import { fail, FillError } from './zip.js';
 export { parseWorkbook, FillError };
-export const CORE_VERSION = '0.1.0-alpha.1';
+export const CORE_VERSION = '0.1.0-alpha.5';
 export const SCHEMA_VERSION = 1;
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, '').toLowerCase();
 const idFor = value => digest(Buffer.from(JSON.stringify(value)));
@@ -12,15 +12,33 @@ export function mapFields(headers, catalog) {
     return { cell, column, label: value, field: candidates.length === 1 ? candidates[0].key : null, confidence: candidates.length === 1 ? 1 : 0, evidence: candidates.length === 1 ? 'exact-alias' : candidates.length ? 'ambiguous-alias' : 'unknown-field' };
   });
 }
-export function analyzeDocument(bytes, catalog) {
+export function analyzeDocument(bytes, catalog, options = {}) {
   if (!Array.isArray(catalog) || new Set(catalog.map(f => f.key)).size !== catalog.length) fail('FIELD_CATALOG', '字段目录无效');
   const document = parseWorkbook(bytes), opportunities = [], incomplete = [], tables = [];
+  if (!options || typeof options !== 'object' || Array.isArray(options) || Object.keys(options).some(k => !['sheets','headers','mappings','anchors'].includes(k))) fail('CONFIG_INVALID', '字段设置格式无效');
+  const selected = options.sheets ?? document.sheets.filter(s => !s.hidden).map(s => s.name);
+  if (!Array.isArray(selected) || (!selected.length && options.sheets !== undefined) || new Set(selected).size !== selected.length || selected.some(name => !document.sheets.some(s => s.name === name && !s.hidden))) fail('CONFIG_INVALID', '请选择可见工作表');
+  for (const key of ['headers','mappings','anchors']) if (options[key] !== undefined && (!Array.isArray(options[key]) || options[key].length > 10000)) fail('CONFIG_INVALID', '设置列表无效');
+  for (const [key, identity] of [['headers', x => x.sheet], ['mappings', x => x.sheet+':'+x.column], ['anchors', x => x.sheet+':'+x.row]]) {
+    const list = options[key] ?? [];
+    if (list.some(x => !x || !selected.includes(x.sheet)) || new Set(list.map(identity)).size !== list.length) fail('CONFIG_INVALID', '重复或无效的设置位置');
+  }
+  for (const x of options.headers ?? []) if (!Number.isInteger(x.row) || !document.sheets.find(s => s.name === x.sheet).rows.some(row => row.number === x.row && !row.hidden)) fail('CONFIG_INVALID', '表头行无效');
+  for (const x of options.mappings ?? []) if (!Number.isInteger(x.column) || x.column < 1 || x.column > 128 || (x.field !== null && !catalog.some(f => f.key === x.field))) fail('CONFIG_INVALID', '字段映射无效');
+  for (const x of options.anchors ?? []) if (!Number.isInteger(x.row) || !document.sheets.find(s => s.name === x.sheet).rows.some(row => row.number === x.row && !row.hidden) || typeof x.value !== 'string' || !x.value.trim() || x.value.length > 256 || /[\x00-\x1f]/.test(x.value)) fail('CONFIG_INVALID', '主体确认无效');
   for (const sheet of document.sheets) {
     if (sheet.hidden) { incomplete.push({ sheet: sheet.name, reason: 'hidden-sheet', message: '隐藏工作表未处理' }); continue; }
+    if (!selected.includes(sheet.name)) { incomplete.push({ sheet: sheet.name, reason: 'sheet-excluded' }); continue; }
+    const explicitHeader = options.headers?.find(x => x.sheet === sheet.name);
     const candidates = [];
-    for (const row of sheet.rows.filter(r => !r.hidden).slice(0, 30)) {
+    for (const row of (explicitHeader ? sheet.rows.filter(r => r.number === explicitHeader.row) : sheet.rows.filter(r => !r.hidden).slice(0, 30))) {
       const headers = Object.values(sheet.cells).filter(c => c.row === row.number && !c.hidden && !c.formula && c.type !== 'e' && c.value.trim()).map(c => ({ cell: c.ref, column: c.column, value: c.value }));
       const mappings = mapFields(headers, catalog);
+      for (const override of options.mappings?.filter(x => x.sheet === sheet.name) ?? []) {
+        const mapping = mappings.find(m => m.column === override.column);
+        if (!mapping) { if (explicitHeader) fail('CONFIG_INVALID', '映射位置必须是已有表头'); continue; }
+        Object.assign(mapping, { field: override.field, confidence: override.field ? 1 : 0, evidence: 'user-mapping' });
+      }
       const mapped = mappings.filter(m => m.field);
       if (mapped.length >= 2 && mapped.some(m => catalog.find(f => f.key === m.field)?.anchor)) candidates.push({ row: row.number, mappings, score: mapped.length });
     }
@@ -43,6 +61,11 @@ export function analyzeDocument(bytes, catalog) {
         const c = sheet.cells[address(row.number, mapping.column)];
         if (c && !c.hidden && !c.formula && c.type !== 'e' && c.value.trim()) anchor[mapping.field] = c.value.trim();
       }
+      const selection = options.anchors?.find(x => x.sheet === sheet.name && x.row === row.number);
+      if (selection) {
+        if (anchors.length !== 1) fail('CONFIG_INVALID', '主体确认需要唯一主体列');
+        anchor[anchors[0].field] = selection.value.trim();
+      }
       if (!Object.keys(anchor).length) { incomplete.push({ sheet: sheet.name, row: row.number, reason: 'missing-anchor' }); continue; }
       for (const mapping of header.mappings) {
         const ref = address(row.number, mapping.column), cell = sheet.cells[ref];
@@ -53,9 +76,11 @@ export function analyzeDocument(bytes, catalog) {
           continue;
         }
         if (cell?.hidden || sheet.hiddenColumns.some(([a, b]) => mapping.column >= a && mapping.column <= b) || sheet.merges.some(r => inRange(row.number, mapping.column, r) || inRange(header.row, mapping.column, r))) { incomplete.push({ ...location, reason: 'hidden-or-merged' }); continue; }
-        if (!mapping.field) { incomplete.push({ ...location, reason: 'unknown-field' }); continue; }
+        if (!mapping.field) { incomplete.push({ ...location, reason: mapping.evidence === 'user-mapping' ? 'user-excluded' : 'unknown-field' }); continue; }
         if (catalog.find(f => f.key === mapping.field)?.anchor) { incomplete.push({ ...location, reason: 'missing-anchor-field' }); continue; }
         const opportunity = { kind: 'FillOpportunity', ...location, anchor, oldValue: cell?.value ?? '', confidence: mapping.confidence, evidence: mapping.evidence };
+        const rules = (sheet.validations ?? []).filter(rule => rule.ranges.some(r => inRange(row.number, mapping.column, r)));
+        if (rules.length) opportunity.allowedValues = rules.reduce((values, rule) => values.filter(value => rule.values.includes(value)), rules[0].values);
         opportunities.push({ id: idFor([document.documentHash, sheet.name, ref]), ...opportunity });
       }
     }
@@ -101,7 +126,12 @@ export async function executePlan(plan, provider, options = {}) {
     else if (!candidate.source || typeof candidate.source !== 'string' || !candidate.acquiredAt || !Number.isFinite(Date.parse(candidate.acquiredAt))) reason = 'missing-provenance';
     else if (!['string', 'number', 'boolean'].includes(typeof candidate.value) || (typeof candidate.value === 'number' && !Number.isFinite(candidate.value))) reason = 'invalid-value';
     else if (/^[\s]*[=+@-]/.test(String(candidate.value)) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(String(candidate.value)) || String(candidate.value).length > 32767) reason = 'unsafe-value';
-    if (reason) { incomplete.push({ ...item, reason }); continue; }
+    if (!reason && item.allowedValues && !item.allowedValues.includes(String(candidate.value))) reason = 'validation-conflict';
+    if (reason) {
+      const candidates = reason === 'candidate-review-required' && Array.isArray(result?.candidates)
+        ? result.candidates.filter(c => typeof c?.company_name === 'string' && c.company_name.length <= 256 && typeof c.credit_no === 'string' && c.credit_no.length <= 32).slice(0,20).map(c => ({ id: idFor([c.company_name,c.credit_no]), company_name: c.company_name, credit_no: c.credit_no })) : [];
+      incomplete.push({ ...item, reason, ...(candidates.length ? { candidates } : {}) }); continue;
+    }
     changes.push({ id: item.id, sheet: item.sheet, cell: item.cell, field: item.field, label: item.label, anchor: item.anchor, oldValue: item.oldValue, newValue: String(candidate.value), source: candidate.source, acquiredAt: candidate.acquiredAt, confidence: candidate.confidence, changeType: 'fill-blank', basis: item.evidence, status: 'preview' });
   }
   const body = { kind: 'ChangeSet', schemaVersion: 1, ...versions, providerVersion: provider.version, documentHash: plan.documentHash, planId: plan.planId, changes, incomplete };

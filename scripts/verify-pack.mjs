@@ -14,8 +14,8 @@ for (const name of ['form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-a
   const pack = JSON.parse(execFileSync(npmCommand, [...npmPrefix, 'pack', '--ignore-scripts', '--json', '--pack-destination', destination], { cwd, encoding: 'utf8' }))[0];
   assert.ok(pack.files.length > 2);
   assert.ok(pack.unpackedSize < 200000);
-  if (name === 'dsh-form-fill-agent') {
-    assert.ok(pack.files.some(file => file.path === 'README.md'), 'Published agent must include README.md');
+  {
+    assert.ok(pack.files.some(file => file.path === 'README.md'), 'Published package must include README.md');
     assert.ok((await readFile(join(cwd, 'README.md'), 'utf8')).includes('## 安装'), 'Published README must explain installation');
   }
   for (const file of pack.files) {

@@ -17,8 +17,8 @@ body{margin:20px auto;padding:0 18px}h1{font-size:28px}.tabs{display:flex;gap:8p
 <div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
-<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p>默认只填空白，已有内容保持原样。当前根据明确表头识别字段；有歧义时请修正原表后重新上传。</p><div id="mapping"></div></div>
-<div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>仅对完整登记名称或信用代码查询。简称、多个候选与身份不一致均留待核验，不自动替换企业。</p><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
+<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><div id="mapping"></div><button id="configure">应用字段设置</button></div>
+<div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
 <div class="card" data-pane="preview"><h2>填写预览</h2><p id="summary"></p><p class="muted">每格显示原值、准备填写值和来源。取消勾选后点击“应用选择”，再确认新的预览。</p>
 <div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原值</th><th>准备填写</th><th>依据与来源</th><th>填写</th></tr></thead><tbody id="changes"></tbody></table></div><button id="selection">应用选择</button></div>
 <div class="card" data-pane="preview"><h2>未完成项</h2><div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原因</th></tr></thead><tbody id="incomplete"></tbody></table></div></div>
@@ -34,13 +34,50 @@ if(!/^[a-f0-9]{64}$/.test(owner||'')){owner=[...crypto.getRandomValues(new Uint8
 document.cookie='ff_owner='+owner+'; SameSite=Strict; Path='+(basePath||'/');
 let current,filename='已填表格',busy=false,step='import',pendingNavigation;
 const sessionId=new URLSearchParams(location.search).get('session')||undefined;
-const reasons={'unknown-field':'暂无可用字段映射','no-capability':'尚未查询或此字段暂无来源','no-match':'未匹配到企业','candidate-review-required':'主体需要人工确认','no-data':'该字段未返回','provider-error':'查询失败或未连接，请稍后重试','user-excluded':'已按你的选择排除','unsafe-value':'值不安全，已阻止填写','placeholder-needs-confirmation':'已有占位内容，保持原样'};
+const reasons={'unknown-field':'暂无可用字段映射','no-capability':'尚未查询或此字段暂无来源','provider-unavailable':'尚未查询或此字段暂无来源','no-match':'未匹配到企业','candidate-review-required':'主体需要人工确认','validation-conflict':'返回值不在原表下拉选项中，请人工核验','sheet-excluded':'工作表未选择','no-data':'该字段未返回','provider-error':'查询失败或未连接，请稍后重试','user-excluded':'已按你的选择排除','unsafe-value':'值不安全，已阻止填写','placeholder-needs-confirmation':'已有占位内容，保持原样'};
 function controls(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value)}
 function row(target,values,labels){const tr=document.createElement('tr');values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.dataset.label=labels[i];tr.append(td)});$(target).append(tr);return tr}
 async function api(path,body){if(current&&body?.id===current.id)body={...body,expectedRevision:current.revision};const response=await fetch(basePath+path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{'Content-Type':'application/json','X-Form-Fill-Owner':owner}});const data=await response.json();if(!response.ok)throw Error(data.message);return data}
 function navigate(target){if(target!=='import'&&!current){$('status').textContent='请先导入表格。';return}step=target;$('history').hidden=true;$('current').hidden=false;document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==target);document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.step===target)))}
 function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
 function command(){return '使用企查查填写任务，调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+'。只填空白，结果在工作台预览后由我确认。'+$('requirements').value}
+function renderSettings(data){
+ $('mapping').replaceChildren();$('entities').replaceChildren();
+ for(const sheet of data.structure||[]){
+  const section=document.createElement('fieldset');section.dataset.sheet=sheet.name;
+  const legend=document.createElement('legend');legend.textContent=sheet.name;section.append(legend);
+  const enabled=document.createElement('input');enabled.type='checkbox';enabled.className='sheet-enabled';enabled.checked=!data.configuration?.sheets||data.configuration.sheets.includes(sheet.name);enabled.setAttribute('aria-label','处理工作表 '+sheet.name);section.append(enabled);
+  const header=document.createElement('select');header.className='header-row';header.setAttribute('aria-label',sheet.name+' 表头行');
+  const table=data.analysis.tables.find(t=>t.sheet===sheet.name);
+  for(const row of sheet.rows){const option=document.createElement('option');option.value=row.number;option.textContent='第 '+row.number+' 行：'+row.cells.map(c=>c.label).join(' / ').slice(0,100);header.append(option)}
+  header.value=data.configuration?.headers?.find(h=>h.sheet===sheet.name)?.row||table?.headerRow||sheet.rows[0]?.number;
+  const fields=document.createElement('div');
+  const showFields=()=>{
+   fields.replaceChildren();
+   for(const cell of sheet.rows.find(r=>r.number===Number(header.value))?.cells||[]){
+    const label=document.createElement('label');label.textContent=cell.label+' → ';
+    const select=document.createElement('select');select.dataset.column=cell.column;select.setAttribute('aria-label',sheet.name+' 字段 '+cell.label);
+    for(const field of [{key:'',label:'不填写'},...(data.catalog||[])]){const option=document.createElement('option');option.value=field.key;option.textContent=field.label;select.append(option)}
+    const override=data.configuration?.mappings?.find(m=>m.sheet===sheet.name&&m.column===cell.column);
+    select.value=override?override.field||'':table?.headerRow===Number(header.value)?table.mappings.find(m=>m.column===cell.column)?.field||'':'';
+    label.append(select);fields.append(label,document.createElement('br'));
+   }
+  };
+  header.onchange=showFields;section.append(header,fields);showFields();$('mapping').append(section);
+ }
+ const seen=new Set();
+ for(const item of data.changeSet.incomplete.filter(i=>i.reason==='candidate-review-required')){
+  const key=JSON.stringify([item.sheet,item.row]);if(seen.has(key))continue;seen.add(key);
+  const box=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=item.sheet+' 第 '+item.row+' 行 · '+(item.anchor?.company_name||'');box.append(legend);
+  const choice=document.createElement('select');choice.setAttribute('aria-label','候选 '+item.sheet+' '+item.row);
+  const blank=document.createElement('option');blank.value='';blank.textContent='请选择候选（不自动选择）';choice.append(blank);
+  for(const c of item.candidates||[]){const option=document.createElement('option');option.value=c.id;option.textContent=c.company_name+' '+c.credit_no;choice.append(option)}
+  const manual=document.createElement('input');manual.placeholder='或填写已核验的完整名称/信用代码';manual.setAttribute('aria-label','人工主体 '+item.sheet+' '+item.row);
+  const button=document.createElement('button');button.textContent='确认此主体';button.onclick=async()=>{if(busy)return;controls(true);try{render(await api('/resolve',{id:current.id,sheet:item.sheet,row:item.row,...(choice.value?{candidateId:choice.value}:{value:manual.value})}));$('status').textContent='主体已确认，请重新发送查询指令。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
+  box.append(choice,manual,button);$('entities').append(box);
+ }
+ for(const selection of data.configuration?.anchors||[]){const p=document.createElement('p');p.textContent=selection.sheet+' 第 '+selection.row+' 行：人工确认 '+selection.value;$('entities').append(p)}
+}
 function render(data){
 current=data;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
 if(parent!==window)parent.postMessage({type:'ff-task',taskId:data.id},location.origin);
@@ -48,7 +85,7 @@ $('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').
 $('task-meta').textContent=(data.filename||'表格')+' · '+({'enriching':'查询中','completed':'已完成','interrupted':'查询中断，请重新核验','partial':'部分完成','preview_ready':'可核验'}[data.state]||data.state)+' · 有效期至 '+new Date(data.expiresAt).toLocaleString();
 $('summary').textContent='可填写 '+data.changeSet.changes.length+' 格 · '+(data.plan.paidCalls?'企查查来源':'本地分析 / 合成示例 · 费用 0')+' · 未完成 '+data.changeSet.incomplete.length+' 项';
 $('structure').textContent=data.analysis.tables.map(t=>t.sheet+'：表头第 '+t.headerRow+' 行').join('；');
-$('mapping').textContent='可识别字段：'+[...new Set(data.plan.opportunities.map(o=>o.label))].join('、');
+renderSettings(data);
 for(const c of data.changeSet.changes){const tr=row('changes',[c.sheet+' ! '+c.cell,c.label,c.oldValue||'（空白）',c.newValue,(c.source.startsWith('qcc://')?'企查查 · '+c.source.slice(6):'合成示例')+' · 获取于 '+c.acquiredAt.slice(0,10)+' · 明确字段映射'],['位置','字段','原值','准备填写','来源']);const td=document.createElement('td'),check=document.createElement('input');check.type='checkbox';check.checked=true;check.value=c.id;check.disabled=data.confirmed;check.setAttribute('aria-label','填写 '+c.cell);td.append(check);tr.append(td)}
 for(const i of data.changeSet.incomplete)row('incomplete',[i.sheet+' '+(i.cell||''),i.label||'—',reasons[i.reason]||'此项需要人工处理'],['位置','字段','原因']);
 $('preview').hidden=false;if(data.confirmed)downloads();$('qcc-command').textContent=command();
@@ -57,6 +94,7 @@ async function restore(silent=false){if(busy||!current&& !location.hash)return;c
 async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message}finally{controls(false)}}
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>navigate(b.dataset.step));
 $('upload').onclick=async()=>{const f=$('file').files[0];if(!f){$('status').textContent='请先选择 XLSX 文件';return}await preview(await f.arrayBuffer(),f.name)};
+$('configure').onclick=async()=>{if(!current||busy)return;const configuration={sheets:[],headers:[],mappings:[]};for(const section of $('mapping').querySelectorAll('fieldset')){if(!section.querySelector('.sheet-enabled').checked)continue;const sheet=section.dataset.sheet;configuration.sheets.push(sheet);configuration.headers.push({sheet,row:Number(section.querySelector('.header-row').value)});for(const field of section.querySelectorAll('[data-column]'))configuration.mappings.push({sheet,column:Number(field.dataset.column),field:field.value||null})}controls(true);try{render(await api('/configure',{id:current.id,configuration}));$('status').textContent='字段设置已应用，旧预览已清除，请重新核验。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('samples').onclick=async e=>{if(!e.target.dataset.name||busy)return;const name=e.target.dataset.name;try{const response=await fetch(basePath+'/fixture/'+encodeURIComponent(name));if(!response.ok)throw Error('模板读取失败');await preview(await response.arrayBuffer(),name+'.xlsx',true)}catch(e){$('status').textContent=e.message}};
 $('confirm').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/confirm',{id:current.id,confirmChangeSetId:current.changeSet.changeSetId});current=await api('/task/'+current.id);render(current);downloads();$('status').textContent='副本已生成，原文件保持不变。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('selection').onclick=async()=>{if(!current||busy)return;controls(true);try{render(await api('/select',{id:current.id,selectedIds:[...$('changes').querySelectorAll('input:checked')].map(x=>x.value)}));$('status').textContent='选择已应用，请核对新的预览。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};

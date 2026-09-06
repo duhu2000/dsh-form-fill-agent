@@ -1,4 +1,4 @@
-export const PROVIDER_VERSION = '0.1.0-alpha.1';
+export const PROVIDER_VERSION = '0.1.0-alpha.5';
 export { createQccProvider, decodeRegistration, isCompleteAnchor, REGISTRATION_TOOL } from './qcc.js';
 // Provider-owned vocabulary; the caller supplies the authorized transport.
 export const FIELD_CATALOG = Object.freeze([
@@ -27,6 +27,7 @@ export function createMockProvider({ acquiredAt = '2026-09-06T00:00:00.000Z' } =
       calls++;
       if (request.capability !== 'synthetic-registration') return { status: 'error', code: 'unknown-capability' };
       if (request.anchor.company_name === '合成多候选有限公司') return { status: 'ambiguous' };
+      if (request.anchor.company_name === '合成待选主体有限公司') return { status: 'ambiguous', candidates: ['合成客户甲有限公司','合成客户乙有限公司'].map(company_name => ({ company_name, credit_no: synthetic[company_name].credit_no })) };
       const record = synthetic[request.anchor.company_name];
       if (!record) return { status: 'not-found' };
       return { status: 'exact', values: Object.fromEntries(request.fields.filter(field => Object.hasOwn(record, field)).map(field => [field, { value: record[field], source: 'mock://synthetic-registration/' + field, acquiredAt, confidence: 1 }])) };

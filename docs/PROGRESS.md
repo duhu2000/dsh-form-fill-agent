@@ -1,5 +1,7 @@
 # AI填表开发进度
 
+当前增量：alpha.5 三包候选完成字段配置、候选人工确认、固定选项下拉保真及 schema 3。59 项测试、新浏览器控件、双 DSH/原生/真实模型闭环均通过，旧 0.8.6 消费新版 core 的 211 tests + 24 golden 通过；最终 CI 与发布待收口。完整范围和未完成项见 [U3-CONTROLS-ACCEPTANCE.md](U3-CONTROLS-ACCEPTANCE.md)。alpha.4 npm 已发布且 README registry/安装包验证通过，先前“等待账号验证”为历史记录。
+
 alpha.4 发布修复：实际 npm 子包此前缺少 README，现已加入用户说明并增加 tarball README 必检与 registry/安装包 README 一致性检查。50 项测试及打包通过，运行代码和共享依赖不变。4763ce4 的六组 CI（run 34039715682）全部通过；v0.1.0-alpha.4 tag 与 GitHub Latest Release 已发布。npm 发布等待账号验证，尚未执行 alpha.4 registry 回归，npm latest 暂为 alpha.3。
 
 最新开发增量（alpha.3）：修复真实宿主发现客户端、右栏遮挡、完成任务恢复导航及 alpha.2 普通会话复用问题。两版真实原生入口→业务会话→六格合成预览→草稿回填→确认下载→恢复→普通会话通过；50 项测试通过。U2 真实模型/QCC 全链路现已在 rc.2 与 alpha.2 通过，工作台自动更新六格并下载副本，副本再次分析新增填写为 0。详见 [U2-NATIVE-ACCEPTANCE.md](U2-NATIVE-ACCEPTANCE.md)。

@@ -39,7 +39,7 @@ function range(ref) {
 }
 export function inRange(row, column, r) { return row >= r.start.row && row <= r.end.row && column >= r.start.column && column <= r.end.column; }
 const allowedEntry = /^(?:\[Content_Types\]\.xml|_rels\/\.rels|docProps\/(?:app|core)\.xml|xl\/(?:workbook\.xml|_rels\/workbook\.xml\.rels|styles\.xml|sharedStrings\.xml|theme\/theme[0-9]+\.xml|worksheets\/sheet[0-9]+\.xml))$/;
-const unsupportedSheet = ['sheetProtection', 'dataValidations', 'conditionalFormatting', 'drawing', 'legacyDrawing', 'tableParts', 'oleObjects', 'controls', 'extLst', 'hyperlinks', 'AlternateContent'];
+const unsupportedSheet = ['sheetProtection', 'conditionalFormatting', 'drawing', 'legacyDrawing', 'tableParts', 'oleObjects', 'controls', 'extLst', 'hyperlinks', 'AlternateContent'];
 export function parseWorkbook(input) {
   const bytes = Buffer.from(input), entries = readZip(bytes), parsed = new Map();
   for (const [name, data] of entries) {
@@ -72,8 +72,18 @@ export function parseWorkbook(input) {
     if (!/^xl\/worksheets\/sheet[0-9]+\.xml$/.test(path) || paths.has(path)) fail('BAD_WORKBOOK', '工作表路径越界或重复');
     paths.add(path);
     const source = entries.get(path)?.toString('utf8'), sheet = parsed.get(path)?.worksheet;
-    if (!sheet || /<(?:\w+:)(?:worksheet|row|c|sheetData)\b/.test(source)) fail('UNSUPPORTED_STRUCTURE', '工作表 XML 命名空间格式不受支持');
+    if (!sheet || /<(?:\w+:)(?:worksheet|row|c|sheetData|dataValidations|dataValidation|formula1|formula2)\b/.test(source)) fail('UNSUPPORTED_STRUCTURE', '工作表 XML 命名空间格式不受支持');
     for (const key of unsupportedSheet) if (sheet[key] !== undefined) fail('UNSUPPORTED_STRUCTURE', '暂不支持工作表结构：' + key);
+    if (sheet.dataValidations !== undefined && !sheet.dataValidations?.dataValidation) fail('UNSUPPORTED_STRUCTURE', '下拉验证结构为空');
+    const validations = array(sheet.dataValidations?.dataValidation).map(rule => {
+      const literal = text(rule.formula1);
+      if (rule['@_type'] !== 'list' || typeof literal !== 'string' || !/^"[^"]*"$/.test(literal) || rule.formula2 !== undefined || Object.keys(rule).some(k => !k.startsWith('@_') && k !== 'formula1')) fail('UNSUPPORTED_STRUCTURE', '仅支持内嵌固定选项的下拉列表，不支持公式或区域引用验证');
+      const refs = String(rule['@_sqref'] ?? '').trim().split(/\s+/);
+      if (refs.length > 1000) fail('SHEET_LIMIT', '验证区域过多');
+      const ranges = refs.map(range);
+      if (ranges.some(r => r.start.row > r.end.row || r.start.column > r.end.column)) fail('CELL_REFERENCE', '验证区域无效');
+      return { ranges, values: literal.slice(1,-1).split(',') };
+    });
     if (sheet.dimension?.['@_ref']) range(sheet.dimension['@_ref']);
     const merges = array(sheet.mergeCells?.mergeCell).map(m => range(m['@_ref']));
     const hiddenColumns = array(sheet.cols?.col).filter(c => c['@_hidden'] === '1').map(c => [Number(c['@_min']), Number(c['@_max'])]);
@@ -97,13 +107,16 @@ export function parseWorkbook(input) {
         cells[ref] = { ref, ...location, type, value: String(value), formula: cell.f !== undefined, style: cell['@_s'], hidden: row['@_hidden'] === '1' || hiddenColumns.some(([a, b]) => location.column >= a && location.column <= b) };
       }
     }
-    sheets.push({ name, path, hidden: item['@_state'] !== undefined && item['@_state'] !== 'visible', cells, rows: rows.sort((a, b) => a.number - b.number), merges, hiddenColumns });
+    sheets.push({ name, path, hidden: item['@_state'] !== undefined && item['@_state'] !== 'visible', cells, rows: rows.sort((a, b) => a.number - b.number), merges, hiddenColumns, ...(validations.length ? { validations } : {}) });
   }
   if (!sheets.length || sheets.length > LIMITS.sheets) fail('SHEET_LIMIT', '工作表数量必须为 1–16');
   return { schemaVersion: 1, kind: 'DocumentSchema', documentHash: digest(bytes), sheets, entries };
 }
 
 export function isBlank(cell) { return !cell || (!cell.formula && cell.type !== 'e' && cell.value.trim() === ''); }
+export function validationAllows(sheet, row, column, value) {
+  return (sheet.validations ?? []).filter(rule => rule.ranges.some(r => inRange(row, column, r))).every(rule => rule.values.includes(String(value)));
+}
 export function writeWorkbook(document, changes) {
   const entries = new Map(document.entries);
   const seen = new Set();
@@ -115,6 +128,7 @@ export function writeWorkbook(document, changes) {
     if (seen.has(key)) fail('CHANGE_DUPLICATE', '重复填写位置'); seen.add(key);
     if (sheet.hidden || cell?.hidden || sheet.rows.find(r => r.number === row)?.hidden || sheet.hiddenColumns.some(([a, b]) => column >= a && column <= b) || sheet.merges.some(r => inRange(row, column, r))) fail('CHANGE_TARGET', '隐藏或合并单元格不可填写');
     if (!isBlank(cell) || (cell?.value ?? '') !== change.oldValue) fail('WRITE_CONFLICT', '单元格已有值或预览后已更改');
+    if (!validationAllows(sheet, row, column, change.newValue)) fail('VALIDATION_CONFLICT', '填写值不在原表下拉选项内');
     let source = entries.get(sheet.path).toString();
     const safe = xmlEscape(change.newValue);
     const replacement = '<c r="' + change.cell + '"' + (cell?.style !== undefined ? ' s="' + xmlEscape(cell.style) + '"' : '') + ' t="inlineStr"><is><t xml:space="preserve">' + safe + '</t></is></c>';
