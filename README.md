@@ -19,7 +19,12 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo，三个子包为公开发布候选。npm 发布状态以 registry 为准，GitHub Release 提供三个可安装 tarball。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo，三个子包已公开发布 0.1.0-alpha.1，dist-tag 为 next。GitHub Release 同时提供三个可安装 tarball。
+
+在已选定的 DSH profile 中安装预览版：
+```sh
+dsh plugin --profile web add dsh-form-fill-agent@0.1.0-alpha.1
+```
 
 安装三个 tarball 至隔离 profile 后，将 dsh-form-fill-agent 加入该 profile 的 bundles。两版真实安装与卸载演示可运行 scripts/dsh-smoke.mjs，环境配置见 docs/M1-ACCEPTANCE.md。不要把测试安装到生产 profile，测试禁止使用 43120。
 
@@ -38,6 +43,7 @@ DSH 在显式 DSH_HOME 下保存任务至 form-fill-tasks，默认 24 小时过�
 
 - [整体进度](docs/PROGRESS.md)、[M1 验收](docs/M1-ACCEPTANCE.md)、[M2 验收与发布状态](docs/M2-ACCEPTANCE.md)。
 - npm run test:consumer：旧插件完整检查、24 golden case，以及新插件三个真实 tarball 消费闭环；需要相邻兼容工作树。
+- node scripts/registry-smoke.mjs：从官方 npm 安装，核验三个 tarball 完整性及三模板端到端结果。
 - 新增 QCC 契约、Agent-owned 嵌套执行、任务重启恢复、权限和过期测试。
 - 三包分别为 packages/form-fill-core、packages/qcc-form-fill-provider、packages/dsh-form-fill-agent。
 - 旧插件主线未改动，共享 CSV 接入只在独立兼容工作树验证。
