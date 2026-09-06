@@ -1,0 +1,44 @@
+# U2 原生宿主验收与当前边界
+
+2026-09-06。代码版本：0.1.0-alpha.3 候选，尚未打 tag 或发布 npm。U2 整体未完成，不将真实界面回归等同于真实模型/QCC 调用。
+
+## 本轮发现和修复
+
+1. alpha.2 npm 包缺少 exports["./package.json"]。真实 DSH clientModules 用 require.resolve(packageName + "/package.json") 发现客户端，解析失败被视为无客户端，因此独立页面可用却不显示原生入口。已补导出，并增加实际 require.resolve 回归。
+2. dsh.client.inject 是模块名列表；factory 的 inject 才是运行时服务名。清单改为官方 layout/conversation 模块，未引入第三方界面依赖。
+3. 真实宿主没有测试夹具的 data-slot="conversation" 容器；右栏覆盖输入框。改用 composer 最近的 data-phase 容器，关闭或切换会话后恢复原 padding；旧标记保留为降级。
+4. 关闭工作台后从填写预览恢复已完成任务时，异步恢复会强制切到下载。恢复期间保留父窗口请求的导航，避免覆盖用户选择。
+5. rc.2 的 startSession 在 workspaces，alpha.2 迁至 uiWorkspace。新增可选运行时注入，以同一业务前缀限定普通新会话桥接；清理恢复原属性描述符，服务缺失不阻止插件加载。
+
+## 实际验证范围
+
+scripts/dsh-native-smoke.mjs 使用实际 CLI、全新 DSH_HOME、合成工作区、随机非 43120 端口、独立 Chromium；包通过 npm tarball 安装。仅通过 Host API 准备已有合成目录，业务会话创建、导航、草稿回填、确认与下载均从原生界面执行。
+
+| 验证 | rc.2 / alpha.2 |
+|---|---|
+| 原生侧栏入口、插件客户端实际加载 | PASS / PASS |
+| 专属业务会话、六格合成表预览 | PASS / PASS |
+| 指令回填原生 Composer | PASS / PASS |
+| 右栏不遮挡 Composer，真实 boundingBox 断言 | PASS / PASS |
+| 确认新副本、浏览器下载 HTTP 200 | PASS / PASS |
+| 关闭再从填写预览恢复已完成任务 | PASS / PASS |
+| 普通新会话不沿用业务菜单 | PASS / PASS |
+| 真实模型调用 | NOT_TESTED / NOT_TESTED |
+| 真实 DSH QCC 连接 | NOT_CONNECTED / NOT_CONNECTED |
+
+npm run check：50 tests、50 pass、0 fail、0 skip，三包打包检查通过。scripts/native-ui-smoke.mjs 的既有 React/Chromium 契约也通过。
+
+补充回归：Node 22.19.0 和 24.19.0 各 50/50；scripts/dsh-smoke.mjs 两版三模板、浏览器、重启恢复及卸载组成均通过。所有测试使用本地候选 tarball，未将候选误认为 npm 已发布版本。
+
+运行真实原生回归前设置 DSH_RC_BIN、DSH_ALPHA_BIN、PLAYWRIGHT_MODULE、CHROME_BIN，再执行 node scripts/dsh-native-smoke.mjs。可加 FORM_FILL_KEEP_HOST=1，在两版验收通过后保留最后一个隔离 Host；控制台仅输出本地设置地址和隔离目录，SIGINT/SIGTERM 结束并关闭该子进程。不保存认证 URL、浏览器 storageState 或宿主原始日志。
+
+## 后续所需配置
+
+当前可用的启动环境没有 DEEPSEEK_API_KEY；全新 profile 显示“添加一个 API Key 开始使用”，也未连接 QCC。不能从生产 DSH profile 复制凭据。需要在保留的隔离 Host 设置页配置测试模型凭据、连接并授权企查查 MCP，不在聊天或仓库粘贴 Key、Token。
+
+配置完成后继续真实原生发送 form_fill_enrich，验收模型 → QCC → 自动更新预览 → 人工确认 → XLSX 副本，随后完成发布门禁。之前 M2 的真实 MCP transport 注入记录仍有效，但不能替代该链路。
+
+## 文件与兼容边界
+
+修改智能体 package.json、lib/client.js、lib/ui.html、lib/http.js；根 package.json/package-lock.json；test/http.test.mjs；新增 scripts/dsh-native-smoke.mjs；更新 CHANGELOG、README 与进度文档。
+form-fill-core、qcc-form-fill-provider 和清洗插件源码未修改。两个共享包仍为 alpha.1。已发布 alpha.2 tag 保持原样，候选 alpha.3 尚未发布。

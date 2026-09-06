@@ -28,8 +28,9 @@ window.__ModuleLoader__.load({
     if(!ctx.sessions?.create)return;e.preventDefault();try{await start()}catch{window.open('/form-fill/','_blank','noopener')}
    }},'▦ AI填表'));
    if(!React.useState||!React.useEffect||!portal||!ctx.sessions?.list)return;
-   const original=ctx.workspaces?.startSession;
-   if(typeof original==='function'){
+   function installSessionBridge(navigation){
+    const original=navigation?.startSession,descriptor=navigation&&Object.getOwnPropertyDescriptor(navigation,'startSession');
+    if(typeof original!=='function')return;
     let disposed=false,pending;
     const wrapped=function(workspaceId){
      const previous=current();if(disposed||!owned(previous))return original.call(this,workspaceId);
@@ -40,8 +41,10 @@ window.__ModuleLoader__.load({
      pending=ctx.sessions.create({workspaceId:target}).then(id=>{if(!disposed&&current()===previous)ctx.sessions.open(id)}).finally(()=>pending=null);
      return pending;
     };
-    try{ctx.workspaces.startSession=wrapped;disposers.push(()=>{disposed=true;if(ctx.workspaces.startSession===wrapped)ctx.workspaces.startSession=original})}catch{}
+    try{navigation.startSession=wrapped;const dispose=()=>{disposed=true;if(navigation.startSession===wrapped){if(descriptor)Object.defineProperty(navigation,'startSession',descriptor);else delete navigation.startSession}};disposers.push(dispose);return dispose}catch{}
    }
+   if(ctx.workspaces?.startSession)installSessionBridge(ctx.workspaces);
+   else ctx.inject?.(['uiWorkspace'],scope=>{const dispose=installSessionBridge(scope.uiWorkspace);scope.effect?.(()=>dispose)});
    function Menu({sessionId}){
     const ref=React.useRef(null),[mount,setMount]=React.useState(null);
     React.useEffect(()=>{
@@ -87,8 +90,8 @@ window.__ModuleLoader__.load({
     },[view?.id]);
     React.useEffect(()=>{
      if(!view)return;
-     const container=document.querySelector('[data-slot="conversation"]'),previous=container?.style.paddingRight;
-     const adjust=()=>{if(container)container.style.paddingRight=innerWidth>=1100?'min(48vw, 640px)':previous||''};
+     const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]'),previous=container?.style.paddingRight;
+     const adjust=()=>{if(container)container.style.paddingRight=innerWidth>=1100?'calc(min(48vw, 640px) + 1px)':previous||''};
      adjust();window.addEventListener('resize',adjust);return()=>{window.removeEventListener('resize',adjust);if(container)container.style.paddingRight=previous};
     },[view?.id]);
     if(!view||active!==view.id)return null;

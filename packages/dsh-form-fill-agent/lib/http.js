@@ -32,7 +32,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       if (url.pathname !== basePath && !url.pathname.startsWith(basePath + '/')) return send(404, { message: '路径不存在' });
       const path = url.pathname.slice(basePath.length) || '/';
       if (request.method === 'GET' && path === '/') return send(200, await readFile(new URL('./ui.html', import.meta.url)), 'text/html; charset=utf-8');
-      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.2', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
+      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.3', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
       if (request.method === 'GET' && path === '/tasks') {
         if (!validOwner(owner)) return send(403, { message: '需要本地任务访问凭据' });
         return send(200, [...tasks].filter(([, t]) => t.owner === owner).map(([id,t]) => metadata(id,t)).sort((a,b) => b.updatedAt-a.updatedAt));

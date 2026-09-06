@@ -3,9 +3,16 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { createRequire } from 'node:module';
 import { createFormFillHandler } from '../packages/dsh-form-fill-agent/lib/http.js';
 import { parseWorkbook } from 'form-fill-core';
 const bytes = await readFile(new URL('../fixtures/xlsx/客户台账.xlsx', import.meta.url));
+test('real Host can resolve the client manifest through package exports',async()=>{
+  const require=createRequire(import.meta.url);
+  const manifest=JSON.parse(await readFile(require.resolve('dsh-form-fill-agent/package.json'),'utf8'));
+  assert.equal(manifest.exports['./client'],'./lib/client.js');
+  assert.deepEqual(manifest.dsh.client.inject,['@deepseek-ai/dsh-client-ui-layout','@deepseek-ai/dsh-client-ui-conversation']);
+});
 function harness(options = {}) {
   const service = createFormFillHandler({ getPort: () => 43260, ...options });
   async function request(path, body, headers = {}, method = body === undefined ? 'GET' : 'POST') {

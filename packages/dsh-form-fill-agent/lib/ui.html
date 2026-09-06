@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 let owner=localStorage.getItem('ff-owner');
 if(!/^[a-f0-9]{64}$/.test(owner||'')){owner=[...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');localStorage.setItem('ff-owner',owner)}
 document.cookie='ff_owner='+owner+'; SameSite=Strict; Path='+(basePath||'/');
-let current,filename='已填表格',busy=false,step='import';
+let current,filename='已填表格',busy=false,step='import',pendingNavigation;
 const sessionId=new URLSearchParams(location.search).get('session')||undefined;
 const reasons={'unknown-field':'暂无可用字段映射','no-capability':'尚未查询或此字段暂无来源','no-match':'未匹配到企业','candidate-review-required':'主体需要人工确认','no-data':'该字段未返回','provider-error':'查询失败或未连接，请稍后重试','user-excluded':'已按你的选择排除','unsafe-value':'值不安全，已阻止填写','placeholder-needs-confirmation':'已有占位内容，保持原样'};
 function controls(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value)}
@@ -53,7 +53,7 @@ for(const c of data.changeSet.changes){const tr=row('changes',[c.sheet+' ! '+c.c
 for(const i of data.changeSet.incomplete)row('incomplete',[i.sheet+' '+(i.cell||''),i.label||'—',reasons[i.reason]||'此项需要人工处理'],['位置','字段','原因']);
 $('preview').hidden=false;if(data.confirmed)downloads();$('qcc-command').textContent=command();
 }
-async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.revision!==current?.revision){render(data);if(!silent)navigate(data.confirmed?'download':'preview')}}catch(e){if(!silent)$('status').textContent=e.message}}
+async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.revision!==current?.revision){render(data);if(!silent){const target=pendingNavigation||(data.confirmed?'download':'preview');pendingNavigation=undefined;if(target==='history')$('history-tab').click();else navigate(target)}}}catch(e){if(!silent)$('status').textContent=e.message}}
 async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message}finally{controls(false)}}
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>navigate(b.dataset.step));
 $('upload').onclick=async()=>{const f=$('file').files[0];if(!f){$('status').textContent='请先选择 XLSX 文件';return}await preview(await f.arrayBuffer(),f.name)};
@@ -69,7 +69,7 @@ $('wizard-close').onclick=()=>{$('wizard').close();$('wizard-open').focus()};
 $('requirements').oninput=()=>{$('qcc-command').textContent=command()};
 $('copy-command').onclick=async()=>{try{await navigator.clipboard.writeText(command());$('status').textContent='已复制，请在 DSH 对话中发送。'}catch{$('status').textContent='请手动复制指令。'}};
 $('draft').onclick=()=>{if(parent===window){$('status').textContent='独立页面请复制指令到 DSH 对话。';return}parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value},location.origin)};
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.type==='ff-draft-result'){$('status').textContent=e.data.ok?'已回填，请在对话框修改或发送。':'回填失败，任务已保留。';if(e.data.ok)$('wizard').close()}if(e.data?.type==='ff-navigate'){if(e.data.step==='history')$('history-tab').click();else navigate(e.data.step)}});
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.type==='ff-draft-result'){$('status').textContent=e.data.ok?'已回填，请在对话框修改或发送。':'回填失败，任务已保留。';if(e.data.ok)$('wizard').close()}if(e.data?.type==='ff-navigate'){if(!current&&location.hash)pendingNavigation=e.data.step;if(e.data.step==='history')$('history-tab').click();else navigate(e.data.step)}});
 api('/health').then(s=>{$('connection').textContent=s.qccAvailable?'已发现企查查工商工具，可在对话中执行。':'尚未发现企查查工商工具；请先连接 MCP。合成模板仍可体验。'}).catch(()=>{});
 navigate('import');restore();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
 </script></html>
