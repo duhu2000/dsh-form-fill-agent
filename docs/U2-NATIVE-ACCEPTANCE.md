@@ -1,6 +1,6 @@
 # U2 原生宿主验收与当前边界
 
-2026-09-06。代码版本：0.1.0-alpha.3 候选，尚未打 tag 或发布 npm。U2 整体未完成，不将真实界面回归等同于真实模型/QCC 调用。
+2026-09-06。代码版本：0.1.0-alpha.3 候选，尚未打 tag 或发布 npm。U2 原生界面与真实模型/QCC 闭环均已完成，等待发布收口。
 
 ## 本轮发现和修复
 
@@ -23,8 +23,10 @@ scripts/dsh-native-smoke.mjs 使用实际 CLI、全新 DSH_HOME、合成工作�
 | 确认新副本、浏览器下载 HTTP 200 | PASS / PASS |
 | 关闭再从填写预览恢复已完成任务 | PASS / PASS |
 | 普通新会话不沿用业务菜单 | PASS / PASS |
-| 真实模型调用 | NOT_TESTED / NOT_TESTED |
-| 真实 DSH QCC 连接 | NOT_CONNECTED / NOT_CONNECTED |
+| 真实模型调用 form_fill_enrich | PASS / PASS |
+| 真实 DSH QCC 连接与六字段查询 | PASS / PASS |
+| 保持工作台打开时自动刷新六格预览 | PASS / PASS |
+| 真实填写副本再次分析无新增填写 | PASS / PASS |
 
 npm run check：50 tests、50 pass、0 fail、0 skip，三包打包检查通过。scripts/native-ui-smoke.mjs 的既有 React/Chromium 契约也通过。
 
@@ -34,17 +36,21 @@ npm run check：50 tests、50 pass、0 fail、0 skip，三包打包检查通过�
 
 运行真实原生回归前设置 DSH_RC_BIN、DSH_ALPHA_BIN、PLAYWRIGHT_MODULE、CHROME_BIN，再执行 node scripts/dsh-native-smoke.mjs。可加 FORM_FILL_KEEP_HOST=1，在两版验收通过后保留最后一个隔离 Host；控制台仅输出本地设置地址和隔离目录，SIGINT/SIGTERM 结束并关闭该子进程。不保存认证 URL、浏览器 storageState 或宿主原始日志。
 
-## 后续所需配置
+## 真实模型验收
 
-当前可用的启动环境没有 DEEPSEEK_API_KEY；全新 profile 显示“添加一个 API Key 开始使用”。不能从生产 DSH profile 复制凭据，需要在保留的隔离 Host 设置页配置测试模型凭据，不在聊天或仓库粘贴 Key、Token。
+用户已在本任务的隔离 Host 设置页完成测试模型配置。rc 验收仅复用本任务隔离测试设置，未读取生产 DSH profile。
 
-后续连接增量：已使用用户明确提供并确认所属服务的 QCC 凭据，将 alpha.2 隔离 Host 接入 https://agent.qcc.com/mcp/company/stream。实际 health.qccAvailable=true，工商工具发现成功。这是 MCP 连接/工具发现验证，尚未发起本轮真实模型驱动的工商查询。
+已使用用户明确提供并确认所属服务的 QCC 凭据，接入 https://agent.qcc.com/mcp/company/stream。rc.2 与 alpha.2 均完成真实模型驱动工商查询。
 
 新增 scripts/isolated-qcc-host.mjs：仅接受本任务生成的隔离目录，从关闭回显的 stdin 读取授权信息，放入子进程环境；生成的 patch 只含环境变量引用，QCC 凭据不落盘、不放命令行参数、不记录原始日志。原始模型设置、已有任务与用户 patch 不覆盖。此进程结束后需要重新注入 QCC 凭据。
 
 alpha.2 Web 首页需要浏览器启动认证，裸 origin 在新浏览器中会返回 401。设置 FORM_FILL_OPEN_BROWSER=1 时由 DSH 自带流程打开认证入口；启动器不打印或保存该认证 URL、不关闭认证。此前只提供裸地址不足以进入设置页，已修正此操作流程。
 
-配置完成后继续真实原生发送 form_fill_enrich，验收模型 → QCC → 自动更新预览 → 人工确认 → XLSX 副本，随后完成发布门禁。之前 M2 的真实 MCP transport 注入记录仍有效，但不能替代该链路。
+scripts/dsh-live-e2e.mjs 从关闭回显的 stdin 接收测试授权与企业名称，仅在内存创建测试 XLSX。实际原生 UI 上传后断言 changes=0；回填草稿、点击发送，等待模型调用 form_fill_enrich，再断言 revision 增长、六格来源均为 qcc://、保持打开的工作台自动显示六行。确认下载后重新分析副本，secondPassChanges=0。两版均输出 PASS；不使用 mock 事实，不保存原始模型日志、浏览器认证 URL 或真实企业数据至仓库。端口分别为 52174 和 52173，测试后关闭子进程。
+
+命令：配置 PLAYWRIGHT_MODULE、CHROME_BIN 后执行 `node scripts/dsh-live-e2e.mjs <isolated-home> <dsh-bin> <isolated-port>`，授权与测试主体由 stdin 提供。该测试需要已配置模型的隔离 Host；不会进入无凭据 CI。此前一次 rc 尝试没有完成工具调用，未计为通过；最终同一驱动在两个基线均完成上述断言。
+
+最终 `npm run check`：50 tests、50 pass、0 fail、0 cancelled、0 skipped、0 todo，三包打包 PASS。agent 候选 tarball SHA-256：0247d105120f64fdbea1195fe750618a9080d55ad259e68c6341c6e10c24efeb。
 
 ## 文件与兼容边界
 

@@ -60,7 +60,7 @@ window.__ModuleLoader__.load({
     const content=h('div',{style:{padding:'10px',display:'flex',gap:'8px',flexWrap:'wrap'}},h('strong',null,'AI填表'),...[
      ['导入表格','import'],['字段设置','rules'],['主体核验','identity'],['填写预览','preview'],['任务历史','history']
     ].map(([label,step])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},label)));
-    return h('div',{ref},mount?portal(content,mount):content);
+    return h('div',{ref,'data-form-fill-session':sessionId},mount?portal(content,mount):content);
    }
    function Panel(){
     const [view,setView]=React.useState(null),frame=React.useRef(null),[active,setActive]=React.useState(current()),[wide,setWide]=React.useState(innerWidth>=1100);
