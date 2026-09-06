@@ -22,6 +22,6 @@
 
 后续受限事项：非技术用户正式签收、Excel 桌面实际重算验收；新增工具或未来风险目录变化须独立验证；市场须通过门禁并由维护者合并。不能把上述状态写成“全部完成”或“已上架”。
 
-本轮版本：alpha.8 已 commit/push/tag、六组 CI 通过；alpha.9 为后续目录迁移增量，npm 两版均未发布。次日仅发布最终 alpha.9 三包，不必补发中间 alpha.8。
+本轮版本：alpha.8 已 commit/push/tag、六组 CI 通过；alpha.9 已 commit/push/tag（e4a17ad），96 项测试及六组 CI 通过；npm 两版均未发布。次日仅发布最终 alpha.9 三包，不必补发中间 alpha.8。
 
 历史发布记录： [alpha.7](RELEASE-alpha7.md)、[alpha.6](U4-UI-ACCEPTANCE.md)、[alpha.5](U3-CONTROLS-ACCEPTANCE.md)、[alpha.3](U2-NATIVE-ACCEPTANCE.md)、[alpha.2](U1-ACCEPTANCE.md)、[M2](M2-ACCEPTANCE.md)、[M1](M1-ACCEPTANCE.md)。这些文档的测试/版本仅对其当时提交有效。

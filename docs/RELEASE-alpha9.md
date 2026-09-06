@@ -2,6 +2,8 @@
 
 今晚仅 commit / push / tag，未执行 npm publish。alpha.8 是中间验证 tag，次日直接发布最终 alpha.9 三包。GitHub Latest 保持已发布 alpha.7，避免向用户推荐 registry 中不存在的版本。
 
+运行代码：e4a17ad7c99be983d3d84c5fe1df5cee448e54c9；tag：v0.1.0-alpha.9；CI 34048662436 六组成功。
+
 ## 已打包文件 SHA-256
 
 | 文件（artifacts/） | SHA-256 |

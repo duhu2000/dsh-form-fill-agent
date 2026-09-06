@@ -50,4 +50,4 @@
 
 范围边界：只支持 security.md 列明的 Excel 结构，不承诺任意工作簿；默认每个计划最多 100 次预计工具调用，超出需拆分表格或由调用方明确设置预算。大表性能验证覆盖查看/分析，不代表无上限远端批量查询。后续新增 QCC 工具与目录变更必须继续契约验证，不能自动接受未知字段。
 
-Git/CI：待最终提交后记录。npm：未发布 alpha.9；GitHub Latest 保持已发布 alpha.7。
+Git/CI：运行代码 e4a17ad7c99be983d3d84c5fe1df5cee448e54c9 已提交、推送，v0.1.0-alpha.9 已推送；[CI 34048662436](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34048662436) 六组全部成功。npm：未发布 alpha.9；只读核验 latest=alpha.7、next=alpha.3，GitHub Latest 标题为 0.1.0-alpha.7。次日操作及三包 SHA-256 见 RELEASE-alpha9.md。
