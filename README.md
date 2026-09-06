@@ -4,7 +4,7 @@ AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查
 
 当前为 0.1.0-alpha.2 预览版本。支持简单 XLSX、确定性同义表头、企业完整登记名、六类工商字段、来源追溯、未完成清单和任务恢复。新版提供五步工作台、指令回填、任务历史与单元格排除。没有 LLM 猜值；已有内容默认保留。
 
-main 正在开发未发布的 alpha.3：真实宿主测试发现 alpha.2 的客户端清单不可解析，原生入口不加载，独立 /form-fill/ 仍可用。此问题及右栏布局、恢复导航、alpha.2 宿主会话隔离已修复；进展见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm next 目前仍为已发布的 alpha.2。
+alpha.3 已完成真实宿主修复并提供 GitHub 预览 Release，npm 发布等待账号验证。alpha.2 的客户端清单不可解析，原生入口不加载，独立 /form-fill/ 仍可用。alpha.3 修复此问题及右栏布局、恢复导航、alpha.2 宿主会话隔离；两版真实模型/QCC 闭环通过，见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm next 目前仍为 alpha.2。
 
 ## 本地体验
 
@@ -43,7 +43,7 @@ DSH 在显式 DSH_HOME 下保存任务至 form-fill-tasks，默认 24 小时过�
 
 ## 验证与边界
 
-- [新版验收与已知限制](docs/U1-ACCEPTANCE.md)：真实模型对话全链路仍待验收；升级 schema 2 后回退 alpha.1 需使用升级前任务目录副本或新目录。
+- [原生宿主及真实模型验收](docs/U2-NATIVE-ACCEPTANCE.md)：双基线闭环通过。[此前 U1 范围](docs/U1-ACCEPTANCE.md)保留历史记录；升级 schema 2 后回退 alpha.1 需使用升级前任务目录副本或新目录。
 
 - [整体进度](docs/PROGRESS.md)、[M1 验收](docs/M1-ACCEPTANCE.md)、[M2 验收与发布状态](docs/M2-ACCEPTANCE.md)。
 - npm run test:consumer：旧插件完整检查、24 golden case，以及新插件三个真实 tarball 消费闭环；需要相邻兼容工作树。

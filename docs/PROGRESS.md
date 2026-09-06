@@ -1,8 +1,8 @@
 # AI填表开发进度
 
-最新开发增量（未发布 alpha.3）：修复真实宿主发现客户端、右栏遮挡、完成任务恢复导航及 alpha.2 普通会话复用问题。两版真实原生入口→业务会话→六格合成预览→草稿回填→确认下载→恢复→普通会话通过；50 项测试通过。U2 真实模型/QCC 全链路现已在 rc.2 与 alpha.2 通过，工作台自动更新六格并下载副本，副本再次分析新增填写为 0。详见 [U2-NATIVE-ACCEPTANCE.md](U2-NATIVE-ACCEPTANCE.md)。
+最新开发增量（alpha.3）：修复真实宿主发现客户端、右栏遮挡、完成任务恢复导航及 alpha.2 普通会话复用问题。两版真实原生入口→业务会话→六格合成预览→草稿回填→确认下载→恢复→普通会话通过；50 项测试通过。U2 真实模型/QCC 全链路现已在 rc.2 与 alpha.2 通过，工作台自动更新六格并下载副本，副本再次分析新增填写为 0。详见 [U2-NATIVE-ACCEPTANCE.md](U2-NATIVE-ACCEPTANCE.md)。
 
-本轮后续：用户已完成隔离测试模型配置；真实模型驱动查询验收通过，QCC 凭据只在子进程环境中使用。此前六组远端 CI 与旧 0.8.6/new tarball 消费回归全绿；正推进 alpha.3 最终 CI 与发布。
+发布收口：f79c3f6 六组最终 CI 全绿，v0.1.0-alpha.3 tag 与 GitHub Release 已发布；npm 等待账号验证，next 暂为 alpha.2。旧 0.8.6/new tarball 消费回归全绿。QCC 凭据只在测试子进程环境中使用。
 
 本轮增量：0.1.0-alpha.2 已实现五步工作台、原生业务会话导航、指令回填、任务历史与 revision、单元格排除。49 项测试通过；原生 React 契约验收通过；双基线 DSH 网页/重启验收通过。下文为此前 M0–M2 阶段记录；最新范围、命令、发布状态以 [U1-ACCEPTANCE.md](U1-ACCEPTANCE.md) 为准。
 
@@ -29,16 +29,16 @@
 | 新消费者 tarball E2E | 完成 | 三套 fixture 3/3，无 workspace 链接 |
 | 独立本地 Web/CLI 演示 | 完成 | 浅/深色、390px、上传与下载验证通过 |
 | DSH 双基线基础加载 | 完成 | 两版全新隔离 Host；无第三方 UI 插件 |
-| DSH 实际填表工作台 | 完成（本地验收） | rc.2/alpha.2 各三套 HTTP + 浏览器闭环；入口降级单测通过，侧栏挂载待人工验收 |
+| DSH 实际填表工作台 | 完成（原生验收） | rc.2/alpha.2 原生入口、会话、草稿、预览与下载均通过 |
 | QCC Provider 完整迁移 | 待开发 | 工商六类字段已实现且真实调用已授权；完整 catalog/bridge 迁移仍需 golden/parity |
-| DSH Agent-owned 高层工具编排 | 已实现 | form_fill_enrich 嵌套执行；真实模型对话仍待验收 |
+| DSH Agent-owned 高层工具编排 | 已验收 | form_fill_enrich 嵌套执行；双基线真实模型/QCC 对话闭环通过 |
 | 持久任务、重启恢复 | 已完成 | 两版真实 Host 重启后下载恢复；24 小时 TTL、删除、进程锁 |
 | 运行中取消、多进程/多用户服务 | 待开发 | 当前运行中拒绝冲突操作，单进程本机服务 |
 | 复杂 Excel 保真、Word | 待开发 | 当前明确拒绝未支持结构；Word 后置 |
 | Windows/Linux/macOS × Node 22/24 | CI 已通过 | 六组检查全绿；非技术用户人工验收待完成 |
 | GitHub/npm/市场发布 | GitHub/npm 已发布 | 三个 npm 包及预览 Release 已发布；市场草稿 #4487 等仓库满 1 天及维护者审核 |
 
-下一步顺序：任务/会话契约 → 原生首页、向导与右侧工作台 → 真实 DSH 模型对话闭环 → 映射/候选/单元格选择完善 → 扩展 Excel 保真与完整 Provider parity。详细计划见 [UI-UPGRADE-PLAN.md](UI-UPGRADE-PLAN.md)。
+下一步顺序：alpha.3 npm 发布后 registry 回归 → 映射/候选/单元格选择完善 → 扩展 Excel 保真与完整 Provider parity。详细计划见 [UI-UPGRADE-PLAN.md](UI-UPGRADE-PLAN.md)。
 
 2026-09-06 本轮规划核验：清洗插件已推进到 f17ecc4 / 0.8.7；其首页与工作台方案已查阅，但共享 core 的旧消费者兼容验证仍只覆盖至 0.8.6。AI填表 npm 的 next/latest 当前均指向 0.1.0-alpha.1，仍为预览版；市场 #4487 仍为未合并草稿。
 

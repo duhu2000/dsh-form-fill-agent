@@ -1,6 +1,6 @@
 # U2 原生宿主验收与当前边界
 
-2026-09-06。代码版本：0.1.0-alpha.3 候选，尚未打 tag 或发布 npm。U2 原生界面与真实模型/QCC 闭环均已完成，等待发布收口。
+2026-09-06。U2 原生界面与真实模型/QCC 闭环均已完成。代码 f79c3f6、v0.1.0-alpha.3 tag 与 GitHub 预览 Release 已推送；npm 发布正等待账号验证，next 暂为 alpha.2。
 
 ## 本轮发现和修复
 
@@ -52,7 +52,9 @@ scripts/dsh-live-e2e.mjs 从关闭回显的 stdin 接收测试授权与企业名
 
 最终 `npm run check`：50 tests、50 pass、0 fail、0 cancelled、0 skipped、0 todo，三包打包 PASS。agent 候选 tarball SHA-256：0247d105120f64fdbea1195fe750618a9080d55ad259e68c6341c6e10c24efeb。
 
+发布提交 f79c3f6 的 [最终 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34038642596)：Windows/Linux/macOS × Node 22/24 六组全部 success。[GitHub 预览 Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.3) 已附 agent tarball；npm 与市场状态单独核验，市场草稿 #4487 的 Submission gate 仍未通过。
+
 ## 文件与兼容边界
 
 修改智能体 package.json、lib/client.js、lib/ui.html、lib/http.js；根 package.json/package-lock.json；test/http.test.mjs；新增 scripts/dsh-native-smoke.mjs、scripts/isolated-qcc-host.mjs；更新 CHANGELOG、README 与进度文档。
-form-fill-core、qcc-form-fill-provider 和清洗插件源码未修改。两个共享包仍为 alpha.1。已发布 alpha.2 tag 保持原样，候选 alpha.3 尚未发布。
+form-fill-core、qcc-form-fill-provider 和清洗插件源码未修改。两个共享包仍为 alpha.1。已发布 alpha.2 tag 保持原样；alpha.3 仅新增本插件版本。
