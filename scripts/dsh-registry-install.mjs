@@ -10,7 +10,8 @@ for (const entry of [process.env.DSH_RC_BIN, process.env.DSH_ALPHA_BIN]) {
  const env={PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:tmpdir(),DSH_HOME:home,NO_COLOR:'1'};
  const run=args=>execFileSync(process.execPath,[bin,...args],{cwd,env,encoding:'utf8',maxBuffer:8*1024*1024,timeout:120000});
  const version=run(['--version']).trim();
- run(['plugin','--profile','web','add','dsh-form-fill-agent@0.1.0-alpha.1','--ignore-scripts','--registry=https://registry.npmjs.org/','--store-dir',join(home,'pnpm-store')]);
+ const packageVersion=JSON.parse(await readFile(new URL('../packages/dsh-form-fill-agent/package.json',import.meta.url))).version;
+ run(['plugin','--profile','web','add','dsh-form-fill-agent@'+packageVersion,'--ignore-scripts','--registry=https://registry.npmjs.org/','--store-dir',join(home,'pnpm-store')]);
  const manifest=JSON.parse(await readFile(join(home,'profiles/web/package.json')));
  assert.ok(manifest.dsh.profile.bundles.includes('dsh-form-fill-agent'));
  assert.ok(run(['--profile','web','--dump-config']).includes('dsh-form-fill-agent'));

@@ -16,16 +16,19 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(base);
   for (const [name, count] of [['客户台账',6],['供应商准入表',4],['合同主体信息表',6]]) {
+    await page.getByRole('button', { name: '1 导入与识别', exact: true }).click();
+    await page.locator('details').evaluate(el => el.open = true);
     await page.getByRole('button', { name, exact: true }).click();
     await page.getByText('预览已准备好，请检查后确认。', { exact: true }).waitFor();
     assert.equal(await page.locator('#changes tr').count(), count);
     assert.match(await page.locator('#summary').innerText(), /费用 0/);
+    await page.getByRole('button', { name: '5 确认与下载', exact: true }).click();
     await page.getByRole('button', { name: '确认这些填写，生成新副本' }).click();
     await page.getByRole('link', { name: '下载已填副本' }).waitFor();
     const href = await page.getByRole('link', { name: '下载已填副本' }).getAttribute('href');
-    const response = await fetch(new URL(href, base));
-    assert.equal(response.status, 200);
-    assert.ok(parseWorkbook(Buffer.from(await response.arrayBuffer())).sheets.length);
+    const response = await page.request.get(new URL(href, base).href);
+    assert.equal(response.status(), 200);
+    assert.ok(parseWorkbook(await response.body()).sheets.length);
     if (name === '客户台账') {
       await page.screenshot({ path: join(root,'artifacts/screenshots/customer-light.png'), fullPage: true });
       await page.emulateMedia({ colorScheme: 'dark' });
@@ -37,10 +40,27 @@ try {
     }
   }
   // Real file upload path, including the input element.
+  await page.getByRole('button', { name: '1 导入与识别', exact: true }).click();
   await page.locator('#file').setInputFiles(join(root,'fixtures/xlsx/客户台账.xlsx'));
   await page.getByRole('button',{name:'分析表格',exact:true}).click();
   await page.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
-  assert.equal(await page.locator('#changes tr').count(),6);
+  assert.equal(await page.locator('#changes tr').count(),0);
+  await page.getByRole('button',{name:'3 主体核验',exact:true}).click();
+  await page.getByRole('button',{name:'生成填写指令',exact:true}).click();
+  await page.locator('#wizard').waitFor({state:'visible'});
+  for(const viewport of [{width:1440,height:900},{width:1024,height:768},{width:390,height:700},{width:900,height:500}]){
+    await page.setViewportSize(viewport);
+    for(const scheme of ['light','dark']){
+      await page.emulateMedia({colorScheme:scheme});
+      const box=await page.locator('#wizard').boundingBox();
+      assert.ok(box.x>=0&&box.y>=0&&box.y+box.height<=viewport.height);
+      assert.ok(await page.locator('#wizard-close').isVisible());
+    }
+  }
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'任务历史',exact:true}).click();
+  await page.locator('#history-list button').nth(3).waitFor();
+  assert.equal(await page.locator('#history-list button').count(),4);
   assert.deepEqual(errors, []);
   assert.equal((await fetch(base + '/preview', { method:'POST', headers:{Origin:'https://example.invalid','Content-Type':'application/json'},body:'{}' })).status,403);
   assert.equal((await fetch(base + '/confirm', { method:'POST', headers:{Origin:url.origin,'Content-Type':'application/json'},body:JSON.stringify({id:'nonexistent',confirmChangeSetId:'x'}) })).status,404);

@@ -71,3 +71,25 @@ test('native entry needs no sessions or third-party companion and degrades safel
   assert.doesNotThrow(()=>plugin.apply({}));
   assert.doesNotThrow(()=>definition.factory(()=>{throw Error('missing React');}).apply({}));
 });
+
+test('scoped history, revision conflicts and selected cells are enforced',async t=>{
+ const h=harness();t.after(h.dispose);
+ const owner='a'.repeat(64),headers={'x-form-fill-owner':owner};
+ const p=(await h.request('/preview',{base64:bytes.toString('base64'),filename:'台账.xlsx'},headers)).json();
+ assert.equal((await h.request('/tasks')).status,403);
+ assert.equal((await h.request('/tasks',undefined,{'x-form-fill-owner':'b'.repeat(64)})).json().length,0);
+ assert.equal((await h.request('/task/'+p.id)).status,404);
+ const list=(await h.request('/tasks',undefined,headers)).json();
+ assert.equal(list.length,1);assert.equal(list[0].filename,'台账.xlsx');assert.equal(list[0].plan,undefined);
+ assert.equal((await h.request('/confirm',{id:p.id,confirmChangeSetId:p.changeSet.changeSetId},headers)).status,409);
+ const selected=await h.request('/select',{id:p.id,expectedRevision:p.revision,selectedIds:[p.changeSet.changes[0].id]},headers);
+ assert.equal(selected.status,200);const q=selected.json();assert.equal(q.changeSet.changes.length,1);assert.equal(q.revision,2);
+ assert.equal((await h.request('/confirm',{id:p.id,expectedRevision:p.revision,confirmChangeSetId:p.changeSet.changeSetId},headers)).status,409);
+ const confirmed=await h.request('/confirm',{id:p.id,expectedRevision:q.revision,confirmChangeSetId:q.changeSet.changeSetId},headers);
+ assert.equal(confirmed.status,200);assert.equal(confirmed.json().filled,1);
+});
+test('actual upload analysis does not use synthetic facts',async t=>{
+ const h=harness();t.after(h.dispose);
+ const p=await h.request('/preview',{base64:bytes.toString('base64'),analyzeOnly:true});
+ assert.equal(p.status,200);assert.equal(p.json().changeSet.changes.length,0);assert.equal(p.json().plan.estimatedCalls,0);
+});

@@ -6,9 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const version='0.1.0-alpha.1';
+const version=JSON.parse(await readFile(join(root,'packages/dsh-form-fill-agent/package.json'))).version;
 const directory=await mkdtemp(join(tmpdir(),'form-fill-registry-'));
 for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
+  const version=JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version;
   const integrity=JSON.parse(execFileSync('npm',['view',name+'@'+version,'dist.integrity','--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
   assert.equal(integrity,'sha512-'+createHash('sha512').update(await readFile(join(root,'artifacts',name+'-'+version+'.tgz'))).digest('base64'));
 }

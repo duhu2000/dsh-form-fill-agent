@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdtemp, rm, stat, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -29,4 +29,20 @@ test('expired persistent tasks are removed on restart',async t=>{
   const store=createTaskStore({directory:dir,now:()=>0});
   store.set(randomUUID(),{bytes,preview:await previewBytes(bytes),created:0});store.close();
   const restored=createTaskStore({directory:dir,now:()=>2000,ttlMs:1000});assert.equal(restored.size,0);restored.close();
+});
+
+test('legacy schema migration preserves data and interrupted owned tasks recover',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'form-fill-migration-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+  const bytes=fixtureBytes('合成测试',['企业名称','信用代码'],[['合成客户甲有限公司','']]),id=randomUUID();
+  let store=createTaskStore({directory:dir});
+  store.set(id,{bytes,preview:await previewBytes(bytes),created:Date.now()});store.close();
+  const path=join(dir,id+'.json'),legacy=JSON.parse(await readFile(path,'utf8'));
+  legacy.schema=1;delete legacy.revision;await writeFile(path,JSON.stringify(legacy));
+  store=createTaskStore({directory:dir});
+  assert.equal(store.get(id).revision,1);assert.deepEqual(store.get(id).bytes,bytes);
+  store.set(id,{...store.get(id),owner:'a'.repeat(64),state:'enriching',sessionId:'synthetic-session',revision:2});store.close();
+  store=createTaskStore({directory:dir});
+  assert.equal(store.get(id).state,'interrupted');assert.equal(store.get(id).owner,'a'.repeat(64));
+  assert.equal(store.get(id).sessionId,'synthetic-session');assert.equal(store.get(id).revision,2);
+  store.close();
 });

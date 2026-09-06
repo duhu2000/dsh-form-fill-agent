@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
 const root = fileURLToPath(new URL('../', import.meta.url));
+const versions = Object.fromEntries(await Promise.all(['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent'].map(async name => [name, JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version])));
 assert.ok(process.env.DSH_RC_BIN && process.env.DSH_ALPHA_BIN, 'Set DSH_RC_BIN and DSH_ALPHA_BIN to isolated SDK CLI entrypoints');
 const binaries = [process.env.DSH_RC_BIN, process.env.DSH_ALPHA_BIN].map(bin => resolve(bin));
 execFileSync(process.execPath, [join(root, 'scripts/verify-pack.mjs')], { stdio: 'inherit' });
@@ -15,7 +16,7 @@ for (const [index, bin] of binaries.entries()) {
   const home = join(base, index ? 'alpha' : 'rc'), cwd = join(home, 'synthetic-workspace'), profile = join(home, 'profiles/web');
   await mkdir(profile, { recursive: true }); await mkdir(cwd);
   // Generated isolated installation metadata, never copied from a user profile.
-  const dependencies = Object.fromEntries(['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent'].map(name => [name, 'file:' + join(root, 'artifacts', name + '-0.1.0-alpha.1.tgz')]));
+  const dependencies = Object.fromEntries(Object.entries(versions).map(([name, version]) => [name, 'file:' + join(root, 'artifacts', name + '-' + version + '.tgz')]));
   const manifest = { name: 'synthetic-dsh-smoke', version: '0.0.0', private: true, type: 'module', dependencies, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','dsh-form-fill-agent'] } } };
   await writeFile(join(profile, 'package.json'), JSON.stringify(manifest, null, 2));
   execFileSync('npm', ['install','--offline','--ignore-scripts','--legacy-peer-deps','--no-audit','--no-fund'], { cwd: profile, stdio: 'pipe' });

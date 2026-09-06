@@ -8,12 +8,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const legacy = resolve(process.env.LEGACY_REPO ?? join(root, '../dsh-data-cleaning-agent-form-fill-compat'));
 const sandbox = await mkdtemp(join(tmpdir(), 'form-fill-consumers-'));
 const names = ['form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent'];
+const versions = Object.fromEntries(await Promise.all(names.map(async name => [name, JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version])));
 execFileSync(process.execPath, [join(root, 'scripts/verify-pack.mjs')], { stdio: 'inherit' });
 const packed = join(sandbox, 'dsh-form-fill-agent/artifacts');
 await mkdir(packed, { recursive: true });
 const tarballs = [];
 for (const name of names) {
-  const file = name + '-0.1.0-alpha.1.tgz';
+  const file = name + '-' + versions[name] + '.tgz';
   await cp(join(root, 'artifacts', file), join(packed, file));
   tarballs.push(join(packed, file));
 }
@@ -36,7 +37,7 @@ await mkdir(newConsumer);
 execFileSync('npm', [...npmArgs, ...tarballs], { cwd: newConsumer, stdio: 'inherit' });
 for (const name of names) {
   assert.equal((await lstat(join(newConsumer, 'node_modules', name))).isSymbolicLink(), false);
-  assert.equal(JSON.parse(await readFile(join(newConsumer, 'node_modules', name, 'package.json'))).version, '0.1.0-alpha.1');
+  assert.equal(JSON.parse(await readFile(join(newConsumer, 'node_modules', name, 'package.json'))).version, versions[name]);
 }
 const code = [
   'import {readFileSync} from "node:fs";',
