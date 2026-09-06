@@ -42,6 +42,8 @@ npm run check：50 tests、50 pass、0 fail、0 skip，三包打包检查通过�
 
 新增 scripts/isolated-qcc-host.mjs：仅接受本任务生成的隔离目录，从关闭回显的 stdin 读取授权信息，放入子进程环境；生成的 patch 只含环境变量引用，QCC 凭据不落盘、不放命令行参数、不记录原始日志。原始模型设置、已有任务与用户 patch 不覆盖。此进程结束后需要重新注入 QCC 凭据。
 
+alpha.2 Web 首页需要浏览器启动认证，裸 origin 在新浏览器中会返回 401。设置 FORM_FILL_OPEN_BROWSER=1 时由 DSH 自带流程打开认证入口；启动器不打印或保存该认证 URL、不关闭认证。此前只提供裸地址不足以进入设置页，已修正此操作流程。
+
 配置完成后继续真实原生发送 form_fill_enrich，验收模型 → QCC → 自动更新预览 → 人工确认 → XLSX 副本，随后完成发布门禁。之前 M2 的真实 MCP transport 注入记录仍有效，但不能替代该链路。
 
 ## 文件与兼容边界

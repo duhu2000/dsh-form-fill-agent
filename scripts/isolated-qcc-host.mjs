@@ -28,10 +28,11 @@ const patchPath=join(profile,'cordis.patch.yml');
 let existing;try{existing=await readFile(patchPath,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
 if(existing===undefined)await writeFile(patchPath,patch,{flag:'wx',mode:0o600});
 else assert.equal(existing,patch,'Preserve existing user patch; use a fresh isolated test home');
-const child=spawn(process.execPath,[bin,'--profile','web','--port',String(port),'--no-open'],{
+const browserLaunchRequested=process.env.FORM_FILL_OPEN_BROWSER==='1';
+const child=spawn(process.execPath,[bin,'--profile','web','--port',String(port),...(browserLaunchRequested?[]:['--no-open'])],{
  cwd:join(home,'synthetic-workspace'),env:{PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:process.env.TMPDIR,DSH_HOME:home,NO_COLOR:'1',QCC_MCP_TOKEN:authorization.slice(7)},stdio:['ignore','pipe','pipe']
 });
-// Never expose raw Host/MCP logs or authentication URLs.
+// Let DSH open its authenticated local browser URL; never print or save that URL.
 child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
 process.once('SIGINT',()=>child.kill('SIGTERM'));process.once('SIGTERM',()=>child.kill('SIGTERM'));
 const origin='http://127.0.0.1:'+port;
@@ -42,5 +43,5 @@ for(let i=0;i<100;i++){
  await new Promise(ok=>setTimeout(ok,300));
 }
 if(!health){child.kill('SIGTERM');throw Error('Isolated Host did not become healthy; raw logs intentionally omitted')}
-console.log(JSON.stringify({isolatedSetupUrl:origin,qccAvailable:health.qccAvailable,qccCredentialOnDisk:false,productionProfileUsed:false}));
+console.log(JSON.stringify({isolatedSetupUrl:origin,browserLaunchRequested,qccAvailable:health.qccAvailable,qccCredentialOnDisk:false,productionProfileUsed:false}));
 await once(child,'exit');
