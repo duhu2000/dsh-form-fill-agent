@@ -1,6 +1,6 @@
-# XLSX 导入兼容修复（待发布）
+# XLSX 导入兼容修复（alpha.10 已发布）
 
-2026-09-07：本地源码修复，npm alpha.9 尚不包含本修复。
+2026-09-07：修复已包含在 npm alpha.10 中，alpha.9 用户需升级；发布及安装验收见 RELEASE-alpha10.md。
 
 用户报告选择 XLSX 后出现“ZIP 路径不安全或重复”。只读检查同名本地文件，确认合法空目录条目（例如 xl/）被当作包含空路径段而拒绝；继续分析发现 docProps/custom.xml 和标准 calcFeatures 元数据也被旧白名单拒绝。
 
