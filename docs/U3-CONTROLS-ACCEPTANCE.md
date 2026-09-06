@@ -24,7 +24,7 @@
 
 scripts/dsh-live-e2e.mjs 在已配置测试模型的两个隔离 DSH_HOME、端口 52173/52174 通过真实原生发送 → QCC 六字段 → 自动预览 → 下载闭环，filled=6、secondPassChanges=0。真实数据不进仓库，测试后子进程关闭。此真实测试验证既有精确查询闭环；新增候选异常分支使用合成响应契约测试，不冒充真实模糊检索验收。
 
-最终 CI 与发布状态在完成后追加。
+提交 32d8abf 的 [最终 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34040997267) 六组全部 success（Windows/Linux/macOS × Node 22/24）。v0.1.0-alpha.5 tag 已推送。内核和 Provider 的 npm 发布正在等待账号验证；智能体在依赖发布后继续发布。暂未将 GitHub Latest 从 alpha.4 改为 alpha.5，发布后再同步。
 
 ## 当前限制与后续
 
