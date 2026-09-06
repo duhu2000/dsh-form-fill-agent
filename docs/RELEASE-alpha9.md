@@ -17,9 +17,9 @@
 ## 等待所有者认证后执行
 
 ```sh
-npm publish artifacts/form-fill-core-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
-npm publish artifacts/qcc-form-fill-provider-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
-npm publish artifacts/dsh-form-fill-agent-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
+npm publish ./artifacts/form-fill-core-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
+npm publish ./artifacts/qcc-form-fill-provider-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
+npm publish ./artifacts/dsh-form-fill-agent-0.1.0-alpha.9.tgz --access public --tag latest --registry=https://registry.npmjs.org/
 node scripts/registry-smoke.mjs
 ```
 
