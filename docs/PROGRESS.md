@@ -2,6 +2,8 @@
 
 最新开发增量（未发布 alpha.3）：修复真实宿主发现客户端、右栏遮挡、完成任务恢复导航及 alpha.2 普通会话复用问题。两版真实原生入口→业务会话→六格合成预览→草稿回填→确认下载→恢复→普通会话通过；50 项测试通过。U2 真实模型/QCC 全链路尚未完成，等待在独立 DSH_HOME 配置测试模型与 MCP；不使用生产凭据。详见 [U2-NATIVE-ACCEPTANCE.md](U2-NATIVE-ACCEPTANCE.md)。
 
+本轮后续：隔离 alpha.2 Host 的 QCC 工商 MCP 已连接、工具发现成功，QCC 凭据只在子进程环境中使用。当前仅缺测试模型配置；真实模型驱动查询未验收。六组远端 CI 与旧 0.8.6/new tarball 消费回归全绿。
+
 本轮增量：0.1.0-alpha.2 已实现五步工作台、原生业务会话导航、指令回填、任务历史与 revision、单元格排除。49 项测试通过；原生 React 契约验收通过；双基线 DSH 网页/重启验收通过。下文为此前 M0–M2 阶段记录；最新范围、命令、发布状态以 [U1-ACCEPTANCE.md](U1-ACCEPTANCE.md) 为准。
 
 发布收口：代码 4f74b41 与 v0.1.0-alpha.2 已推送，GitHub Release 和 npm alpha.2 已发布；next=alpha.2、latest=alpha.1。发布后三包 integrity、三模板 registry E2E、两版全新隔离 DSH 安装/卸载均通过。

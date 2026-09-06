@@ -30,15 +30,21 @@ npm run check：50 tests、50 pass、0 fail、0 skip，三包打包检查通过�
 
 补充回归：Node 22.19.0 和 24.19.0 各 50/50；scripts/dsh-smoke.mjs 两版三模板、浏览器、重启恢复及卸载组成均通过。所有测试使用本地候选 tarball，未将候选误认为 npm 已发布版本。
 
+提交 64f362c 的 [六组远端 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34035608374) 全部通过。候选 tarball 消费回归：旧插件 0.8.6 的 211 tests + 24 golden、新插件三模板 3/3，通过且没有 workspace 链接。
+
 运行真实原生回归前设置 DSH_RC_BIN、DSH_ALPHA_BIN、PLAYWRIGHT_MODULE、CHROME_BIN，再执行 node scripts/dsh-native-smoke.mjs。可加 FORM_FILL_KEEP_HOST=1，在两版验收通过后保留最后一个隔离 Host；控制台仅输出本地设置地址和隔离目录，SIGINT/SIGTERM 结束并关闭该子进程。不保存认证 URL、浏览器 storageState 或宿主原始日志。
 
 ## 后续所需配置
 
-当前可用的启动环境没有 DEEPSEEK_API_KEY；全新 profile 显示“添加一个 API Key 开始使用”，也未连接 QCC。不能从生产 DSH profile 复制凭据。需要在保留的隔离 Host 设置页配置测试模型凭据、连接并授权企查查 MCP，不在聊天或仓库粘贴 Key、Token。
+当前可用的启动环境没有 DEEPSEEK_API_KEY；全新 profile 显示“添加一个 API Key 开始使用”。不能从生产 DSH profile 复制凭据，需要在保留的隔离 Host 设置页配置测试模型凭据，不在聊天或仓库粘贴 Key、Token。
+
+后续连接增量：已使用用户明确提供并确认所属服务的 QCC 凭据，将 alpha.2 隔离 Host 接入 https://agent.qcc.com/mcp/company/stream。实际 health.qccAvailable=true，工商工具发现成功。这是 MCP 连接/工具发现验证，尚未发起本轮真实模型驱动的工商查询。
+
+新增 scripts/isolated-qcc-host.mjs：仅接受本任务生成的隔离目录，从关闭回显的 stdin 读取授权信息，放入子进程环境；生成的 patch 只含环境变量引用，QCC 凭据不落盘、不放命令行参数、不记录原始日志。原始模型设置、已有任务与用户 patch 不覆盖。此进程结束后需要重新注入 QCC 凭据。
 
 配置完成后继续真实原生发送 form_fill_enrich，验收模型 → QCC → 自动更新预览 → 人工确认 → XLSX 副本，随后完成发布门禁。之前 M2 的真实 MCP transport 注入记录仍有效，但不能替代该链路。
 
 ## 文件与兼容边界
 
-修改智能体 package.json、lib/client.js、lib/ui.html、lib/http.js；根 package.json/package-lock.json；test/http.test.mjs；新增 scripts/dsh-native-smoke.mjs；更新 CHANGELOG、README 与进度文档。
+修改智能体 package.json、lib/client.js、lib/ui.html、lib/http.js；根 package.json/package-lock.json；test/http.test.mjs；新增 scripts/dsh-native-smoke.mjs、scripts/isolated-qcc-host.mjs；更新 CHANGELOG、README 与进度文档。
 form-fill-core、qcc-form-fill-provider 和清洗插件源码未修改。两个共享包仍为 alpha.1。已发布 alpha.2 tag 保持原样，候选 alpha.3 尚未发布。
