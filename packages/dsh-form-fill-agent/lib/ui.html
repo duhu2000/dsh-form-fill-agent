@@ -11,7 +11,7 @@
 <p id="task-meta" class="badge"></p>
 <div class="toolbar"><span id="execution-progress" role="status"></span><button id="cancel-run" disabled>取消查询</button><button id="retry-run" disabled>仅重试失败 / 未完成查询</button></div>
 <details id="grid" hidden><summary>查看完整原表 / 结果表格</summary><p class="muted">全量行列按页查看，隐藏行列只读标注。结果视图展示当前已选填写；下载不受分页或搜索影响。</p><div class="toolbar"><label>工作表 <select id="grid-sheet"></select></label><label>视图 <select id="grid-view"><option value="original">原表</option><option value="result">结果预览</option></select></label><label>搜索全部行 <input id="grid-query" type="search" maxlength="200"></label><button id="grid-search">搜索</button></div><p id="grid-status" role="status"></p><div class="scroll"><table><thead id="grid-head"></thead><tbody id="grid-body"></tbody></table></div><div class="toolbar"><button id="grid-prev">上一页</button><button id="grid-next">下一页</button><button id="grid-left">前 16 列</button><button id="grid-right">后 16 列</button></div></details>
-<div class="card" data-pane="import"><h2>导入表格</h2><p class="muted">支持简单 XLSX，最大 8 MiB。公式、宏、图片和区域引用下拉等复杂结构暂不支持；固定文本下拉可保留。上传仅做本地分析，不查询企查查。</p>
+<div class="card" data-pane="import"><h2>导入表格</h2><p class="muted">支持 XLSX，最大 8 MiB。支持普通内部公式、固定文本或区域下拉、基础条件格式及普通表格对象；宏、图片、图表及复杂扩展结构暂不支持。上传仅做本地分析，不查询企查查。</p>
 <div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>

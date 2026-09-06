@@ -38,7 +38,7 @@ function range(ref) {
   const start=coordinate(a),end=coordinate(b);if(start.row>end.row||start.column>end.column)fail('CELL_REFERENCE','区域起止位置无效');return {start,end};
 }
 export function inRange(row, column, r) { return row >= r.start.row && row <= r.end.row && column >= r.start.column && column <= r.end.column; }
-const allowedEntry = /^(?:\[Content_Types\]\.xml|_rels\/\.rels|docProps\/(?:app|core)\.xml|xl\/(?:workbook\.xml|_rels\/workbook\.xml\.rels|styles\.xml|sharedStrings\.xml|theme\/theme[0-9]+\.xml|worksheets\/sheet[0-9]+\.xml|worksheets\/_rels\/sheet[0-9]+\.xml\.rels|tables\/table[0-9]+\.xml))$/;
+const allowedEntry = /^(?:\[Content_Types\]\.xml|_rels\/\.rels|docProps\/(?:app|core|custom)\.xml|xl\/(?:workbook\.xml|_rels\/workbook\.xml\.rels|styles\.xml|sharedStrings\.xml|theme\/theme[0-9]+\.xml|worksheets\/sheet[0-9]+\.xml|worksheets\/_rels\/sheet[0-9]+\.xml\.rels|tables\/table[0-9]+\.xml))$/;
 const unsupportedSheet = ['sheetProtection', 'drawing', 'legacyDrawing', 'oleObjects', 'controls', 'extLst', 'hyperlinks', 'AlternateContent'];
 const safeFunctions=new Set('SUM AVERAGE MIN MAX COUNT COUNTA COUNTIF COUNTIFS SUMIF SUMIFS IF IFERROR AND OR NOT ROUND ROUNDUP ROUNDDOWN ABS LEN LEFT RIGHT MID TRIM CONCAT CONCATENATE TEXT VALUE DATE YEAR MONTH DAY TRUE FALSE'.split(' '));
 function validateFormula(value){
@@ -54,6 +54,16 @@ function reference(value,currentSheet){
  if(r.start.row>r.end.row||r.start.column>r.end.column)fail('CELL_REFERENCE','引用范围无效');
  return {sheet:match[1]?.replaceAll("''","'")||match[2]||currentSheet,range:r};
 }
+// calcFeatures is calculation-engine version metadata, not worksheet formulas.
+// Preserve only this known extension verbatim; all other extensions still fail.
+function workbookWithoutCalcMetadata(source) {
+  return source.replace(/<extLst>[\s\S]*?<\/extLst>/g, block => {
+    const feature = '<xcalcf:feature\\s+name="[A-Za-z0-9_.:-]+"\\s*\\/>';
+    const safe = new RegExp('^<extLst>\\s*<ext\\s+uri="\\{B58B0392-4F1F-4190-BB64-5DF3571DCE5F\\}"\\s+xmlns:xcalcf="http://schemas.microsoft.com/office/spreadsheetml/2018/calcfeatures"\\s*>\\s*<xcalcf:calcFeatures>\\s*(?:' + feature + '\\s*)+<\\/xcalcf:calcFeatures>\\s*<\\/ext>\\s*<\\/extLst>$');
+    if (!safe.test(block)) fail('UNSUPPORTED_STRUCTURE', '工作簿扩展结构尚不支持');
+    return '';
+  });
+}
 export function parseWorkbook(input) {
   const bytes = Buffer.from(input), entries = readZip(bytes), parsed = new Map();
   for (const [name, data] of entries) {
@@ -63,12 +73,13 @@ export function parseWorkbook(input) {
   const workbook = parsed.get('xl/workbook.xml')?.workbook;
   const types = parsed.get('[Content_Types].xml')?.Types;
   const rootRels = parsed.get('_rels/.rels')?.Relationships;
-  if (/<\w+:/.test(entries.get('xl/workbook.xml')?.toString()||''))fail('UNSUPPORTED_STRUCTURE','不支持带前缀的工作簿元素');
+  const workbookStructure = workbookWithoutCalcMetadata(entries.get('xl/workbook.xml')?.toString() || '');
+  if (/<\w+:/.test(workbookStructure))fail('UNSUPPORTED_STRUCTURE','不支持带前缀的工作簿元素');
   if (!workbook || !types || !rootRels || workbook['@_xmlns'] !== 'http://schemas.openxmlformats.org/spreadsheetml/2006/main') fail('NOT_XLSX', '缺少标准 XLSX 工作簿结构');
   for (const entry of [...array(types.Override), ...array(types.Default)]) {
     if (/macro|vba|encrypted|binary/i.test(entry['@_ContentType'] ?? '')) fail('UNSUPPORTED_STRUCTURE', '宏或二进制工作簿不受支持');
   }
-  if (workbook.workbookProtection!==undefined || workbook.externalReferences!==undefined || workbook.extLst!==undefined) fail('UNSUPPORTED_STRUCTURE', '保护或外部引用不受支持');
+  if (workbook.workbookProtection!==undefined || workbook.externalReferences!==undefined || /<extLst\b/.test(workbookStructure)) fail('UNSUPPORTED_STRUCTURE', '保护、外部引用或未知工作簿扩展不受支持');
   const rels = array(parsed.get('xl/_rels/workbook.xml.rels')?.Relationships?.Relationship);
   for (const rel of [...rels, ...array(rootRels.Relationship),...[...parsed].filter(([p])=>p.endsWith('.rels')).flatMap(([,v])=>array(v.Relationships?.Relationship))]) {
     if (rel['@_TargetMode'] === 'External' || /^(?:[a-z]+:|\/\/)/i.test(rel['@_Target'] ?? '')) fail('EXTERNAL_LINK', '外部链接不受支持');

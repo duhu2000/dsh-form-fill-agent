@@ -20,7 +20,7 @@ export function readZip(input) {
   if (eocd < 0) fail('BAD_ZIP', 'ZIP 目录缺失');
   const count = bytes.readUInt16LE(eocd + 10), size = bytes.readUInt32LE(eocd + 12), offset = bytes.readUInt32LE(eocd + 16);
   if (bytes.readUInt16LE(eocd + 4) || bytes.readUInt16LE(eocd + 6) || bytes.readUInt16LE(eocd + 8) !== count || count > LIMITS.entries || offset + size !== eocd) fail('ZIP_LIMIT', '多卷、ZIP64 或过多 ZIP 条目不受支持');
-  const entries = new Map(), spans = [];
+  const entries = new Map(), paths = new Map(), spans = [];
   let at = offset, total = 0;
   for (let i = 0; i < count; i++) {
     if (at + 46 > eocd || bytes.readUInt32LE(at) !== 0x02014b50) fail('BAD_ZIP', 'ZIP 中央目录损坏');
@@ -30,7 +30,13 @@ export function readZip(input) {
     const next = at + 46 + n + extra + comment;
     if (next > eocd) fail('BAD_ZIP', 'ZIP 条目越界');
     const name = bytes.subarray(at + 46, at + 46 + n).toString('utf8');
-    if (!/^[a-zA-Z0-9_\[\].\-/]+$/.test(name) || name.startsWith('/') || name.split('/').some(p => !p || p === '.' || p === '..') || entries.has(name)) fail('ZIP_PATH', 'ZIP 路径不安全或重复');
+    const directory = name.endsWith('/'), path = directory ? name.slice(0, -1) : name;
+    if (!/^[a-zA-Z0-9_\[\].\-/]+$/.test(name) || name.startsWith('/') || path.split('/').some(p => !p || p === '.' || p === '..')) fail('ZIP_PATH', 'ZIP 内部路径不安全');
+    if (paths.has(path)) fail('ZIP_PATH', 'ZIP 内部路径重复或文件与目录冲突');
+    const parts = path.split('/');
+    for (let j = 1; j < parts.length; j++) if (paths.get(parts.slice(0, j).join('/')) === false) fail('ZIP_PATH', 'ZIP 文件与目录路径冲突');
+    if (!directory && [...paths.keys()].some(p => p.startsWith(path + '/'))) fail('ZIP_PATH', 'ZIP 文件与目录路径冲突');
+    paths.set(path, directory);
     if (flags & ~0x080e || ![0, 8].includes(method)) fail('ZIP_UNSUPPORTED', 'ZIP 加密或压缩方式不受支持');
     total += expanded;
     if (expanded > LIMITS.entryBytes || total > LIMITS.expanded || expanded / Math.max(compressed, 1) > LIMITS.ratio) fail('ZIP_LIMIT', 'ZIP 解压大小或压缩比超限');
@@ -43,7 +49,10 @@ export function readZip(input) {
     try { data = method === 0 ? bytes.subarray(start, start + compressed) : inflateRawSync(bytes.subarray(start, start + compressed), { maxOutputLength: Math.max(1, Math.min(expanded, LIMITS.entryBytes)) }); }
     catch { fail('ZIP_LIMIT', 'ZIP 解压失败或实际大小超限'); }
     if (data.length !== expanded || crc32(data) !== checksum) fail('BAD_ZIP', 'ZIP 实际大小或 CRC 校验失败');
-    entries.set(name, Buffer.from(data));
+    // Directory records are legal ZIP metadata, not OOXML parts. Validate them
+    // fully before omitting them from the in-memory workbook part collection.
+    if (directory && data.length !== 0) fail('BAD_ZIP', 'ZIP 目录条目包含异常内容');
+    if (!directory) entries.set(name, Buffer.from(data));
     at = next;
   }
   if (at !== eocd) fail('BAD_ZIP', 'ZIP 目录大小不匹配');
