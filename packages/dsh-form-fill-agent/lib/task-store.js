@@ -28,7 +28,7 @@ export function createTaskStore({ directory, maxTasks = 10, now = Date.now, ttlM
         const id = file.slice(0,-5), path = join(root,file);
         if (!idPattern.test(id) || lstatSync(path).isSymbolicLink() || lstatSync(path).size > 48 * 1024 * 1024) throw Error('Invalid persisted task');
         const saved = JSON.parse(readFileSync(path,'utf8'));
-        if (![1,2,3].includes(saved.schema) || saved.id !== id || !Number.isFinite(saved.created)) throw Error('Invalid task schema');
+        if (![1,2,3,4].includes(saved.schema) || saved.id !== id || !Number.isFinite(saved.created)) throw Error('Invalid task schema');
         if (now() - saved.created >= ttlMs) { unlinkSync(path); continue; }
         if (tasks.size >= maxTasks) throw Error('Task capacity exceeded');
         const bytes = Buffer.from(saved.base64,'base64');
@@ -37,7 +37,7 @@ export function createTaskStore({ directory, maxTasks = 10, now = Date.now, ttlM
           assertPlan(saved.preview.plan); assertChangeSet(saved.preview.changeSet);
           if (saved.preview.plan.documentHash !== doc.documentHash || saved.preview.changeSet.planId !== saved.preview.plan.planId) throw Error('Persisted document mismatch');
         }
-        const task = { bytes, preview: saved.preview, configuration: saved.configuration, analyzeOnly: saved.analyzeOnly, created: saved.created, revision: saved.revision ?? 1, owner: saved.owner, filename: saved.filename ?? '未命名表格.xlsx', updatedAt: saved.updatedAt ?? saved.created, state: saved.state === 'enriching' ? 'interrupted' : saved.state ?? (saved.confirmed ? 'completed' : 'preview_ready'), sessionId: saved.sessionId };
+        const task = { bytes, preview: saved.preview, configuration: saved.configuration, selectedFields:saved.selectedFields, analyzeOnly: saved.analyzeOnly, created: saved.created, revision: saved.revision ?? 1, owner: saved.owner, filename: saved.filename ?? '未命名表格.xlsx', updatedAt: saved.updatedAt ?? saved.created, state: saved.state === 'enriching' ? 'interrupted' : saved.state ?? (saved.confirmed ? 'completed' : 'preview_ready'), sessionId: saved.sessionId };
         if (saved.confirmed && task.preview) task.result = applyChangeSet(bytes,task.preview.plan,task.preview.changeSet,{confirmChangeSetId:task.preview.changeSet.changeSetId});
         tasks.set(id,task);
       }
@@ -51,7 +51,7 @@ export function createTaskStore({ directory, maxTasks = 10, now = Date.now, ttlM
       if (!idPattern.test(id)) throw Error('Invalid task ID');
       if (!tasks.has(id) && tasks.size >= maxTasks) throw Error('Task capacity exceeded');
       if (root) {
-        const json = JSON.stringify({ schema:3,id,base64:task.bytes.toString('base64'),preview:task.preview,configuration:task.configuration,analyzeOnly:task.analyzeOnly,created:task.created,revision:task.revision ?? 1,confirmed:!!task.result,owner:task.owner,filename:task.filename,updatedAt:task.updatedAt,state:task.state,sessionId:task.sessionId });
+        const json = JSON.stringify({ schema:4,id,base64:task.bytes.toString('base64'),preview:task.preview,configuration:task.configuration,selectedFields:task.selectedFields,analyzeOnly:task.analyzeOnly,created:task.created,revision:task.revision ?? 1,confirmed:!!task.result,owner:task.owner,filename:task.filename,updatedAt:task.updatedAt,state:task.state,sessionId:task.sessionId });
         if (Buffer.byteLength(json) > 48*1024*1024) throw Error('Task too large');
         const temp = join(root,'.'+randomUUID()+'.tmp');
         try { writeFileSync(temp,json,{mode:0o600,flag:'wx'});renameSync(temp,join(root,id+'.json')); }

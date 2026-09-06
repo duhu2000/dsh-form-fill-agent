@@ -48,9 +48,9 @@ try{
  },{path:join(home,'synthetic-workspace'),alpha:version.includes('alpha')});
  assert.equal(prepared,true,'prepare real Host workspace');await page.reload();
  phase='upload';
- await page.getByRole('link',{name:'▦ AI填表',exact:true}).waitFor();
+ await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
  const previousSession=await page.locator('[data-form-fill-session]').count()?await page.locator('[data-form-fill-session]').first().getAttribute('data-form-fill-session'):null;
-  await page.getByRole('link',{name:'▦ AI填表',exact:true}).click();
+  await page.getByRole('link',{name:'AI填表',exact:true}).click();
   await page.waitForFunction(previous=>{const id=document.querySelector('[data-form-fill-session]')?.getAttribute('data-form-fill-session');return id&&id!==previous},previousSession);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe[title="AI填表任务"]');
@@ -63,6 +63,7 @@ try{
  console.log(JSON.stringify({phase:'local-analysis',changes:0,realQueries:0}));
  await frame.getByRole('button',{name:'3 主体核验',exact:true}).click();
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+ await frame.getByRole('button',{name:'4 确认描述',exact:true}).click();
  await frame.locator('#requirements').fill('请现在仅调用 form_fill_enrich 完成本任务。不要通过其他工具读取文件或另行查询，完成后等我确认副本。');
  await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
  await page.waitForFunction(()=>[...document.querySelectorAll('textarea,[contenteditable=true]')].some(e=>(e.value||e.textContent).includes('form_fill_enrich')));

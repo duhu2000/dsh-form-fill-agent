@@ -3,9 +3,14 @@ import { join, resolve, dirname, basename } from 'node:path';
 import { analyzeDocument, buildFillPlan, executePlan, applyChangeSet, serialize, FillError } from 'form-fill-core';
 import { createMockProvider, FIELD_CATALOG } from 'qcc-form-fill-provider';
 
-export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = 100, confirmPaidCalls = false, configuration = {} } = {}) {
+export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = 100, confirmPaidCalls = false, configuration = {}, selectedFields } = {}) {
   if (provider.mode !== 'mock' && (provider.mode !== 'qcc' || confirmPaidCalls !== true)) throw new FillError('REAL_PROVIDER_DISABLED', '真实来源需要调用方明确授权');
   const { analysis } = analyzeDocument(bytes, FIELD_CATALOG, configuration);
+  if (selectedFields !== undefined) {
+    if (!Array.isArray(selectedFields) || new Set(selectedFields).size !== selectedFields.length || selectedFields.some(key=>!FIELD_CATALOG.some(f=>f.key===key&&!f.anchor))) throw new FillError('FIELD_SCOPE','填写字段范围无效');
+    analysis.incomplete.push(...analysis.opportunities.filter(o=>!selectedFields.includes(o.field)).map(o=>({...o,reason:'user-excluded'})));
+    analysis.opportunities=analysis.opportunities.filter(o=>selectedFields.includes(o.field));
+  }
   const plan = buildFillPlan(analysis, provider.capabilities, provider.version);
   const changeSet = await executePlan(plan, provider, { maxCalls, confirmPaidCalls });
   return { analysis, plan, changeSet };

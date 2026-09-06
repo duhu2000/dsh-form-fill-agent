@@ -1,46 +1,88 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI填表工作台</title>
-<style>
-:root{color-scheme:light dark;font-family:system-ui,sans-serif;background:#f4f7f9;color:#203848}*{box-sizing:border-box}body{max-width:1120px;margin:48px auto;padding:0 24px}h1{font-size:36px;margin-bottom:8px}p{line-height:1.7}.badge{font-size:13px;background:#dcece9;color:#205e50;border-radius:16px;padding:6px 12px;display:inline-block}.card{background:white;border:1px solid #d8e2e8;border-radius:16px;padding:24px;margin:24px 0}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}button,a.download{background:#225f73;color:white;padding:11px 18px;border:0;border-radius:8px;font-size:15px;cursor:pointer;text-decoration:none}button.secondary{background:#e9f0f4;color:#225064}button:disabled{opacity:.45;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #e8a829;outline-offset:3px}input{max-width:100%;font-size:15px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;border-bottom:1px solid #e0e6eb;padding:12px;vertical-align:top;overflow-wrap:anywhere;min-width:70px}th{background:#edf3f6}td small{display:block;color:#64798a;margin-top:5px}#status{min-height:28px;color:#315e70}#summary{font-weight:650}h2{font-size:21px}#downloads{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}.muted{color:#607888;font-size:14px}@media(max-width:640px){body{margin:24px auto;padding:0 14px}.card{padding:16px}h1{font-size:30px}}@media(prefers-color-scheme:dark){:root{background:#15232d;color:#dce7ed}.card{background:#1b2d39;border-color:#354c59}th{background:#243f4e}td,th{border-color:#38505e}.muted,td small,#status{color:#adcad7}.badge{background:#244c46;color:#c5e6da}button.secondary{background:#304b5a;color:#d4e7f0}}
-@media(max-width:640px){.scroll table,.scroll tbody,.scroll tr{display:block;width:100%}.scroll thead{display:none}.scroll tr{padding:8px 0;border-bottom:1px solid #71818c55}.scroll td{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;border:0;padding:6px 0;min-width:0}.scroll td::before{content:attr(data-label);font-weight:600;opacity:.7}}
-
-body{margin:20px auto;padding:0 18px}h1{font-size:28px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button{padding:8px 10px;font-size:13px}.tabs button[aria-current=true]{outline:2px solid #e8a829}.card{margin:16px 0;padding:18px}.toolbar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}dialog{width:min(600px,95vw);max-height:90dvh;border:1px solid #71818c;border-radius:16px;padding:0}dialog::backdrop{background:#0006}.dialog-body{padding:20px;max-height:65dvh;overflow:auto}.dialog-footer{padding:14px;position:sticky;bottom:0;background:Canvas;border-top:1px solid #71818c55}.muted code{overflow-wrap:anywhere}.history-item{padding:12px;border-bottom:1px solid #71818c55}[hidden]{display:none!important}
-</style>
-<div class="toolbar"><div><h1>AI填表</h1><p class="muted">识别空位，核验来源，确认后生成新副本。</p></div><div class="controls"><button id="current-tab" class="secondary">当前任务</button><button id="history-tab" class="secondary">任务历史</button></div></div>
+<link id="ff-style" rel="stylesheet">
+<body class="ff-ui ff-workbench">
+<div class="ff-brand"><span class="ff-mark" data-icon="table"></span><h1>AI填表智能体</h1></div><p class="muted">识别空位，核验来源，确认后生成新副本。</p><nav class="task-tabs" aria-label="任务视图"><button id="current-tab" aria-pressed="true">当前任务</button><button id="history-tab" aria-pressed="false">任务历史</button></nav>
 <p id="status" role="status" aria-live="polite"></p>
 <section id="history" hidden><h2>本浏览器的任务</h2><p class="muted">只显示持有相同访问凭据的本地任务。过期任务自动清理。</p><div id="history-list"></div></section>
 <main id="current">
 <nav class="tabs" aria-label="工作流程"><button data-step="import">1 导入与识别</button><button data-step="rules">2 字段与规则</button><button data-step="identity">3 主体核验</button><button data-step="preview">4 填写预览</button><button data-step="download">5 确认与下载</button></nav>
-<p id="task-meta" class="muted"></p>
-<div class="card" data-pane="import"><h2>导入表格</h2><p class="muted">支持简单 XLSX，最大 8 MiB。公式、宏、图片和数据验证等复杂结构暂不支持。上传仅做本地分析，不查询企查查。</p>
+<p id="task-meta" class="badge"></p>
+<div class="card" data-pane="import"><h2>导入表格</h2><p class="muted">支持简单 XLSX，最大 8 MiB。公式、宏、图片和区域引用下拉等复杂结构暂不支持；固定文本下拉可保留。上传仅做本地分析，不查询企查查。</p>
 <div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
-<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><div id="mapping"></div><button id="configure">应用字段设置</button></div>
+<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button></div>
 <div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
 <div class="card" data-pane="preview"><h2>填写预览</h2><p id="summary"></p><p class="muted">每格显示原值、准备填写值和来源。取消勾选后点击“应用选择”，再确认新的预览。</p>
+<div class="toolbar"><label>筛选单元格 <input id="result-search" type="search" placeholder="位置、字段或值"></label><span id="result-count" class="muted"></span></div>
 <div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原值</th><th>准备填写</th><th>依据与来源</th><th>填写</th></tr></thead><tbody id="changes"></tbody></table></div><button id="selection">应用选择</button></div>
 <div class="card" data-pane="preview"><h2>未完成项</h2><div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原因</th></tr></thead><tbody id="incomplete"></tbody></table></div></div>
-<div class="card" data-pane="download"><h2>确认并下载</h2><p>原文件不会被覆盖。请先核对填写预览；确认后下载新副本和完整清单。</p><button id="confirm">确认这些填写，生成新副本</button><div id="downloads"></div></div>
+<div class="card" data-pane="download"><h2>确认并下载</h2><p>原文件不会被覆盖。下载包含全部已确认填写及完整清单，不受当前筛选影响。</p><button id="confirm" class="primary">确认这些填写，生成新副本</button><div id="downloads"></div></div>
 <div class="controls"><button id="refresh" class="secondary">刷新任务</button><button id="discard" class="secondary">删除任务</button></div>
 </section></main>
-<dialog id="wizard" aria-labelledby="wizard-title"><div class="dialog-body"><h2 id="wizard-title">组织填写任务</h2><p>将依据已上传表格生成指令，不把整表或企业名单放入对话。</p><label>补充要求<textarea id="requirements" rows="4" maxlength="1000" style="width:100%" placeholder="例如：请核对缺失字段，保留已有值。"></textarea></label><p id="qcc-command" class="muted" style="overflow-wrap:anywhere"></p></div><div class="dialog-footer controls"><button id="draft">回填到对话框</button><button id="copy-command" class="secondary">复制指令</button><button id="wizard-close" class="secondary">关闭</button></div></dialog>
+<dialog id="wizard" aria-labelledby="wizard-title"><header class="dialog-head"><h2 id="wizard-title">生成 AI填表任务</h2><button id="wizard-close" aria-label="关闭提示词向导">关闭</button></header>
+<nav class="tabs" aria-label="提示词向导步骤"><button data-wizard-step="0">1 数据来源</button><button data-wizard-step="1">2 填写规则</button><button data-wizard-step="2">3 填写字段</button><button data-wizard-step="3">4 确认描述</button></nav>
+<div class="dialog-body">
+<section class="ff-wizard-step" data-wizard-pane="0"><h3>上传已有表格</h3><p>仅支持 XLSX；选择文件后执行本地识别，不调用企查查。</p><label>选择 XLSX <input id="wizard-file" type="file" accept=".xlsx"></label><p id="wizard-source"></p></section>
+<section class="ff-wizard-step" data-wizard-pane="1"><h3>填写规则</h3><p>只填空白、保留已有内容，查询后预览，确认后生成副本。</p><p id="wizard-rules"></p><button id="wizard-edit-rules">到工作台修正字段映射</button></section>
+<section class="ff-wizard-step" data-wizard-pane="2"><h3>企业工商字段</h3><div class="toolbar"><label>搜索 <input id="field-search" type="search" placeholder="字段名称"></label><span id="field-count"></span><button id="fields-all">选择可用字段</button><button id="fields-clear">清空可选字段</button></div><p class="muted">主体锚点固定保留；只有原表已映射的字段可选。映射修改请返回工作台。</p><div id="wizard-fields" class="ff-field-grid"></div></section>
+<section class="ff-wizard-step" data-wizard-pane="3"><h3>确认任务描述</h3><p id="business-summary" class="ff-summary"></p><label>补充要求<textarea id="requirements" rows="4" maxlength="1000" placeholder="补充核验说明；字段或范围变更请返回前面步骤设置。"></textarea></label><details><summary>兼容执行信息</summary><p id="qcc-command" class="ff-tech"></p></details></section>
+</div><p id="wizard-message" role="status"></p><footer class="dialog-footer"><button id="wizard-prev">上一步</button><button id="wizard-next" class="primary">下一步</button><button id="draft" class="primary" hidden>回填到对话框</button><button id="copy-command" hidden>复制指令</button></footer></dialog>
+<dialog id="draft-conflict" aria-labelledby="draft-conflict-title"><header class="dialog-head"><h2 id="draft-conflict-title">保留已有输入</h2></header><div class="dialog-body">对话框已有内容，请选择替换、追加或取消。取消会保留现有输入。</div><footer class="dialog-footer"><button id="draft-cancel">取消</button><button id="draft-append">追加</button><button id="draft-replace" class="primary">替换</button></footer></dialog>
 <script>
 const basePath=location.pathname.startsWith('/form-fill')?'/form-fill':'';
+document.getElementById('ff-style').href=basePath+'/brand.css';
+document.querySelectorAll('[data-icon="table"]').forEach(node=>{const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('class','ff-icon');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d','M3 4h18v16H3zM3 9h18M9 9v11');svg.append(path);node.append(svg)});
 const $=id=>document.getElementById(id);
 let owner=localStorage.getItem('ff-owner');
 if(!/^[a-f0-9]{64}$/.test(owner||'')){owner=[...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');localStorage.setItem('ff-owner',owner)}
 document.cookie='ff_owner='+owner+'; SameSite=Strict; Path='+(basePath||'/');
-let current,filename='已填表格',busy=false,step='import',pendingNavigation;
+let current,filename='已填表格',busy=false,step='import',pendingNavigation,wizardStep=0,wizardFields=new Set(),wizardTask,wizardStructure,expectedDraft;
 const sessionId=new URLSearchParams(location.search).get('session')||undefined;
 const reasons={'unknown-field':'暂无可用字段映射','no-capability':'尚未查询或此字段暂无来源','provider-unavailable':'尚未查询或此字段暂无来源','no-match':'未匹配到企业','candidate-review-required':'主体需要人工确认','validation-conflict':'返回值不在原表下拉选项中，请人工核验','sheet-excluded':'工作表未选择','no-data':'该字段未返回','provider-error':'查询失败或未连接，请稍后重试','user-excluded':'已按你的选择排除','unsafe-value':'值不安全，已阻止填写','placeholder-needs-confirmation':'已有占位内容，保持原样'};
-function controls(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value)}
+function controls(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value);if($('wizard').open)renderWizard()}
 function row(target,values,labels){const tr=document.createElement('tr');values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.dataset.label=labels[i];tr.append(td)});$(target).append(tr);return tr}
 async function api(path,body){if(current&&body?.id===current.id)body={...body,expectedRevision:current.revision};const response=await fetch(basePath+path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{'Content-Type':'application/json','X-Form-Fill-Owner':owner}});const data=await response.json();if(!response.ok)throw Error(data.message);return data}
-function navigate(target){if(target!=='import'&&!current){$('status').textContent='请先导入表格。';return}step=target;$('history').hidden=true;$('current').hidden=false;document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==target);document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.step===target)))}
+function navigate(target){if(target==='wizard'){openWizard();return}if(target!=='import'&&!current){$('status').textContent='请先导入表格。';return}step=target;$('history').hidden=true;$('current').hidden=false;$('current-tab').setAttribute('aria-pressed','true');$('history-tab').setAttribute('aria-pressed','false');document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==target);document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.step===target)))}
 function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
-function command(){return '使用企查查填写任务，调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+'。只填空白，结果在工作台预览后由我确认。'+$('requirements').value}
+function businessSummary(){return current?'填写文件“'+current.filename+'”中的空白字段。工作表：'+current.analysis.tables.map(t=>t.sheet).join('、')+'。填写字段：'+current.catalog.filter(f=>wizardFields.has(f.key)).map(f=>f.label).join('、')+'。保留原值，核验预览后生成新副本。':'请先上传 XLSX 文件。'}
+function command(){return current?businessSummary()+'\n'+$('requirements').value+'\n执行关联：调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+'。字段范围以工作台确认设置为准。':''}
+function saveWizard(){if(current)sessionStorage.setItem('ff-wizard:'+current.id,JSON.stringify({fields:[...wizardFields],requirements:$('requirements').value,step:wizardStep}))}
+function initWizard(){const structure=JSON.stringify(current?.analysis.tables);if(wizardTask===current?.id&&wizardStructure===structure)return;wizardTask=current?.id;wizardStructure=structure;const available=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field))||[];let saved;try{saved=JSON.parse(sessionStorage.getItem('ff-wizard:'+current?.id))}catch{}wizardFields=new Set((saved?.fields||current?.selectedFields||available).filter(k=>available.includes(k)));$('requirements').value=saved?.requirements||'';wizardStep=saved?.step||0}
+function renderWizard(){
+ initWizard();
+ document.querySelectorAll('[data-wizard-pane]').forEach(p=>p.setAttribute('aria-current',String(Number(p.dataset.wizardPane)===wizardStep)));
+ document.querySelectorAll('[data-wizard-step]').forEach(p=>p.setAttribute('aria-current',String(Number(p.dataset.wizardStep)===wizardStep)));
+ $('wizard-source').textContent=current?current.filename+' · '+current.analysis.tables.length+' 个已识别工作表':'尚未选择表格。';
+ $('wizard-rules').textContent=current?current.analysis.tables.map(t=>t.sheet+'：第 '+t.headerRow+' 行表头').join('；'):'请先上传并识别表格。';
+ $('wizard-fields').replaceChildren();
+ const available=new Set(current?.analysis.tables.flatMap(t=>t.mappings.map(m=>m.field))||[]);
+ for(const field of current?.catalog||[]){
+  const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';input.checked=field.anchor||wizardFields.has(field.key);input.disabled=field.anchor||!available.has(field.key);input.dataset.field=field.key;
+  input.onchange=()=>{if(input.checked)wizardFields.add(field.key);else wizardFields.delete(field.key);saveWizard();renderWizard()};
+  label.append(input,document.createTextNode(field.label+(field.anchor?'（固定）':!available.has(field.key)?'（原表未映射）':'')));$('wizard-fields').append(label);
+ }
+ $('field-count').textContent='已选 '+wizardFields.size+' 个填写字段';
+ $('business-summary').textContent=businessSummary();$('qcc-command').textContent=command();
+ $('wizard-prev').disabled=wizardStep===0||busy;$('wizard-next').hidden=wizardStep===3;$('wizard-next').disabled=!current||busy;
+ $('draft').hidden=wizardStep!==3;$('copy-command').hidden=wizardStep!==3;$('draft').disabled=!current||!wizardFields.size||busy;$('copy-command').disabled=$('draft').disabled;
+}
+function openWizard(){initWizard();renderWizard();if(!$('wizard').open)$('wizard').showModal();if(parent!==window){document.body.classList.add('ff-modal-host');parent.postMessage({type:'ff-wizard-state',open:true},location.origin)}}
+function closeWizard(focusComposer=false){saveWizard();$('draft-conflict').close();$('wizard').close();document.body.classList.remove('ff-modal-host');if(parent!==window)parent.postMessage({type:'ff-wizard-state',open:false,focusComposer},location.origin);if(!focusComposer)$('wizard-open').focus()}
+async function applyScope(){
+ if(!current||!wizardFields.size)throw Error('请至少选择一个已映射的填写字段');
+ const original=current.selectedFields||[...new Set(current.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field)))];
+ if(JSON.stringify([...original].sort())!==JSON.stringify([...wizardFields].sort()))render(await api('/scope',{id:current.id,selectedFields:[...wizardFields]}));
+}
+async function sendDraft(mode){
+ if(busy)return;
+ if(parent===window){$('wizard-message').textContent='独立页面请复制指令到 DSH 对话。';return}
+ controls(true);$('wizard-message').textContent='';
+ try{await applyScope();saveWizard();parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value,summary:businessSummary(),mode,expectedDraft},location.origin)}catch(e){$('wizard-message').textContent=e.message}finally{controls(false)}
+}
+function filterResults(){const query=$('result-search').value.trim().toLowerCase(),rows=[...$('changes').rows];let shown=0;for(const tr of rows){tr.hidden=!!query&&!tr.textContent.toLowerCase().includes(query);if(!tr.hidden)shown++}const selected=rows.filter(tr=>tr.querySelector('input')?.checked).length;$('result-count').textContent=rows.length?'显示 '+shown+' / '+rows.length+' 格 · 已选 '+selected+' 格'+(!shown?' · 无匹配结果':''):'暂无可填写单元格'}
 function renderSettings(data){
  $('mapping').replaceChildren();$('entities').replaceChildren();
  for(const sheet of data.structure||[]){
@@ -82,6 +124,7 @@ function render(data){
 current=data;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
 if(parent!==window)parent.postMessage({type:'ff-task',taskId:data.id},location.origin);
 $('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').replaceChildren();
+$('task-meta').dataset.state=data.state;
 $('task-meta').textContent=(data.filename||'表格')+' · '+({'enriching':'查询中','completed':'已完成','interrupted':'查询中断，请重新核验','partial':'部分完成','preview_ready':'可核验'}[data.state]||data.state)+' · 有效期至 '+new Date(data.expiresAt).toLocaleString();
 $('summary').textContent='可填写 '+data.changeSet.changes.length+' 格 · '+(data.plan.paidCalls?'企查查来源':'本地分析 / 合成示例 · 费用 0')+' · 未完成 '+data.changeSet.incomplete.length+' 项';
 $('structure').textContent=data.analysis.tables.map(t=>t.sheet+'：表头第 '+t.headerRow+' 行').join('；');
@@ -89,9 +132,10 @@ renderSettings(data);
 for(const c of data.changeSet.changes){const tr=row('changes',[c.sheet+' ! '+c.cell,c.label,c.oldValue||'（空白）',c.newValue,(c.source.startsWith('qcc://')?'企查查 · '+c.source.slice(6):'合成示例')+' · 获取于 '+c.acquiredAt.slice(0,10)+' · 明确字段映射'],['位置','字段','原值','准备填写','来源']);const td=document.createElement('td'),check=document.createElement('input');check.type='checkbox';check.checked=true;check.value=c.id;check.disabled=data.confirmed;check.setAttribute('aria-label','填写 '+c.cell);td.append(check);tr.append(td)}
 for(const i of data.changeSet.incomplete)row('incomplete',[i.sheet+' '+(i.cell||''),i.label||'—',reasons[i.reason]||'此项需要人工处理'],['位置','字段','原因']);
 $('preview').hidden=false;if(data.confirmed)downloads();$('qcc-command').textContent=command();
+initWizard();filterResults();if($('wizard').open)renderWizard();
 }
 async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.revision!==current?.revision){render(data);if(!silent){const target=pendingNavigation||(data.confirmed?'download':'preview');pendingNavigation=undefined;if(target==='history')$('history-tab').click();else navigate(target)}}}catch(e){if(!silent)$('status').textContent=e.message}}
-async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message}finally{controls(false)}}
+async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message;$('wizard-message').textContent=e.message}finally{controls(false)}}
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>navigate(b.dataset.step));
 $('upload').onclick=async()=>{const f=$('file').files[0];if(!f){$('status').textContent='请先选择 XLSX 文件';return}await preview(await f.arrayBuffer(),f.name)};
 $('configure').onclick=async()=>{if(!current||busy)return;const configuration={sheets:[],headers:[],mappings:[]};for(const section of $('mapping').querySelectorAll('fieldset')){if(!section.querySelector('.sheet-enabled').checked)continue;const sheet=section.dataset.sheet;configuration.sheets.push(sheet);configuration.headers.push({sheet,row:Number(section.querySelector('.header-row').value)});for(const field of section.querySelectorAll('[data-column]'))configuration.mappings.push({sheet,column:Number(field.dataset.column),field:field.value||null})}controls(true);try{render(await api('/configure',{id:current.id,configuration}));$('status').textContent='字段设置已应用，旧预览已清除，请重新核验。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
@@ -100,14 +144,22 @@ $('confirm').onclick=async()=>{if(!current||busy)return;controls(true);try{await
 $('selection').onclick=async()=>{if(!current||busy)return;controls(true);try{render(await api('/select',{id:current.id,selectedIds:[...$('changes').querySelectorAll('input:checked')].map(x=>x.value)}));$('status').textContent='选择已应用，请核对新的预览。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('refresh').onclick=()=>restore();
 $('discard').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/discard',{id:current.id});current=null;history.replaceState(null,'',location.pathname+location.search);$('preview').hidden=true;navigate('import');$('status').textContent='任务及保存的表格已删除。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
-$('history-tab').onclick=async()=>{try{const list=await api('/tasks');$('history-list').replaceChildren();for(const item of list){const div=document.createElement('div');div.className='history-item';const button=document.createElement('button');button.textContent=item.filename+' · '+item.state;button.onclick=()=>{location.hash='task='+item.id;restore()};div.append(button);$('history-list').append(div)}$('history').hidden=false;$('current').hidden=true;if(!list.length)$('history-list').textContent='暂无可恢复的任务。'}catch(e){$('status').textContent=e.message}};
+$('history-tab').onclick=async()=>{try{const list=await api('/tasks');$('history-list').replaceChildren();for(const item of list){const div=document.createElement('div');div.className='history-item';const button=document.createElement('button');button.textContent=item.filename+' · '+item.state;button.onclick=()=>{location.hash='task='+item.id;restore()};div.append(button);$('history-list').append(div)}$('history').hidden=false;$('current').hidden=true;$('current-tab').setAttribute('aria-pressed','false');$('history-tab').setAttribute('aria-pressed','true');if(!list.length)$('history-list').textContent='暂无可恢复的任务。'}catch(e){$('status').textContent=e.message}};
 $('current-tab').onclick=()=>navigate(step);
-$('wizard-open').onclick=()=>{$('qcc-command').textContent=command();$('wizard').showModal()};
-$('wizard-close').onclick=()=>{$('wizard').close();$('wizard-open').focus()};
-$('requirements').oninput=()=>{$('qcc-command').textContent=command()};
-$('copy-command').onclick=async()=>{try{await navigator.clipboard.writeText(command());$('status').textContent='已复制，请在 DSH 对话中发送。'}catch{$('status').textContent='请手动复制指令。'}};
-$('draft').onclick=()=>{if(parent===window){$('status').textContent='独立页面请复制指令到 DSH 对话。';return}parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value},location.origin)};
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.type==='ff-draft-result'){$('status').textContent=e.data.ok?'已回填，请在对话框修改或发送。':'回填失败，任务已保留。';if(e.data.ok)$('wizard').close()}if(e.data?.type==='ff-navigate'){if(!current&&location.hash)pendingNavigation=e.data.step;if(e.data.step==='history')$('history-tab').click();else navigate(e.data.step)}});
+$('wizard-open').onclick=openWizard;$('wizard-close').onclick=()=>closeWizard();$('wizard').addEventListener('cancel',e=>{e.preventDefault();closeWizard()});
+document.querySelectorAll('[data-wizard-step]').forEach(b=>b.onclick=()=>{wizardStep=Number(b.dataset.wizardStep);saveWizard();renderWizard()});
+$('wizard-prev').onclick=()=>{wizardStep=Math.max(0,wizardStep-1);saveWizard();renderWizard()};$('wizard-next').onclick=()=>{wizardStep=Math.min(3,wizardStep+1);saveWizard();renderWizard()};
+$('wizard-file').onchange=async()=>{const file=$('wizard-file').files[0];if(file){await preview(await file.arrayBuffer(),file.name);renderWizard()}};
+$('wizard-edit-rules').onclick=()=>{closeWizard();navigate('rules')};
+$('field-search').oninput=renderWizard;$('fields-all').onclick=()=>{wizardFields=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field))||[]);saveWizard();renderWizard()};$('fields-clear').onclick=()=>{wizardFields.clear();saveWizard();renderWizard()};
+$('requirements').oninput=()=>{saveWizard();$('qcc-command').textContent=command()};
+$('copy-command').onclick=async()=>{try{await applyScope();saveWizard();await navigator.clipboard.writeText(command());$('status').textContent='已复制，请在 DSH 对话中发送。'}catch(e){$('status').textContent=e.message}};
+$('draft').onclick=()=>sendDraft();
+$('draft-cancel').onclick=()=>$('draft-conflict').close();
+for(const mode of ['append','replace'])$('draft-'+mode).onclick=()=>{$('draft-conflict').close();sendDraft(mode)};
+$('mapping-search').oninput=()=>{const query=$('mapping-search').value.trim();$('mapping').querySelectorAll('label').forEach(label=>label.hidden=!label.textContent.includes(query))};
+$('result-search').oninput=filterResults;$('changes').onchange=filterResults;
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.type==='ff-theme'&&['light','dark'].includes(e.data.theme))document.body.dataset.ffTheme=e.data.theme;if(e.data?.type==='ff-draft-conflict'){expectedDraft=e.data.draft;if(!$('draft-conflict').open)$('draft-conflict').showModal()}if(e.data?.type==='ff-draft-result'){$('status').textContent=e.data.ok?'已回填，请在对话框修改或发送。':'回填失败，任务已保留。';if(e.data.ok)closeWizard(true)}if(e.data?.type==='ff-navigate'){if(!current&&location.hash)pendingNavigation=e.data.step;if(e.data.step==='history')$('history-tab').click();else navigate(e.data.step)}});
 api('/health').then(s=>{$('connection').textContent=s.qccAvailable?'已发现企查查工商工具，可在对话中执行。':'尚未发现企查查工商工具；请先连接 MCP。合成模板仍可体验。'}).catch(()=>{});
 navigate('import');restore();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
 </script></html>

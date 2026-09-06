@@ -36,7 +36,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   const local=urls.find(u=>new URL(u).port===String(port)&&u.includes('?'))||origin;
   await page.goto(local);
   // No authentication URL, storage state or raw host output is written to disk.
-  await page.getByRole('link',{name:'▦ AI填表',exact:true}).waitFor();
+  await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
   const prepared=await page.evaluate(async ({path,alpha})=>{
    const method=alpha?'workspace/create':'workspace.create',payload=alpha?{args:{request:{path}}}:{path};
    const response=await fetch('/api/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'client-request',rpcId:crypto.randomUUID(),method,payload})});
@@ -44,22 +44,31 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   },{path:cwd,alpha:version.includes('alpha')});
   assert.equal(prepared?.ok,true,'prepare synthetic workspace through real Host API: '+JSON.stringify(prepared?.error));
   await page.reload();
-  await page.getByRole('link',{name:'▦ AI填表',exact:true}).waitFor();
-  await page.getByRole('link',{name:'▦ AI填表',exact:true}).click();
+  await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
+  await page.getByRole('link',{name:'AI填表',exact:true}).click();
+  phase='owned-session';
   await page.getByRole('button',{name:'导入表格',exact:true}).waitFor();
+  phase='hero-brand';
+  await page.locator('.ff-hero h1').waitFor();
+  assert.equal(await page.locator('.ff-hero h1').innerText(),'AI填表智能体');
+  assert.ok(await page.locator('[data-form-fill-top]').evaluate(e=>e.nextElementSibling.dataset.slot==='sidebar.workspaces'));
+  if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'native-'+version+'-home.png')})}
   await page.getByRole('button',{name:'导入表格',exact:true}).click();
   const frame=page.frameLocator('iframe[title="AI填表任务"]');
   phase='sample';
   const composer=await page.locator('[data-composer-card]').boundingBox(),panel=await page.getByRole('region',{name:'AI填表工作台'}).boundingBox();
   if(composer?.x+composer?.width>panel?.x+1)console.log('Composer ancestors:',await page.locator('[data-composer-card]').evaluate(e=>{const rows=[];for(let n=e;n&&rows.length<9;n=n.parentElement)rows.push({tag:n.tagName,attributes:[...n.attributes].map(a=>[a.name,a.value]).filter(([k])=>k!=='style')});return rows}));
   assert.ok(composer&&panel&&composer.x+composer.width<=panel.x+1,'workbench must not cover native composer: '+JSON.stringify({composer,panel}));
-  await frame.locator('details').evaluate(el=>el.open=true);
+  await frame.locator('details').first().evaluate(el=>el.open=true);
   await frame.getByRole('button',{name:'客户台账',exact:true}).click();
   await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
   assert.equal(await frame.locator('#changes tr').count(),6);
   phase='draft';
   await page.getByRole('button',{name:'主体核验',exact:true}).click();
   await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+  await frame.getByRole('button',{name:'4 确认描述',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.ff-panel').getBoundingClientRect().width===innerWidth);
+  if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'native-'+version+'-wizard.png')});
   await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
   await page.waitForFunction(()=>[...document.querySelectorAll('textarea,[contenteditable=true]')].some(e=>(e.value||e.textContent).includes('form_fill_enrich')));
   phase='download';
@@ -75,6 +84,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   await page.getByRole('button',{name:'关闭工作台',exact:true}).click();
   await page.getByRole('button',{name:'新建会话',exact:true}).first().click();
   await page.getByRole('button',{name:'导入表格',exact:true}).waitFor({state:'hidden'});
+  assert.equal(await page.locator('.ff-hero').count(),0);
   console.log(JSON.stringify({version,nativeEntry:'PASS',ownedSession:'PASS',samplePreview:6,nativeDraft:'PASS',composerUnobscured:'PASS',download:'PASS',restore:'PASS',ordinarySession:'PASS',realModel:'NOT_TESTED',qcc:'NOT_CONNECTED',productionProfileUsed:false}));
   if(process.env.FORM_FILL_KEEP_HOST==='1'&&entry===process.env.DSH_ALPHA_BIN){
    await browser.close();browser=undefined;
@@ -83,7 +93,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   }
  }catch(error){
   // Fresh synthetic profile only: report visible UI labels, never tokens or network bodies.
-  if(browser){const pages=browser.contexts().flatMap(c=>c.pages());const page=pages[0];if(page)console.log('Synthetic UI labels:',await page.locator('button,a,h1,h2').allTextContents())}
+  if(browser){const pages=browser.contexts().flatMap(c=>c.pages());const page=pages[0];if(page){console.log('Synthetic UI labels:',await page.locator('button,a,h1,h2').allTextContents());console.log('Synthetic hero structure:',await page.locator('[class*="headlineText"]').evaluateAll(nodes=>nodes.map(e=>{const out=[];for(let n=e;n&&out.length<5;n=n.parentElement)out.push({tag:n.tagName,class:n.className,display:n.style.display});return out})));if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'native-failure.png')})}}
   throw Error('Native host acceptance failed ('+phase+'): '+String(error.message).split('\n')[0]);
  }finally{
   await browser?.close();child.kill('SIGTERM');

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -22,8 +23,8 @@ ${source}
 const h=React.createElement,root=createRoot(document.getElementById('root'));
 function slot(name){return components[name]?h(components[name],{sessionId:active}):null}
 function render(){root.render(h(React.Fragment,null,
- h('aside',null,slot('sidebar.footer.action'),h('button',{onClick:()=>ctx.workspaces.startSession('synthetic-workspace')},'新会话')),
- h('main',{'data-slot':'conversation'},h('div',{'data-composer-seat':''},
+ h('aside',null,h('button',{onClick:()=>ctx.workspaces.startSession('synthetic-workspace')},'新会话'),h('div',{'data-slot':'sidebar.workspaces'},'工作区'),slot('sidebar.footer.action')),
+ h('main',{'data-slot':'conversation','data-phase':'hero'},h('div',null,h('span',{className:'fishHitbox'},'host logo'),h('h1',{className:'headlineText'},'探索未至之境')),h('div',{'data-composer-seat':''},
  h('div',null,h('div',{'data-composer-card':''},h('textarea',{'aria-label':'原生输入框'}),slot('conversation.input.overlay'))),slot('conversation.input.dock'))),
  slot('shell.overlay')))}
 window.probe={get active(){return active},get draft(){return draft},get normalStarts(){return normalStarts},switchNormal:()=>ctx.sessions.open('normal'),dispose:()=>cleanups.forEach(fn=>fn?.())};render();
@@ -37,35 +38,79 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
  assert.equal(await page.getByRole('button',{name:'导入表格',exact:true}).count(),0);
- await page.getByRole('link',{name:'▦ AI填表'}).click();
+ await page.getByRole('link',{name:'AI填表',exact:true}).click();
  await page.getByRole('button',{name:'导入表格',exact:true}).waitFor();
+ await page.locator('.ff-hero h1').waitFor();
+ assert.equal(await page.locator('.ff-hero h1').innerText(),'AI填表智能体');
+ assert.ok(await page.locator('[data-form-fill-top]').evaluate(e=>e.nextElementSibling.dataset.slot==='sidebar.workspaces'));
+ assert.equal(await page.locator('.headlineText').isVisible(),false);
+ if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/home.png'})}
  const id=await page.evaluate(()=>probe.active);assert.match(id,/^session-dsh-form-fill-agent-/);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe');
- await frame.locator('details').evaluate(e=>e.open=true);
+ await frame.locator('details').first().evaluate(e=>e.open=true);
  await frame.getByRole('button',{name:'客户台账',exact:true}).click();
  await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
  assert.equal(await frame.locator('#changes tr').count(),6);
  await page.getByRole('button',{name:'主体核验',exact:true}).click();
+ await page.getByRole('textbox',{name:'原生输入框'}).fill('保留我的手写要求');
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.ff-panel').getBoundingClientRect().width===innerWidth);
+ const modalPanel=await page.getByRole('region',{name:'AI填表工作台'}).boundingBox();assert.equal(modalPanel.width,1440);
+ await frame.getByRole('button',{name:'3 填写字段',exact:true}).click();
+ await frame.locator('#field-search').fill('法定');
+ assert.equal(await frame.locator('#wizard-fields label:visible').count(),1);
+ await frame.locator('#field-search').fill('');
+ await page.evaluate(()=>document.documentElement.setAttribute('data-ds-dark-theme',''));
+ await page.waitForTimeout(100);assert.equal(await frame.locator('body').getAttribute('data-ff-theme'),'dark');
+ if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/wizard-dark.png'});
+ await page.evaluate(()=>document.documentElement.removeAttribute('data-ds-dark-theme'));
+ await frame.getByRole('button',{name:'4 确认描述',exact:true}).click();
  await frame.locator('#requirements').fill('只补工商字段');
  await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ await frame.getByRole('button',{name:'取消',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'原生输入框'}).inputValue(),'保留我的手写要求');
+ await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ await frame.getByRole('button',{name:'追加',exact:true}).click();
  await page.waitForFunction(()=>probe.draft.includes('form_fill_enrich'));
+ assert.ok((await page.evaluate(()=>probe.draft)).startsWith('保留我的手写要求\n\n'));
+ await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+ await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ await frame.locator('#wizard').waitFor({state:'hidden'});
+ assert.equal((await page.evaluate(()=>probe.draft)).match(/form_fill_enrich/g).length,1);
+ assert.ok((await page.evaluate(()=>probe.draft)).startsWith('保留我的手写要求\n\n'));
+ await page.getByRole('textbox',{name:'原生输入框'}).fill('可以替换的内容');
+ await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+ await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ await frame.getByRole('button',{name:'替换',exact:true}).click();
+ await page.waitForFunction(()=>!document.querySelector('textarea').value.includes('可以替换的内容'));
  assert.match(await page.evaluate(()=>probe.draft),/expectedRevision=1/);
  assert.equal(await page.evaluate(()=>probe.active),id);
  await page.getByRole('button',{name:'关闭工作台',exact:true}).click();
  await page.getByRole('button',{name:'填写预览',exact:true}).click();
  await frame.locator('#changes tr').nth(5).waitFor();
+ await frame.locator('#result-search').fill('无匹配合成条件');
+ assert.equal(await frame.locator('#changes tr:visible').count(),0);
+ assert.ok((await frame.locator('#result-count').innerText()).includes('已选 6 格'));
+ await frame.locator('#result-search').fill('');
  for(const size of [{width:1440,height:900},{width:390,height:700}]){
   await page.setViewportSize(size);
   await page.waitForTimeout(100);
   const panel=await page.getByRole('region',{name:'AI填表工作台'}).boundingBox();
   assert.ok(panel.x>=-1&&panel.x+panel.width<=size.width+1);
+  if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/workbench-'+size.width+'.png'});
+  await page.getByRole('button',{name:'关闭工作台',exact:true}).click();
+  await page.getByRole('button',{name:'提示词生成',exact:true}).click();
+  await frame.locator('#wizard').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelector('.ff-panel').getBoundingClientRect().width===innerWidth);
+  const dialog=await frame.locator('#wizard').boundingBox();assert.ok(dialog.x>=0&&dialog.y>=0&&dialog.x+dialog.width<=size.width+1&&dialog.y+dialog.height<=size.height+1);
+  await frame.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  }
  await page.getByRole('button',{name:'关闭工作台',exact:true}).click();
  await page.getByRole('button',{name:'新会话',exact:true}).click();
  await page.waitForFunction(()=>probe.active.startsWith('normal-'));
  assert.equal(await page.getByRole('button',{name:'导入表格',exact:true}).count(),0);
+ assert.equal(await page.locator('.ff-hero').count(),0);assert.equal(await page.locator('.headlineText').isVisible(),true);
  await page.getByRole('button',{name:'新会话',exact:true}).click();
  assert.equal(await page.evaluate(()=>probe.normalStarts),1);assert.deepEqual(errors,[]);
  console.log('Native React contract: owned session, navigation, draft, task restore, responsive panel, normal NewSession PASS; not a real Host/model E2E');

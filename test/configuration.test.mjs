@@ -13,6 +13,26 @@ import { fixtureBytes } from '../scripts/generate-fixtures.mjs';
 import { createFormFillHandler } from '../packages/dsh-form-fill-agent/lib/http.js';
 
 const file=(name='合成客户甲有限公司',headers=['企业名称','法定代表人'])=>fixtureBytes('配置表',headers,[[name,'']],{title:false});
+test('field scope limits actual provider work, persists, rejects stale revisions and preserves anchors',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'form-fill-scope-'));let h=handler({taskDirectory:directory});
+ try{
+  const bytes=fixtureBytes('范围表',['企业名称','法定代表人','注册地址'],[['合成客户甲有限公司','','']],{title:false});
+  const task=(await h.request('/preview',{base64:bytes.toString('base64'),analyzeOnly:true})).json;
+  for(const selectedFields of [['invented'],['company_name'],['legal_person','legal_person']])assert.equal((await h.request('/scope',{id:task.id,expectedRevision:task.revision,selectedFields})).status,400);
+  const scoped=await h.request('/scope',{id:task.id,expectedRevision:task.revision,selectedFields:['legal_person']});
+  assert.equal(scoped.status,200);assert.deepEqual(scoped.json.selectedFields,['legal_person']);
+  assert.equal((await h.request('/scope',{id:task.id,expectedRevision:task.revision,selectedFields:[]})).status,409);
+  h.dispose();h=handler({taskDirectory:directory});
+  assert.deepEqual((await h.request('/task/'+task.id)).json.selectedFields,['legal_person']);
+  let calls=0;const provider=createQccProvider({callTool:async()=>{calls++;return {'企业名称':'合成客户甲有限公司','法定代表人':'合成人员甲','注册地址':'合成地址'}}});
+  await h.enrich(task.id,provider,scoped.json.revision);
+  const ready=(await h.request('/task/'+task.id)).json;
+  assert.equal(calls,1);assert.deepEqual(ready.changeSet.changes.map(c=>c.field),['legal_person']);
+  assert.ok(ready.changeSet.incomplete.some(i=>i.reason==='user-excluded'));
+  const output=parseWorkbook(applyChangeSet(bytes,ready.plan,ready.changeSet,{confirmChangeSetId:ready.changeSet.changeSetId}).bytes);
+  assert.equal(output.sheets[0].cells.A2.value,'合成客户甲有限公司');assert.equal(output.sheets[0].cells.C2.value,'');
+ }finally{h.dispose();await rm(directory,{recursive:true})}
+});
 function handler(options={}){
  const service=createFormFillHandler({getPort:()=>43260,...options});
  return {...service,async request(path,body){

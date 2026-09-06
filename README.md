@@ -2,7 +2,7 @@
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前已发布版本为 0.1.0-alpha.5，GitHub 与 npm Latest 一致。alpha.5 增加工作表/表头/字段映射修正、主体候选人工确认、固定文本下拉选项保真及设置持久化。支持六类工商字段、来源追溯、未完成清单和任务恢复。没有 LLM 猜值；已有内容默认保留。
+当前开发版本为 0.1.0-alpha.6：企查查蓝深浅色、左上入口、专属品牌首页、四步字段向导、手写草稿保护和结果筛选。字段范围实际约束查询和填写，支持六类工商字段、来源追溯、未完成清单和任务恢复。没有 LLM 猜值；已有内容默认保留。发布验收见 [U4 验收](docs/U4-UI-ACCEPTANCE.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -21,7 +21,7 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。alpha.5 三个子包使用相同精确版本；精确发布状态见 docs/U3-CONTROLS-ACCEPTANCE.md。推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 alpha.6 使用精确的 core / Provider alpha.5；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
 ```sh
