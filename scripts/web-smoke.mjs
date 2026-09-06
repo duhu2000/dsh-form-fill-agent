@@ -16,13 +16,13 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(base);
   for (const [name, count] of [['客户台账',6],['供应商准入表',4],['合同主体信息表',6]]) {
-    await page.getByRole('button', { name: '1 导入与识别', exact: true }).click();
+    await page.getByRole('button', { name: '导入表格', exact: true }).click();
     await page.locator('details:has(#samples)').evaluate(el => el.open = true);
     await page.getByRole('button', { name, exact: true }).click();
     await page.getByText('预览已准备好，请检查后确认。', { exact: true }).waitFor();
     assert.equal(await page.locator('#changes tr').count(), count);
     assert.match(await page.locator('#summary').innerText(), /费用 0/);
-    await page.getByRole('button', { name: '5 确认与下载', exact: true }).click();
+    await page.getByRole('button', { name: '确认下载', exact: true }).click();
     await page.getByRole('button', { name: '确认这些填写，生成新副本' }).click();
     await page.getByRole('link', { name: '下载已填副本' }).waitFor();
     const href = await page.getByRole('link', { name: '下载已填副本' }).getAttribute('href');
@@ -40,12 +40,12 @@ try {
     }
   }
   // Real file upload path, including the input element.
-  await page.getByRole('button', { name: '1 导入与识别', exact: true }).click();
+  await page.getByRole('button', { name: '导入表格', exact: true }).click();
   await page.locator('#file').setInputFiles(join(root,'fixtures/xlsx/客户台账.xlsx'));
   await page.getByRole('button',{name:'分析表格',exact:true}).click();
   await page.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
   assert.equal(await page.locator('#changes tr').count(),0);
-  await page.getByRole('button',{name:'3 主体核验',exact:true}).click();
+  await page.getByRole('button',{name:'主体核验',exact:true}).click();
   await page.getByRole('button',{name:'生成填写指令',exact:true}).click();
   await page.locator('#wizard').waitFor({state:'visible'});
   for(const viewport of [{width:1440,height:900},{width:1024,height:768},{width:390,height:700},{width:900,height:500}]){

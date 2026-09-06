@@ -7,7 +7,7 @@
 <p id="status" role="status" aria-live="polite"></p>
 <section id="history" hidden><h2>本浏览器的任务</h2><p class="muted">只显示持有相同访问凭据的本地任务。过期任务自动清理。</p><div id="history-list"></div></section>
 <main id="current">
-<nav class="tabs" aria-label="工作流程"><button data-step="import">1 导入与识别</button><button data-step="rules">2 字段与规则</button><button data-step="identity">3 主体核验</button><button data-step="preview">4 填写预览</button><button data-step="download">5 确认与下载</button></nav>
+<nav class="ff-stages" aria-label="工作流程"><button data-step="import"><span class="ff-stage-icon" data-icon="upload"></span><span class="ff-stage-label">导入表格</span></button><button data-step="rules"><span class="ff-stage-icon" data-icon="settings"></span><span class="ff-stage-label">字段设置</span></button><button data-step="identity"><span class="ff-stage-icon" data-icon="identity"></span><span class="ff-stage-label">主体核验</span></button><button data-step="preview"><span class="ff-stage-icon" data-icon="table"></span><span class="ff-stage-label">填写预览</span></button><button data-step="download"><span class="ff-stage-icon" data-icon="download"></span><span class="ff-stage-label">确认下载</span></button></nav>
 <p id="task-meta" class="badge"></p>
 <div class="toolbar"><span id="execution-progress" role="status"></span><button id="cancel-run" disabled>取消查询</button><button id="retry-run" disabled>仅重试失败 / 未完成查询</button></div>
 <details id="grid" hidden><summary>查看完整原表 / 结果表格</summary><p class="muted">全量行列按页查看，隐藏行列只读标注。结果视图展示当前已选填写；下载不受分页或搜索影响。</p><div class="toolbar"><label>工作表 <select id="grid-sheet"></select></label><label>视图 <select id="grid-view"><option value="original">原表</option><option value="result">结果预览</option></select></label><label>搜索全部行 <input id="grid-query" type="search" maxlength="200"></label><button id="grid-search">搜索</button></div><p id="grid-status" role="status"></p><div class="scroll"><table><thead id="grid-head"></thead><tbody id="grid-body"></tbody></table></div><div class="toolbar"><button id="grid-prev">上一页</button><button id="grid-next">下一页</button><button id="grid-left">前 16 列</button><button id="grid-right">后 16 列</button></div></details>
@@ -36,7 +36,8 @@
 <script>
 const basePath=location.pathname.startsWith('/form-fill')?'/form-fill':'';
 document.getElementById('ff-style').href=basePath+'/brand.css';
-document.querySelectorAll('[data-icon="table"]').forEach(node=>{const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('class','ff-icon');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d','M3 4h18v16H3zM3 9h18M9 9v11');svg.append(path);node.append(svg)});
+const stageIcons={table:'M3 4h18v16H3zM3 9h18M9 9v11',upload:'M12 16V3m-4 4 4-4 4 4M4 14v6h16v-6',settings:'M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6',identity:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8m7 1 2 2 4-4',download:'M12 3v13m-4-4 4 4 4-4M4 17v4h16v-4'};
+document.querySelectorAll('[data-icon]').forEach(node=>{const d=stageIcons[node.dataset.icon];if(!d)return;const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('class','ff-icon');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',d);svg.append(path);node.append(svg)});
 const $=id=>document.getElementById(id);
 let owner=localStorage.getItem('ff-owner');
 if(!/^[a-f0-9]{64}$/.test(owner||'')){owner=[...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');localStorage.setItem('ff-owner',owner)}

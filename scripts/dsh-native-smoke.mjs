@@ -94,7 +94,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
   await page.waitForFunction(()=>[...document.querySelectorAll('textarea,[contenteditable=true]')].some(e=>(e.value||e.textContent).includes('form_fill_enrich')));
   phase='download';
-  await frame.getByRole('button',{name:'5 确认与下载',exact:true}).click();
+  await frame.getByRole('button',{name:'确认下载',exact:true}).click();
   await frame.getByRole('button',{name:'确认这些填写，生成新副本',exact:true}).click();
   const download=frame.getByRole('link',{name:'下载已填副本',exact:true});await download.waitFor();
   assert.equal((await page.request.get(origin+await download.getAttribute('href'))).status(),200);

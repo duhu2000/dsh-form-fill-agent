@@ -63,13 +63,13 @@ try{
   assert.equal(await frame.locator('#changes tr').count(),0);
   const taskId=await frame.locator('#status').evaluate(()=>new URLSearchParams(location.hash.slice(1)).get('task'));
  console.log(JSON.stringify({phase:'local-analysis',changes:0,realQueries:0}));
- await frame.getByRole('button',{name:'3 主体核验',exact:true}).click();
+ await frame.getByRole('button',{name:'主体核验',exact:true}).click();
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
  await frame.getByRole('button',{name:'4 确认描述',exact:true}).click();
  await frame.locator('#requirements').fill('请现在仅调用 form_fill_enrich 完成本任务。不要通过其他工具读取文件或另行查询，完成后等我确认副本。');
  await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
  await page.waitForFunction(()=>[...document.querySelectorAll('textarea,[contenteditable=true]')].some(e=>(e.value||e.textContent).includes('form_fill_enrich')));
- await frame.getByRole('button',{name:'4 填写预览',exact:true}).click();
+ await frame.getByRole('button',{name:'填写预览',exact:true}).click();
  phase='model';
  const submitted=[];
  page.on('response',response=>{const path=new URL(response.url()).pathname;if(/prompt|submit|enqueue/.test(path))submitted.push({path,status:response.status()})});
@@ -92,7 +92,7 @@ try{
  phase='preview';
  await frame.locator('#changes tr').nth(expectedCount-1).waitFor();
  assert.equal(await frame.locator('#changes tr').count(),expectedCount);
- await frame.getByRole('button',{name:'5 确认与下载',exact:true}).click();
+ await frame.getByRole('button',{name:'确认下载',exact:true}).click();
  await frame.getByRole('button',{name:'确认这些填写，生成新副本',exact:true}).click();
  const link=frame.getByRole('link',{name:'下载已填副本',exact:true});await link.waitFor();
  const download=await page.request.get(origin+await link.getAttribute('href'));assert.equal(download.status(),200);
