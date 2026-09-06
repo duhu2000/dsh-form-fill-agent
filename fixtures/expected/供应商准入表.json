@@ -1,0 +1,652 @@
+{
+  "analysis": {
+    "kind": "Analysis",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
+    "sheets": [
+      {
+        "name": "供应商准入表",
+        "hidden": false
+      },
+      {
+        "name": "隐藏说明",
+        "hidden": true
+      }
+    ],
+    "tables": [
+      {
+        "sheet": "供应商准入表",
+        "headerRow": 3,
+        "mappings": [
+          {
+            "cell": "A3",
+            "column": 1,
+            "label": "供应商名称",
+            "field": "company_name",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "B3",
+            "column": 2,
+            "label": "统一社会信用代码",
+            "field": "credit_no",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "C3",
+            "column": 3,
+            "label": "法定代表人",
+            "field": "legal_person",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "D3",
+            "column": 4,
+            "label": "经营状态",
+            "field": "business_status",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "E3",
+            "column": 5,
+            "label": "登记机关",
+            "field": "registration_authority",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "F3",
+            "column": 6,
+            "label": "风险结论",
+            "field": null,
+            "confidence": 0,
+            "evidence": "unknown-field"
+          },
+          {
+            "cell": "G3",
+            "column": 7,
+            "label": "审批意见",
+            "field": null,
+            "confidence": 0,
+            "evidence": "unknown-field"
+          }
+        ],
+        "anchors": [
+          "company_name"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "ca4efc5bd9180e90ddb9f4ee1abd1725be695923f87ccfa144587dc4b7f63c06",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "68ae419118c2d6e000a41537d17a17fff0312c9dfee6b122f397bccc93343644",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "ddd83707c877ad88f7600d2e5b3ddf76a331377a227347f9b3c38a5610737393",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "D4",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "d39fa17a6ddda9a65d3b73a3c8421ddcfe8cdc9ead38e0329bd0a0c8e37e1b2e",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "E4",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "420926f4c337943a395174acb4c825ac6766dfa3453ee47718c4490403e4145f",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "a7b72e490399ffb2fa9b34920679b3bbca3370541bc3a92d3c48e990d7074ee1",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "C5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "ebefcd9fd754f362add464a1c39f0a2f19e13f82b24c91ea14e56ee696bc075e",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "D5",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "d2174000815c0e57c303bed7e089c9e92c04363247e75fd6a10fd97e9a64619a",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "E5",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "F4",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "G4",
+        "field": null,
+        "label": "审批意见",
+        "reason": "placeholder-needs-confirmation"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "G5",
+        "field": null,
+        "label": "审批意见",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "隐藏说明",
+        "reason": "hidden-sheet",
+        "message": "隐藏工作表未处理"
+      }
+    ]
+  },
+  "plan": {
+    "kind": "FillPlan",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
+    "policy": "fill-blanks-only",
+    "estimatedCalls": 2,
+    "paidCalls": 0,
+    "calls": [
+      {
+        "id": "f5c19a3a722fa585575981ff1ab34af5a2764ac202a1d3f9ceb70b79a2402d4d",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "business_status",
+          "registration_authority"
+        ]
+      },
+      {
+        "id": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "business_status",
+          "registration_authority"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "ca4efc5bd9180e90ddb9f4ee1abd1725be695923f87ccfa144587dc4b7f63c06",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "f5c19a3a722fa585575981ff1ab34af5a2764ac202a1d3f9ceb70b79a2402d4d"
+      },
+      {
+        "id": "68ae419118c2d6e000a41537d17a17fff0312c9dfee6b122f397bccc93343644",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "f5c19a3a722fa585575981ff1ab34af5a2764ac202a1d3f9ceb70b79a2402d4d"
+      },
+      {
+        "id": "ddd83707c877ad88f7600d2e5b3ddf76a331377a227347f9b3c38a5610737393",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "D4",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "f5c19a3a722fa585575981ff1ab34af5a2764ac202a1d3f9ceb70b79a2402d4d"
+      },
+      {
+        "id": "d39fa17a6ddda9a65d3b73a3c8421ddcfe8cdc9ead38e0329bd0a0c8e37e1b2e",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "E4",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "f5c19a3a722fa585575981ff1ab34af5a2764ac202a1d3f9ceb70b79a2402d4d"
+      },
+      {
+        "id": "420926f4c337943a395174acb4c825ac6766dfa3453ee47718c4490403e4145f",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb"
+      },
+      {
+        "id": "a7b72e490399ffb2fa9b34920679b3bbca3370541bc3a92d3c48e990d7074ee1",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "C5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb"
+      },
+      {
+        "id": "ebefcd9fd754f362add464a1c39f0a2f19e13f82b24c91ea14e56ee696bc075e",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "D5",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb"
+      },
+      {
+        "id": "d2174000815c0e57c303bed7e089c9e92c04363247e75fd6a10fd97e9a64619a",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "E5",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "F4",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "G4",
+        "field": null,
+        "label": "审批意见",
+        "reason": "placeholder-needs-confirmation"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "G5",
+        "field": null,
+        "label": "审批意见",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "隐藏说明",
+        "reason": "hidden-sheet",
+        "message": "隐藏工作表未处理"
+      }
+    ],
+    "planId": "1fdfdab74340fb295a03ccb6be7826e7aa7f5c2cf5b33c0f7dccb8c5d291c490"
+  },
+  "changeSet": {
+    "kind": "ChangeSet",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
+    "planId": "1fdfdab74340fb295a03ccb6be7826e7aa7f5c2cf5b33c0f7dccb8c5d291c490",
+    "changes": [
+      {
+        "id": "ca4efc5bd9180e90ddb9f4ee1abd1725be695923f87ccfa144587dc4b7f63c06",
+        "sheet": "供应商准入表",
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "SYNTHETIC-SUPPLIER-A",
+        "source": "mock://synthetic-registration/credit_no",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "68ae419118c2d6e000a41537d17a17fff0312c9dfee6b122f397bccc93343644",
+        "sheet": "供应商准入表",
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成人员丙",
+        "source": "mock://synthetic-registration/legal_person",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "ddd83707c877ad88f7600d2e5b3ddf76a331377a227347f9b3c38a5610737393",
+        "sheet": "供应商准入表",
+        "cell": "D4",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成示例：存续",
+        "source": "mock://synthetic-registration/business_status",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "d39fa17a6ddda9a65d3b73a3c8421ddcfe8cdc9ead38e0329bd0a0c8e37e1b2e",
+        "sheet": "供应商准入表",
+        "cell": "E4",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成供应商甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成登记机关",
+        "source": "mock://synthetic-registration/registration_authority",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "F4",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 4,
+        "cell": "G4",
+        "field": null,
+        "label": "审批意见",
+        "reason": "placeholder-needs-confirmation"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "风险结论",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "G5",
+        "field": null,
+        "label": "审批意见",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "隐藏说明",
+        "reason": "hidden-sheet",
+        "message": "隐藏工作表未处理"
+      },
+      {
+        "id": "420926f4c337943a395174acb4c825ac6766dfa3453ee47718c4490403e4145f",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb",
+        "reason": "candidate-review-required"
+      },
+      {
+        "id": "a7b72e490399ffb2fa9b34920679b3bbca3370541bc3a92d3c48e990d7074ee1",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "C5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb",
+        "reason": "candidate-review-required"
+      },
+      {
+        "id": "ebefcd9fd754f362add464a1c39f0a2f19e13f82b24c91ea14e56ee696bc075e",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "D5",
+        "field": "business_status",
+        "label": "经营状态",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb",
+        "reason": "candidate-review-required"
+      },
+      {
+        "id": "d2174000815c0e57c303bed7e089c9e92c04363247e75fd6a10fd97e9a64619a",
+        "kind": "FillOpportunity",
+        "sheet": "供应商准入表",
+        "row": 5,
+        "cell": "E5",
+        "field": "registration_authority",
+        "label": "登记机关",
+        "anchor": {
+          "company_name": "合成多候选有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0ff8d750592f06a0f9d0fefef34360173ceb446de2c12368b3f94090dd8ceb",
+        "reason": "candidate-review-required"
+      }
+    ],
+    "changeSetId": "170c71a3ee870470bd79ff20cb1e0d8b7f9226d385a54251e54b8c14ec4f6ae1"
+  }
+}

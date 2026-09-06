@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI填表工作台</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif;background:#f4f7f9;color:#203848}*{box-sizing:border-box}body{max-width:1120px;margin:48px auto;padding:0 24px}h1{font-size:36px;margin-bottom:8px}p{line-height:1.7}.badge{font-size:13px;background:#dcece9;color:#205e50;border-radius:16px;padding:6px 12px;display:inline-block}.card{background:white;border:1px solid #d8e2e8;border-radius:16px;padding:24px;margin:24px 0}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}button,a.download{background:#225f73;color:white;padding:11px 18px;border:0;border-radius:8px;font-size:15px;cursor:pointer;text-decoration:none}button.secondary{background:#e9f0f4;color:#225064}button:disabled{opacity:.45;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #e8a829;outline-offset:3px}input{max-width:100%;font-size:15px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;border-bottom:1px solid #e0e6eb;padding:12px;vertical-align:top;overflow-wrap:anywhere;min-width:70px}th{background:#edf3f6}td small{display:block;color:#64798a;margin-top:5px}#status{min-height:28px;color:#315e70}#summary{font-weight:650}h2{font-size:21px}#downloads{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}.muted{color:#607888;font-size:14px}@media(max-width:640px){body{margin:24px auto;padding:0 14px}.card{padding:16px}h1{font-size:30px}}@media(prefers-color-scheme:dark){:root{background:#15232d;color:#dce7ed}.card{background:#1b2d39;border-color:#354c59}th{background:#243f4e}td,th{border-color:#38505e}.muted,td small,#status{color:#adcad7}.badge{background:#244c46;color:#c5e6da}button.secondary{background:#304b5a;color:#d4e7f0}}
+@media(max-width:640px){.scroll table,.scroll tbody,.scroll tr{display:block;width:100%}.scroll thead{display:none}.scroll tr{padding:8px 0;border-bottom:1px solid #71818c55}.scroll td{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;border:0;padding:6px 0;min-width:0}.scroll td::before{content:attr(data-label);font-weight:600;opacity:.7}}
+</style>
+<span class="badge">AI填表 · 单元格预览 · 原件不覆盖</span>
+<h1>AI填表</h1><p>上传已有 Excel，查看哪些空位可以填写，确认后下载新副本。</p>
+<div class="card">
+<h2>1. 选择表格</h2>
+<p class="muted">仅支持简单 XLSX 表格，最大 8 MiB。含公式、宏、图片、数据验证等复杂结构会明确拒绝。模板体验使用合成数据。真实表格上传后可在 DSH 对话中使用企查查查询。</p>
+<div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
+<p>也可以直接体验三套合成模板：</p>
+<div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<section id="preview" hidden>
+<div class="card"><h2>企查查补全与任务恢复</h2><p>首次分析不调用企查查。需要真实数据时，复制下面的任务指令到 DSH 对话，完成后点击刷新。保留本页地址可恢复任务；DSH 中默认保存 24 小时，可手动删除。</p><p id="qcc-command" style="overflow-wrap:anywhere"></p><div class="controls"><button id="copy-command">复制查询指令</button><button id="refresh">刷新任务</button><button id="discard" class="secondary">删除任务</button></div></div>
+<div class="card"><h2>2. 预览填写内容</h2><p id="summary"></p><p id="structure" class="muted"></p><p class="muted">默认只填空白，已有值保持原样。每个值均标注来源、获取时间及置信度。</p>
+<div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原值</th><th>准备填写</th><th>依据与来源</th></tr></thead><tbody id="changes"></tbody></table></div></div>
+<div class="card"><h2>需要你处理的内容</h2><div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原因</th></tr></thead><tbody id="incomplete"></tbody></table></div></div>
+<div class="card"><h2>3. 确认并生成副本</h2><p>原文件不会被覆盖。确认后可下载已填表格、变更清单及未完成项。</p><button id="confirm">确认这些填写，生成新副本</button><div id="downloads"></div></div>
+</section>
+<script>
+const basePath=location.pathname.startsWith('/form-fill')?'/form-fill':'';
+const $=id=>document.getElementById(id);let current,filename='已填表格',busy=false;
+const reasons={'unknown-field':'缺少可靠来源，请人工填写','no-match':'未匹配到企业','candidate-review-required':'主体需要人工确认，请使用完整登记名称','no-data':'该字段未返回','hidden-sheet':'隐藏工作表保持原样','hidden-row':'隐藏行保持原样','hidden-or-merged':'隐藏或合并位置需人工确认','placeholder-needs-confirmation':'已有占位文字，默认不覆盖','missing-anchor':'缺少主体名称','header-not-found':'未识别可靠表头','ambiguous-mapping':'重复字段需要人工选择','multiple-tables':'多个表头，请先拆分','provider-error':'企查查工具调用失败或未连接，请稍后重试','low-confidence':'置信度不足','missing-provenance':'缺少来源证据','unsafe-value':'值不安全，已阻止写入'};
+function controls(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value)}
+function row(target,values,labels){const tr=document.createElement('tr');values.forEach((value,i)=>{const td=document.createElement('td');td.textContent=value;td.dataset.label=labels[i];tr.append(td)});$(target).append(tr)}
+async function api(path,body){const response=await fetch(basePath+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw Error(data.message);return data}
+function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
+function render(data){
+ current=data;location.hash='task='+data.id;$('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').replaceChildren();
+ const real=data.plan.paidCalls>0;
+ $('summary').textContent='可填写 '+data.changeSet.changes.length+' 格 · 预计 '+data.plan.estimatedCalls+' 次'+(real?'企查查调用':'合成调用 · 费用 0')+' · 未完成 '+data.changeSet.incomplete.length+' 项';
+ $('structure').textContent=data.analysis.tables.map(t=>t.sheet+'：表头在第 '+t.headerRow+' 行').join('；');
+ $('qcc-command').textContent='使用企查查填写任务 '+data.id+'，请调用 form_fill_enrich，taskId 为 '+data.id;
+ for(const c of data.changeSet.changes)row('changes',[c.sheet+' ! '+c.cell,c.label,c.oldValue||'（空白）',c.newValue,(c.source.startsWith('qcc://')?'企查查 · '+c.source.slice(6):'合成工商示例')+' · 获取于 '+c.acquiredAt.slice(0,10)+' · '+Math.round(c.confidence*100)+'%'],['位置','字段','原值','准备填写','来源']);
+ for(const i of data.changeSet.incomplete)row('incomplete',[i.sheet+' '+(i.cell||''),i.label||'—',reasons[i.reason]||'此项需要人工处理'],['位置','字段','原因']);
+ $('preview').hidden=false;if(data.confirmed)downloads();$('status').textContent='预览已准备好，请检查后确认。';
+}
+async function restore(){if(busy)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;controls(true);try{render(await api('/task/'+encodeURIComponent(id)))}catch(e){$('status').textContent=e.message}finally{controls(false)}}
+async function preview(buffer,name){
+ controls(true);$('status').textContent='正在识别表头、主体和待填空位…';$('preview').hidden=true;
+ try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+ const data=await api('/preview',{base64:btoa(binary)});filename=name.replace(/\.xlsx$/i,'');render(data);
+ }catch(e){$('status').textContent=e.message}finally{controls(false)}
+}
+$('upload').onclick=async()=>{const f=$('file').files[0];if(!f){$('status').textContent='请先选择 XLSX 文件';return}await preview(await f.arrayBuffer(),f.name)};
+$('samples').onclick=async e=>{if(!e.target.dataset.name||busy)return;const name=e.target.dataset.name;try{const r=await fetch(basePath+'/fixture/'+encodeURIComponent(name));if(!r.ok)throw Error('模板读取失败');await preview(await r.arrayBuffer(),name)}catch(e){$('status').textContent=e.message}};
+$('confirm').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/confirm',{id:current.id,confirmChangeSetId:current.changeSet.changeSetId});downloads();$('status').textContent='副本已生成，原文件保持不变。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
+$('refresh').onclick=restore;
+$('discard').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/discard',{id:current.id});current=null;history.replaceState(null,'',location.pathname);$('preview').hidden=true;$('status').textContent='任务及保存的表格已删除。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
+$('copy-command').onclick=async()=>{try{await navigator.clipboard.writeText($('qcc-command').textContent);$('status').textContent='已复制，请在 DSH 对话中发送。'}catch{$('status').textContent='请手动复制上面的文字。'}};
+restore();
+</script></html>

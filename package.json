@@ -1,0 +1,23 @@
+{
+  "name": "dsh-form-fill-monorepo",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "npm test && node scripts/verify-pack.mjs",
+    "fixtures": "node scripts/generate-fixtures.mjs",
+    "demo": "node apps/demo/cli.mjs",
+    "demo:web": "node apps/demo/server.mjs",
+    "test:consumer": "node scripts/consumer-contract.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "xlsx": "0.18.5"
+  }
+}

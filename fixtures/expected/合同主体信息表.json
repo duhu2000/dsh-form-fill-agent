@@ -1,0 +1,457 @@
+{
+  "analysis": {
+    "kind": "Analysis",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "documentHash": "2192c92079dce6d772533620b49247e3e120e6239fbfbaa365715b6345131cca",
+    "sheets": [
+      {
+        "name": "合同主体信息表",
+        "hidden": false
+      }
+    ],
+    "tables": [
+      {
+        "sheet": "合同主体信息表",
+        "headerRow": 3,
+        "mappings": [
+          {
+            "cell": "A3",
+            "column": 1,
+            "label": "合同角色",
+            "field": null,
+            "confidence": 0,
+            "evidence": "unknown-field"
+          },
+          {
+            "cell": "B3",
+            "column": 2,
+            "label": "主体名称",
+            "field": "company_name",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "C3",
+            "column": 3,
+            "label": "统一社会信用代码",
+            "field": "credit_no",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "D3",
+            "column": 4,
+            "label": "法定代表人",
+            "field": "legal_person",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "E3",
+            "column": 5,
+            "label": "住所",
+            "field": "registered_address",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "F3",
+            "column": 6,
+            "label": "付款条款",
+            "field": null,
+            "confidence": 0,
+            "evidence": "unknown-field"
+          }
+        ],
+        "anchors": [
+          "company_name"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "e9b048491859651f8e295b79ddffdf1f81250c122c92e8a1ca744f288bfcccef",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "C4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "1a9a367a4a98bc62689bf83ef67f70d645094196cbe817e27a7e42398eb3cb09",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "D4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "eb4698e6c0e5a7b6b0b58cd46bcf939c1b32249738b981e432155842721c080c",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "8c516a6fbf2bfb5ef44a3381d030ab4283e269e2350e3c847e0463786dd5ce48",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "C5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "3daa4e34a0d0ab5553e7fb0f4f04593da1ab049fd26146e5950727d66b6e90fb",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "D5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "0721c809938b35c575cd5413b0cfebd83109ca1aa757acf79bc25a4f6dae9128",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "E5",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "付款条款",
+        "reason": "unknown-field"
+      }
+    ]
+  },
+  "plan": {
+    "kind": "FillPlan",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "2192c92079dce6d772533620b49247e3e120e6239fbfbaa365715b6345131cca",
+    "policy": "fill-blanks-only",
+    "estimatedCalls": 2,
+    "paidCalls": 0,
+    "calls": [
+      {
+        "id": "5832e1e14a6e4d93405636d38ac3fe40c3cab9e9a09e740c2475cd655342163c",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "registered_address"
+        ]
+      },
+      {
+        "id": "6d0a30299072f465a3290322b6ccace3d7db47ca858bbd7767ff9c7e6aa0fa5a",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "registered_address"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "e9b048491859651f8e295b79ddffdf1f81250c122c92e8a1ca744f288bfcccef",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "C4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "5832e1e14a6e4d93405636d38ac3fe40c3cab9e9a09e740c2475cd655342163c"
+      },
+      {
+        "id": "1a9a367a4a98bc62689bf83ef67f70d645094196cbe817e27a7e42398eb3cb09",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "D4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "5832e1e14a6e4d93405636d38ac3fe40c3cab9e9a09e740c2475cd655342163c"
+      },
+      {
+        "id": "eb4698e6c0e5a7b6b0b58cd46bcf939c1b32249738b981e432155842721c080c",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 4,
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "5832e1e14a6e4d93405636d38ac3fe40c3cab9e9a09e740c2475cd655342163c"
+      },
+      {
+        "id": "8c516a6fbf2bfb5ef44a3381d030ab4283e269e2350e3c847e0463786dd5ce48",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "C5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0a30299072f465a3290322b6ccace3d7db47ca858bbd7767ff9c7e6aa0fa5a"
+      },
+      {
+        "id": "3daa4e34a0d0ab5553e7fb0f4f04593da1ab049fd26146e5950727d66b6e90fb",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "D5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0a30299072f465a3290322b6ccace3d7db47ca858bbd7767ff9c7e6aa0fa5a"
+      },
+      {
+        "id": "0721c809938b35c575cd5413b0cfebd83109ca1aa757acf79bc25a4f6dae9128",
+        "kind": "FillOpportunity",
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "E5",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "6d0a30299072f465a3290322b6ccace3d7db47ca858bbd7767ff9c7e6aa0fa5a"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "付款条款",
+        "reason": "unknown-field"
+      }
+    ],
+    "planId": "a995430b924654ac4a30530fc185bffccb55d3396a9a027e38710e67c0b7f503"
+  },
+  "changeSet": {
+    "kind": "ChangeSet",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "2192c92079dce6d772533620b49247e3e120e6239fbfbaa365715b6345131cca",
+    "planId": "a995430b924654ac4a30530fc185bffccb55d3396a9a027e38710e67c0b7f503",
+    "changes": [
+      {
+        "id": "e9b048491859651f8e295b79ddffdf1f81250c122c92e8a1ca744f288bfcccef",
+        "sheet": "合同主体信息表",
+        "cell": "C4",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "SYNTHETIC-PARTY-A",
+        "source": "mock://synthetic-registration/credit_no",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "1a9a367a4a98bc62689bf83ef67f70d645094196cbe817e27a7e42398eb3cb09",
+        "sheet": "合同主体信息表",
+        "cell": "D4",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成人员丁",
+        "source": "mock://synthetic-registration/legal_person",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "eb4698e6c0e5a7b6b0b58cd46bcf939c1b32249738b981e432155842721c080c",
+        "sheet": "合同主体信息表",
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同甲方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成市合同路 1 号",
+        "source": "mock://synthetic-registration/registered_address",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "8c516a6fbf2bfb5ef44a3381d030ab4283e269e2350e3c847e0463786dd5ce48",
+        "sheet": "合同主体信息表",
+        "cell": "C5",
+        "field": "credit_no",
+        "label": "统一社会信用代码",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "SYNTHETIC-PARTY-B",
+        "source": "mock://synthetic-registration/credit_no",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "3daa4e34a0d0ab5553e7fb0f4f04593da1ab049fd26146e5950727d66b6e90fb",
+        "sheet": "合同主体信息表",
+        "cell": "D5",
+        "field": "legal_person",
+        "label": "法定代表人",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成人员戊",
+        "source": "mock://synthetic-registration/legal_person",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "0721c809938b35c575cd5413b0cfebd83109ca1aa757acf79bc25a4f6dae9128",
+        "sheet": "合同主体信息表",
+        "cell": "E5",
+        "field": "registered_address",
+        "label": "住所",
+        "anchor": {
+          "company_name": "合成合同乙方有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成市合同路 2 号",
+        "source": "mock://synthetic-registration/registered_address",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "合同主体信息表",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "付款条款",
+        "reason": "unknown-field"
+      }
+    ],
+    "changeSetId": "b6d56ca1bf2d8baecbfdb83303db6281fcb2ab307cbd82e4f48581efb9bf00ae"
+  }
+}

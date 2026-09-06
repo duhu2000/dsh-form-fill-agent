@@ -1,0 +1,34 @@
+{
+  "name": "dsh-form-fill-agent",
+  "version": "0.1.0-alpha.1",
+  "private": false,
+  "description": "AI填表智能体：XLSX blank-cell preview, QCC enrichment and persistent tasks for DSH.",
+  "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/dsh-form-fill-agent" },
+  "publishConfig": { "access": "public", "tag": "next", "registry": "https://registry.npmjs.org/" },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./http": "./lib/http.js",
+    "./client": "./lib/client.js"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "form-fill-core": "0.1.0-alpha.1",
+    "qcc-form-fill-provider": "0.1.0-alpha.1"
+  },
+  "dsh": {
+    "client": { "inject": [], "platform": "web" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

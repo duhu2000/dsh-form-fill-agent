@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { createTaskStore } from '../packages/dsh-form-fill-agent/lib/task-store.js';
+import { fixtureBytes } from '../scripts/generate-fixtures.mjs';
+import { previewBytes } from 'dsh-form-fill-agent';
+import { applyChangeSet } from 'form-fill-core';
+test('persistent task restores preview and confirmed artifact without provider calls',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'form-fill-store-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+  const bytes=fixtureBytes('合成测试',['企业名称','信用代码'],[['合成客户甲有限公司','']]);
+  const preview=await previewBytes(bytes),id=randomUUID();
+  let store=createTaskStore({directory:dir});
+  store.set(id,{bytes,preview,created:Date.now()});
+  assert.throws(()=>createTaskStore({directory:dir}),/already in use/);
+  if(process.platform!=='win32')assert.equal((await stat(join(dir,id+'.json'))).mode&0o777,0o600);
+  store.close();store=createTaskStore({directory:dir});
+  assert.deepEqual(store.get(id).preview,preview);
+  const result=applyChangeSet(bytes,preview.plan,preview.changeSet,{confirmChangeSetId:preview.changeSet.changeSetId});
+  store.set(id,{...store.get(id),result});store.close();store=createTaskStore({directory:dir});
+  assert.deepEqual(store.get(id).result.bytes,result.bytes);
+  store.delete(id);store.close();store=createTaskStore({directory:dir});assert.equal(store.size,0);store.close();
+});
+test('expired persistent tasks are removed on restart',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'form-fill-expired-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+  const bytes=fixtureBytes('合成测试',['企业名称','信用代码'],[['合成客户甲有限公司','']]);
+  const store=createTaskStore({directory:dir,now:()=>0});
+  store.set(randomUUID(),{bytes,preview:await previewBytes(bytes),created:0});store.close();
+  const restored=createTaskStore({directory:dir,now:()=>2000,ttlMs:1000});assert.equal(restored.size,0);restored.close();
+});

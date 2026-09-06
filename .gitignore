@@ -1,0 +1,6 @@
+node_modules/
+artifacts/
+.demo/
+*.tgz
+*.log
+.DS_Store

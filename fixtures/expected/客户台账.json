@@ -1,0 +1,687 @@
+{
+  "analysis": {
+    "kind": "Analysis",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "documentHash": "d7d7e3dd64165b4a3a3ef4b02afaf196c4659f67a960321c8971f0ca05fb98be",
+    "sheets": [
+      {
+        "name": "客户台账",
+        "hidden": false
+      }
+    ],
+    "tables": [
+      {
+        "sheet": "客户台账",
+        "headerRow": 3,
+        "mappings": [
+          {
+            "cell": "A3",
+            "column": 1,
+            "label": "客户名称",
+            "field": "company_name",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "B3",
+            "column": 2,
+            "label": "信用代码",
+            "field": "credit_no",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "C3",
+            "column": 3,
+            "label": "法人代表",
+            "field": "legal_person",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "D3",
+            "column": 4,
+            "label": "成立时间",
+            "field": "established_date",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "E3",
+            "column": 5,
+            "label": "注册地址",
+            "field": "registered_address",
+            "confidence": 1,
+            "evidence": "exact-alias"
+          },
+          {
+            "cell": "F3",
+            "column": 6,
+            "label": "客户经理",
+            "field": null,
+            "confidence": 0,
+            "evidence": "unknown-field"
+          }
+        ],
+        "anchors": [
+          "company_name"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "8ddb0ee2c0061723d7aafbc984a7b88ac5a3bd9679016030812b1ae303b5176c",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "6ed1ff9a37dcca3e5bc512a41dd4f95c0ffbb4f9c931c8fe6e56a675d2379482",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "604b3fab563331a3da77fc9f1172e9057641a10892b3d74ff07dc9f65779e976",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "D4",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "10e221e32733b8f6c9bf133b5d0e8f46dd189bae2e6ee1b33bcf3514a8c225e3",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "24183f50c64044ba1808a5f4781ffd9e06b7dec26b0ce09f808c26e8b19b1f96",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "313ef66ce220b4074cec71ab357b2ec275607791a8e78c65da350152a4e801b1",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "D5",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "69cb1f9536e71d4e86bdbbcadffe09ca6dedde7826b83a3128912f143f8bd6e1",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "B6",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "6e9599935d21a197c232f72965f9e92c53264c4b2ff21e43301b640e868bf4ae",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "C6",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "e26f6eec2a73711a9a8f53f48de6c1effa695eb6a904f9746576c06532a95a24",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "D6",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      },
+      {
+        "id": "1c6cc3f43556f08015fd74dcbaf79fd048d8a877505b863824efbba0908816c6",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "E6",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "F6",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      }
+    ]
+  },
+  "plan": {
+    "kind": "FillPlan",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "d7d7e3dd64165b4a3a3ef4b02afaf196c4659f67a960321c8971f0ca05fb98be",
+    "policy": "fill-blanks-only",
+    "estimatedCalls": 3,
+    "paidCalls": 0,
+    "calls": [
+      {
+        "id": "fde8b38c6a37cfe80f078f552b6543a4fedc2237542146af075523da547c3c32",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "established_date",
+          "registered_address"
+        ]
+      },
+      {
+        "id": "44e2f85cb17df5b98f1c09a8cadafe53950b24895e2a7ef4b9d5164c348c5c70",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "established_date"
+        ]
+      },
+      {
+        "id": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "capability": "synthetic-registration",
+        "paid": false,
+        "fields": [
+          "credit_no",
+          "legal_person",
+          "established_date",
+          "registered_address"
+        ]
+      }
+    ],
+    "opportunities": [
+      {
+        "id": "8ddb0ee2c0061723d7aafbc984a7b88ac5a3bd9679016030812b1ae303b5176c",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "fde8b38c6a37cfe80f078f552b6543a4fedc2237542146af075523da547c3c32"
+      },
+      {
+        "id": "6ed1ff9a37dcca3e5bc512a41dd4f95c0ffbb4f9c931c8fe6e56a675d2379482",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "fde8b38c6a37cfe80f078f552b6543a4fedc2237542146af075523da547c3c32"
+      },
+      {
+        "id": "604b3fab563331a3da77fc9f1172e9057641a10892b3d74ff07dc9f65779e976",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "D4",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "fde8b38c6a37cfe80f078f552b6543a4fedc2237542146af075523da547c3c32"
+      },
+      {
+        "id": "10e221e32733b8f6c9bf133b5d0e8f46dd189bae2e6ee1b33bcf3514a8c225e3",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 4,
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "fde8b38c6a37cfe80f078f552b6543a4fedc2237542146af075523da547c3c32"
+      },
+      {
+        "id": "24183f50c64044ba1808a5f4781ffd9e06b7dec26b0ce09f808c26e8b19b1f96",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "44e2f85cb17df5b98f1c09a8cadafe53950b24895e2a7ef4b9d5164c348c5c70"
+      },
+      {
+        "id": "313ef66ce220b4074cec71ab357b2ec275607791a8e78c65da350152a4e801b1",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "D5",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "44e2f85cb17df5b98f1c09a8cadafe53950b24895e2a7ef4b9d5164c348c5c70"
+      },
+      {
+        "id": "69cb1f9536e71d4e86bdbbcadffe09ca6dedde7826b83a3128912f143f8bd6e1",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "B6",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599"
+      },
+      {
+        "id": "6e9599935d21a197c232f72965f9e92c53264c4b2ff21e43301b640e868bf4ae",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "C6",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599"
+      },
+      {
+        "id": "e26f6eec2a73711a9a8f53f48de6c1effa695eb6a904f9746576c06532a95a24",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "D6",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599"
+      },
+      {
+        "id": "1c6cc3f43556f08015fd74dcbaf79fd048d8a877505b863824efbba0908816c6",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "E6",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "F6",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      }
+    ],
+    "planId": "3f34f76f8158abc5ea522bf8c02b2e6391b13c5dab32a1bb32479352f90e91af"
+  },
+  "changeSet": {
+    "kind": "ChangeSet",
+    "schemaVersion": 1,
+    "coreVersion": "0.1.0-alpha.1",
+    "rulesetVersion": "1",
+    "documentSchemaVersion": 1,
+    "providerVersion": "0.1.0-alpha.1",
+    "documentHash": "d7d7e3dd64165b4a3a3ef4b02afaf196c4659f67a960321c8971f0ca05fb98be",
+    "planId": "3f34f76f8158abc5ea522bf8c02b2e6391b13c5dab32a1bb32479352f90e91af",
+    "changes": [
+      {
+        "id": "8ddb0ee2c0061723d7aafbc984a7b88ac5a3bd9679016030812b1ae303b5176c",
+        "sheet": "客户台账",
+        "cell": "B4",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "SYNTHETIC-CUSTOMER-A",
+        "source": "mock://synthetic-registration/credit_no",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "6ed1ff9a37dcca3e5bc512a41dd4f95c0ffbb4f9c931c8fe6e56a675d2379482",
+        "sheet": "客户台账",
+        "cell": "C4",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成人员甲",
+        "source": "mock://synthetic-registration/legal_person",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "604b3fab563331a3da77fc9f1172e9057641a10892b3d74ff07dc9f65779e976",
+        "sheet": "客户台账",
+        "cell": "D4",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "2020-01-02",
+        "source": "mock://synthetic-registration/established_date",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "10e221e32733b8f6c9bf133b5d0e8f46dd189bae2e6ee1b33bcf3514a8c225e3",
+        "sheet": "客户台账",
+        "cell": "E4",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成客户甲有限公司"
+        },
+        "oldValue": "",
+        "newValue": "合成市示例路 1 号",
+        "source": "mock://synthetic-registration/registered_address",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "24183f50c64044ba1808a5f4781ffd9e06b7dec26b0ce09f808c26e8b19b1f96",
+        "sheet": "客户台账",
+        "cell": "B5",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "newValue": "SYNTHETIC-CUSTOMER-B",
+        "source": "mock://synthetic-registration/credit_no",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      },
+      {
+        "id": "313ef66ce220b4074cec71ab357b2ec275607791a8e78c65da350152a4e801b1",
+        "sheet": "客户台账",
+        "cell": "D5",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成客户乙有限公司"
+        },
+        "oldValue": "",
+        "newValue": "2021-02-03",
+        "source": "mock://synthetic-registration/established_date",
+        "acquiredAt": "2026-09-06T00:00:00.000Z",
+        "confidence": 1,
+        "changeType": "fill-blank",
+        "basis": "exact-alias",
+        "status": "preview"
+      }
+    ],
+    "incomplete": [
+      {
+        "sheet": "客户台账",
+        "row": 5,
+        "cell": "F5",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      },
+      {
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "F6",
+        "field": null,
+        "label": "客户经理",
+        "reason": "unknown-field"
+      },
+      {
+        "id": "69cb1f9536e71d4e86bdbbcadffe09ca6dedde7826b83a3128912f143f8bd6e1",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "B6",
+        "field": "credit_no",
+        "label": "信用代码",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599",
+        "reason": "no-match"
+      },
+      {
+        "id": "6e9599935d21a197c232f72965f9e92c53264c4b2ff21e43301b640e868bf4ae",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "C6",
+        "field": "legal_person",
+        "label": "法人代表",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599",
+        "reason": "no-match"
+      },
+      {
+        "id": "e26f6eec2a73711a9a8f53f48de6c1effa695eb6a904f9746576c06532a95a24",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "D6",
+        "field": "established_date",
+        "label": "成立时间",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599",
+        "reason": "no-match"
+      },
+      {
+        "id": "1c6cc3f43556f08015fd74dcbaf79fd048d8a877505b863824efbba0908816c6",
+        "kind": "FillOpportunity",
+        "sheet": "客户台账",
+        "row": 6,
+        "cell": "E6",
+        "field": "registered_address",
+        "label": "注册地址",
+        "anchor": {
+          "company_name": "合成未知客户有限公司"
+        },
+        "oldValue": "",
+        "confidence": 1,
+        "evidence": "exact-alias",
+        "callId": "86714d627d7764988c2c5c0a4347e6ccaa4947c654138cb63b8a8f19873a1599",
+        "reason": "no-match"
+      }
+    ],
+    "changeSetId": "73fdfc643925acd933921faac9c416e63beae8772119a04f904252c96dd56594"
+  }
+}
