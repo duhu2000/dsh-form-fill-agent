@@ -4,7 +4,7 @@ AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查
 
 当前为 0.1.0-alpha.3 预览版本。支持简单 XLSX、确定性同义表头、企业完整登记名、六类工商字段、来源追溯、未完成清单和任务恢复。新版提供五步工作台、指令回填、任务历史与单元格排除。没有 LLM 猜值；已有内容默认保留。
 
-alpha.3 已发布 GitHub 预览 Release 和 npm next。修复了 alpha.2 原生入口不加载、右栏布局、恢复导航及新版宿主会话隔离问题；两版真实模型/QCC 闭环和发布后安装回归通过，见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm latest 保持 alpha.1，请使用精确版本或 next。
+alpha.3 已发布 GitHub 预览 Release 和 npm。修复了 alpha.2 原生入口不加载、右栏布局、恢复导航及新版宿主会话隔离问题；两版真实模型/QCC 闭环和发布后安装回归通过，见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm latest 与 next 均指向 alpha.3，默认安装即为该版本；产品仍处于 alpha 预览阶段。
 
 ## 本地体验
 

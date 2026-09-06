@@ -1,6 +1,6 @@
 # U2 原生宿主验收与当前边界
 
-2026-09-06。U2 原生界面与真实模型/QCC 闭环均已完成。代码 f79c3f6、v0.1.0-alpha.3 tag 与 GitHub 预览 Release 已推送；npm dsh-form-fill-agent@0.1.0-alpha.3 发布成功，next=alpha.3、latest=alpha.1。
+2026-09-06。U2 原生界面与真实模型/QCC 闭环均已完成。代码 f79c3f6、v0.1.0-alpha.3 tag 与 GitHub 预览 Release 已推送；npm dsh-form-fill-agent@0.1.0-alpha.3 发布成功。按所有者要求将 latest 指向 alpha.3，官方 registry 已核验 version、latest、next 均为 0.1.0-alpha.3；未重新发布包或移动 Git tag。
 
 ## 本轮发现和修复
 
