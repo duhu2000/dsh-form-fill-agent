@@ -1,6 +1,6 @@
 # U2 原生宿主验收与当前边界
 
-2026-09-06。U2 原生界面与真实模型/QCC 闭环均已完成。代码 f79c3f6、v0.1.0-alpha.3 tag 与 GitHub 预览 Release 已推送；npm 发布正等待账号验证，next 暂为 alpha.2。
+2026-09-06。U2 原生界面与真实模型/QCC 闭环均已完成。代码 f79c3f6、v0.1.0-alpha.3 tag 与 GitHub 预览 Release 已推送；npm dsh-form-fill-agent@0.1.0-alpha.3 发布成功，next=alpha.3、latest=alpha.1。
 
 ## 本轮发现和修复
 
@@ -55,6 +55,8 @@ scripts/dsh-live-e2e.mjs 从关闭回显的 stdin 接收测试授权与企业名
 发布提交 f79c3f6 的 [最终 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34038642596)：Windows/Linux/macOS × Node 22/24 六组全部 success。[GitHub 预览 Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.3) 已附 agent tarball；npm 与市场状态单独核验，市场草稿 #4487 的 Submission gate 仍未通过。
 
 ## 文件与兼容边界
+
+发布后验证：`node scripts/registry-smoke.mjs` 退出 0，官方 npm 三包 integrity 3/3、三模板 E2E 3/3、无 workspace 链接；设置 DSH_RC_BIN、DSH_ALPHA_BIN 后执行 `node scripts/dsh-registry-install.mjs` 退出 0，0.1.1-rc.2 与 0.1.2-alpha.2 均 registryInstall/bundleReconcile/uninstall PASS。使用两个全新隔离 DSH_HOME，无生产 profile，未开启端口。
 
 修改智能体 package.json、lib/client.js、lib/ui.html、lib/http.js；根 package.json/package-lock.json；test/http.test.mjs；新增 scripts/dsh-native-smoke.mjs、scripts/isolated-qcc-host.mjs；更新 CHANGELOG、README 与进度文档。
 form-fill-core、qcc-form-fill-provider 和清洗插件源码未修改。两个共享包仍为 alpha.1。已发布 alpha.2 tag 保持原样；alpha.3 仅新增本插件版本。

@@ -2,9 +2,9 @@
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前为 0.1.0-alpha.2 预览版本。支持简单 XLSX、确定性同义表头、企业完整登记名、六类工商字段、来源追溯、未完成清单和任务恢复。新版提供五步工作台、指令回填、任务历史与单元格排除。没有 LLM 猜值；已有内容默认保留。
+当前为 0.1.0-alpha.3 预览版本。支持简单 XLSX、确定性同义表头、企业完整登记名、六类工商字段、来源追溯、未完成清单和任务恢复。新版提供五步工作台、指令回填、任务历史与单元格排除。没有 LLM 猜值；已有内容默认保留。
 
-alpha.3 已完成真实宿主修复并提供 GitHub 预览 Release，npm 发布等待账号验证。alpha.2 的客户端清单不可解析，原生入口不加载，独立 /form-fill/ 仍可用。alpha.3 修复此问题及右栏布局、恢复导航、alpha.2 宿主会话隔离；两版真实模型/QCC 闭环通过，见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm next 目前仍为 alpha.2。
+alpha.3 已发布 GitHub 预览 Release 和 npm next。修复了 alpha.2 原生入口不加载、右栏布局、恢复导航及新版宿主会话隔离问题；两版真实模型/QCC 闭环和发布后安装回归通过，见 [原生宿主验收](docs/U2-NATIVE-ACCEPTANCE.md)。npm latest 保持 alpha.1，请使用精确版本或 next。
 
 ## 本地体验
 
@@ -21,11 +21,11 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。智能体版本为 0.1.0-alpha.2，core 和 Provider 保持 0.1.0-alpha.1。使用 next 预览渠道；精确发布状态见 docs/U1-ACCEPTANCE.md，GitHub Release 提供可安装 tarball。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。智能体版本为 0.1.0-alpha.3，core 和 Provider 保持 0.1.0-alpha.1。使用 next 预览渠道；精确发布状态见 docs/U2-NATIVE-ACCEPTANCE.md，GitHub Release 提供可安装 tarball。
 
 在已选定的 DSH profile 中安装预览版：
 ```sh
-dsh plugin --profile web add dsh-form-fill-agent@0.1.0-alpha.2
+dsh plugin --profile web add dsh-form-fill-agent@0.1.0-alpha.3
 ```
 
 安装三个 tarball 至隔离 profile 后，将 dsh-form-fill-agent 加入该 profile 的 bundles。两版真实安装与卸载演示可运行 scripts/dsh-smoke.mjs，环境配置见 docs/M1-ACCEPTANCE.md。不要把测试安装到生产 profile，测试禁止使用 43120。
