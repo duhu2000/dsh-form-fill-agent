@@ -41,4 +41,8 @@
 - [CI 34043402196](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34043402196)：Windows/macOS/Linux × Node 22/24 六组全部成功。
 - 两版已配置的隔离 DSH 真实模型 → form_fill_enrich → QCC → 工作台 → XLSX 下载均通过，各填 6 格，副本二次分析新增填写 0；生产 profile 未使用，真实数据未入库。
 - 最终原生截图已检查：提示词触发器与输入文字不重叠；入口位置、普通会话恢复、深浅色与桌面/窄屏验收通过。
-- npm 主包发布已发起，当前等待 npm 官方浏览器认证；尚未确认发布成功。认证完成后继续 registry README、三包完整性、三模板 E2E、双 DSH 全新安装卸载及 GitHub Latest 同步。
+- npm 主包 alpha.6 已发布，latest=0.1.0-alpha.6；next 保留旧 alpha.3。共享 core / Provider 仍为 alpha.5。
+- node scripts/registry-smoke.mjs：registry 与安装包 README 一致；三包 integrity 3/3、三模板 E2E 3/3，无 workspace 链接。
+- node scripts/dsh-registry-install.mjs：rc.2 / alpha.2 两个全新隔离 profile 均安装、bundle 加载和卸载通过，未启动端口。
+- [GitHub Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.6) 已发布，标题 0.1.0-alpha.6，非 Pre-release，设为 Latest。
+- 本轮 commit、push、tag、npm、GitHub Release 全部完成。市场登记不属于本轮发布范围，既有市场 PR 状态不因此改变。
