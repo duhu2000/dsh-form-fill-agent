@@ -1,5 +1,7 @@
 # AI填表开发进度
 
+当前版本：0.1.0-alpha.7 已发布，修复侧栏入口左对齐；commit、push、tag、npm / GitHub Latest 同步完成。60 项测试、六组 CI 和发布后 registry 回归通过。详见 [alpha.7 发布记录](RELEASE-alpha7.md)。以下为此前功能版本记录。
+
 最新发布：alpha.6 企查查蓝 UI、本业务侧栏/首页品牌、四步字段向导、草稿保护、结果筛选和 schema 4 字段范围持久化已完成并发布。60 项测试、六组 CI、两版真实 DSH UI 和模型/QCC 闭环、发布后 registry 与双宿主安装均通过；共享内核与 Provider 仍为 alpha.5。npm / GitHub Latest 一致为 alpha.6，commit、push、tag 已完成。发布状态与适配边界见 [U4-UI-ACCEPTANCE.md](U4-UI-ACCEPTANCE.md)。以下为此前版本历史。
 
 当前增量：alpha.5 三包已发布，完成字段配置、候选人工确认、固定选项下拉保真及 schema 3。59 项测试、新浏览器控件、双 DSH/原生/真实模型闭环均通过，旧 0.8.6 消费新版 core 的 211 tests + 24 golden 通过。32d8abf 的六组最终 CI 全绿，commit/push/tag/npm/GitHub Latest 已完成；发布后 README、三包 integrity、三模板 registry E2E、双宿主全新安装卸载全部通过。默认安装请使用 latest，next 为旧预览渠道。完整范围和未完成项见 [U3-CONTROLS-ACCEPTANCE.md](U3-CONTROLS-ACCEPTANCE.md)。下文旧版本状态为历史记录。
