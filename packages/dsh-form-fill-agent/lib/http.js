@@ -43,7 +43,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       const path = url.pathname.slice(basePath.length) || '/';
       if (request.method === 'GET' && path === '/') return send(200, await readFile(new URL('./ui.html', import.meta.url)), 'text/html; charset=utf-8');
       if (request.method === 'GET' && path === '/brand.css') return send(200, await readFile(new URL('./brand.css', import.meta.url)), 'text/css; charset=utf-8');
-      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.6', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
+      if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.7', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
       if (request.method === 'GET' && path === '/tasks') {
         if (!validOwner(owner)) return send(403, { message: '需要本地任务访问凭据' });
         return send(200, [...tasks].filter(([, t]) => t.owner === owner).map(([id,t]) => metadata(id,t)).sort((a,b) => b.updatedAt-a.updatedAt));
