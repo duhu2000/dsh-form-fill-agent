@@ -1,16 +1,22 @@
-export const PROVIDER_VERSION = '0.1.0-alpha.8';
+export const PROVIDER_VERSION = '0.1.0-alpha.9';
+import {ADDITIONAL_FIELDS} from './extended.js';
+import {QCC_FIELD_CATALOG} from './catalog.js';
+export {createCatalogProvider,CATALOG_TOOL_DOMAINS,runtimeToolNames} from './extended.js';
+export {QCC_FIELD_CATALOG} from './catalog.js';
 import { EXTRA_FIELDS } from './fields.js';
 export { createQccProvider, decodeRegistration, isCompleteAnchor, REGISTRATION_TOOL, ENTITY_TOOL, decodeCandidates } from './qcc.js';
 // Provider-owned vocabulary; the caller supplies the authorized transport.
 export const FIELD_CATALOG = Object.freeze([
   { key: 'company_name', label: '企业名称', aliases: ['公司名称', '客户名称', '供应商名称', '主体名称'], anchor: true, type: 'string' },
-  { key: 'credit_no', label: '统一社会信用代码', aliases: ['信用代码', '社会信用代码', '税号'], type: 'string' },
-  { key: 'legal_person', label: '法定代表人', aliases: ['法人代表', '法人'], type: 'string' },
-  { key: 'established_date', label: '成立日期', aliases: ['成立时间'], type: 'date' },
+  { key: 'credit_no', label: '统一社会信用代码', aliases: ['信用代码', '社会信用代码', '税号'], anchorFallback:true, type: 'string' },
+  { key: 'legal_person', label: '法定代表人', aliases: ['法人代表', '法人','legal_rep'], type: 'string' },
+  { key: 'established_date', label: '成立日期', aliases: ['成立时间','establish_date'], type: 'date' },
   { key: 'registered_address', label: '注册地址', aliases: ['住所', '公司地址'], type: 'string' },
-  { key: 'business_status', label: '经营状态', aliases: ['登记状态'], type: 'string' },
+  { key: 'business_status', label: '经营状态', aliases: ['登记状态','reg_status'], type: 'string' },
   { key: 'registration_authority', label: '登记机关', aliases: [], type: 'string' },
   ...EXTRA_FIELDS,
+  ...QCC_FIELD_CATALOG.slice(1).flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[]}))),
+  ...ADDITIONAL_FIELDS,
 ]);
 const synthetic = Object.freeze({
   '合成客户甲有限公司': { credit_no: 'SYNTHETIC-CUSTOMER-A', legal_person: '合成人员甲', established_date: '2020-01-02', registered_address: '合成市示例路 1 号' },

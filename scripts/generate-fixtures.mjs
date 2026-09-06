@@ -3,13 +3,14 @@ import { fileURLToPath } from 'node:url';
 import { writeZip } from '../packages/form-fill-core/lib/zip.js';
 const root = fileURLToPath(new URL('../fixtures/xlsx/', import.meta.url));
 const escape = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+function columnLabel(number){let out='';for(let n=number;n;n=Math.floor((n-1)/26))out=String.fromCharCode(65+(n-1)%26)+out;return out}
 function cell(row, col, value, style) {
-  const ref = String.fromCharCode(65 + col) + row;
+  const ref = columnLabel(col+1) + row;
   return '<c r="' + ref + '" s="' + style + '" t="inlineStr"><is><t xml:space="preserve">' + escape(value) + '</t></is></c>';
 }
 export function fixtureBytes(name, headers, records, { title = true, hiddenSheet = false } = {}) {
   const headerRow = title ? 3 : 1;
-  const maxCol = String.fromCharCode(64 + headers.length), lastRow = headerRow + records.length;
+  const maxCol = columnLabel(headers.length), lastRow = headerRow + records.length;
   const rows = (title ? '<row r="1" ht="28" customHeight="1">' + cell(1, 0, name + ' · 仅合成演示，无真实客户数据', 1) + '</row>' : '') +
     '<row r="' + headerRow + '" ht="25" customHeight="1">' + headers.map((v, c) => cell(headerRow, c, v, 1)).join('') + '</row>' +
     records.map((record, i) => '<row r="' + (headerRow + 1 + i) + '" ht="24" customHeight="1">' + headers.map((_, c) => cell(headerRow + 1 + i, c, record[c] ?? '', 0)).join('') + '</row>').join('');

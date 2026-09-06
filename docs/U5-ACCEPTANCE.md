@@ -44,4 +44,4 @@
 
 今晚不执行 npm publish，不请求账号认证，不提前把 GitHub Latest 从已发布 alpha.7 改到未发布 alpha.8。次日按 core → Provider → agent 顺序发布已验收 tarball，再检查三个包完整性、README、真实 registry 安装及双宿主回归，最后同步数字标题的 GitHub Latest。
 
-Git/CI：等待最终提交后的精确 SHA 验证。npm：未发布 alpha.8。
+Git/CI：dec780d744c970b696bab4ae97d63c454a63d7a8 已提交和推送，v0.1.0-alpha.8 已推送；CI 34046857236 六组成功。npm：未发布 alpha.8。后续非工商迁移继续推进为 alpha.9，见 U6-ACCEPTANCE.md。

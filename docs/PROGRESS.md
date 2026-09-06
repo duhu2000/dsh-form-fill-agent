@@ -1,6 +1,6 @@
 # AI填表开发进度
 
-更新：2026-09-07。当前开发版本 **0.1.0-alpha.8**（三包同版），npm 已发布版本仍为 **0.1.0-alpha.7**。本轮按所有者要求先开发、提交和 tag，npm 等所有者次日认证；不能把本地打包当成 npm 发布。
+更新：2026-09-07。当前开发版本 **0.1.0-alpha.9**（三包同版），npm 已发布版本仍为 **0.1.0-alpha.7**。本轮按所有者要求先开发、提交和 tag，npm 等所有者次日认证；不能把本地打包当成 npm 发布。
 
 | 优先级 | 当前交付 | 验收与边界 |
 |---|---|---|
@@ -12,14 +12,16 @@
 | P1 执行控制 | 取消、逐调用检查点、仅失败/未执行重试 | 不重复查询已成功的主体字段；远端已执行请求无法撤回 |
 | P1 映射候选 | 未识别字段指引、同表头规则复用、真实检索候选契约 | 浏览器显式复用；不自动选择首项；缺候选工具退回人工确认 |
 | P2 Excel | 普通内部公式、固定区域/命名区域下拉、基础条件格式、普通表格对象 | 保真 fixture 与独立 XLSX 反读；复杂公式、扩展结构继续拒绝 |
-| P2 Provider | 工商字段从 6 扩到 26；企业检索桥接 | 原值、来源保留；合成 golden + 服务工具契约核验，不保存原始响应 |
+| P2 Provider | 原 128 字段兼容目录与 1 个新增维度；七组非工商工具桥接 | 抽取前 21 项 golden、7 组真实工具响应验证；缺工具降级、未知风险维度阻断 |
 | P2 用户验收 | 自动化浏览器矩阵、异常恢复、大表性能 | 非技术用户本人验收尚不能代签；见 UAT 清单 |
 | 外部流程 | 市场 PR #4487 已投稿 | Submission gate / 维护者审核未完成，尚未上架 |
 
 当前持久任务写入 **schema 5**：schema 4 的字段范围、任务历史与访问边界保留，新增完整候选和执行检查点；读取 schema 1–5。核心 Analysis / FillPlan / ChangeSet schema 仍为 1，不能与任务存储 schema 混淆。回退旧插件应使用升级前目录副本或新目录。
 
-本轮详细命令、结果和发布清单：[alpha.8 验收](U5-ACCEPTANCE.md)。安全及访问边界：[security.md](security.md)。最新兼容证据：[compatibility.md](compatibility.md)。
+本轮详细命令、结果和发布清单：[alpha.8 验收](U5-ACCEPTANCE.md)及 [alpha.9 验收](U6-ACCEPTANCE.md)。安全及访问边界：[security.md](security.md)。最新兼容证据：[compatibility.md](compatibility.md)。
 
-后续受限事项：非技术用户正式签收、Excel 桌面实际重算验收、尚未迁移的非工商 catalog/bridge 按独立工具契约逐批推进；市场须通过门禁并由维护者合并。不能把上述状态写成“全部完成”或“已上架”。
+后续受限事项：非技术用户正式签收、Excel 桌面实际重算验收；新增工具或未来风险目录变化须独立验证；市场须通过门禁并由维护者合并。不能把上述状态写成“全部完成”或“已上架”。
+
+本轮版本：alpha.8 已 commit/push/tag、六组 CI 通过；alpha.9 为后续目录迁移增量，npm 两版均未发布。次日仅发布最终 alpha.9 三包，不必补发中间 alpha.8。
 
 历史发布记录： [alpha.7](RELEASE-alpha7.md)、[alpha.6](U4-UI-ACCEPTANCE.md)、[alpha.5](U3-CONTROLS-ACCEPTANCE.md)、[alpha.3](U2-NATIVE-ACCEPTANCE.md)、[alpha.2](U1-ACCEPTANCE.md)、[M2](M2-ACCEPTANCE.md)、[M1](M1-ACCEPTANCE.md)。这些文档的测试/版本仅对其当时提交有效。

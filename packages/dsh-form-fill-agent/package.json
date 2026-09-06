@@ -1,6 +1,6 @@
 {
   "name": "dsh-form-fill-agent",
-  "version": "0.1.0-alpha.8",
+  "version": "0.1.0-alpha.9",
   "private": false,
   "description": "AI填表智能体：XLSX blank-cell preview, QCC enrichment and persistent tasks for DSH.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/dsh-form-fill-agent" },
@@ -24,8 +24,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "form-fill-core": "0.1.0-alpha.8",
-    "qcc-form-fill-provider": "0.1.0-alpha.8"
+    "form-fill-core": "0.1.0-alpha.9",
+    "qcc-form-fill-provider": "0.1.0-alpha.9"
   },
   "dsh": {
     "client": { "inject": ["@deepseek-ai/dsh-client-ui-layout", "@deepseek-ai/dsh-client-ui-conversation"], "platform": "web" },

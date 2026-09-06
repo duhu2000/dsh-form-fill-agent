@@ -51,7 +51,7 @@ try{
  await page.locator('#grid-view').selectOption('result');await page.locator('#grid-body .grid-changed').first().waitFor();
  await page.locator('#grid-query').fill('合成人员乙');await page.locator('#grid-search').click();
  await page.waitForFunction(()=>document.querySelectorAll('#grid-body tr').length===1);
- for(const viewport of [{width:390,height:700},{width:1024,height:768}]){await page.setViewportSize(viewport);await page.getByRole('button',{name:'2 字段与规则',exact:true}).click();await page.getByRole('button',{name:'应用字段设置',exact:true}).scrollIntoViewIfNeeded();assert.ok(await page.getByRole('button',{name:'应用字段设置',exact:true}).isVisible())}
+ for(const colorScheme of ['light','dark'])for(const viewport of [{width:1440,height:900},{width:1024,height:768},{width:390,height:700},{width:900,height:500}]){await page.emulateMedia({colorScheme});await page.setViewportSize(viewport);await page.getByRole('button',{name:'2 字段与规则',exact:true}).click();await page.getByRole('button',{name:'应用字段设置',exact:true}).scrollIntoViewIfNeeded();assert.ok(await page.getByRole('button',{name:'应用字段设置',exact:true}).isVisible())}
  await page.setViewportSize({width:1440,height:900});
  const controlled=await page.evaluate(async base64=>(await fetch('/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base64,analyzeOnly:true})})).json(),fixtureBytes('取消演示',['企业名称','法定代表人'],[['合成取消有限公司','']],{title:false}).toString('base64'));
  await page.goto('http://127.0.0.1:'+server.address().port+'/#task='+controlled.id);
@@ -62,5 +62,6 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#retry-run').disabled);
  await page.locator('#retry-run').click();await page.getByText('仅重试失败、取消或未执行的部分，保留成功结果。',{exact:false}).first().waitFor();
  assert.match(await page.locator('#qcc-command').textContent(),/mode=retry/);
+ await page.keyboard.press('Escape');await page.locator('#wizard').waitFor({state:'hidden'});
  console.log('Configuration UI: cancellation and retry instruction, restored selection, full grid/search, mapping reuse, mapping, reload, unselected candidates, explicit second choice, preview, narrow layouts PASS');
 }finally{await browser?.close();service.dispose();await new Promise(ok=>server.close(ok))}

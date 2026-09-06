@@ -31,11 +31,11 @@ export function createQccProvider({ callTool, timeoutMs = 30000, enableEntitySea
   let calls = 0;
   return {
     id: 'qcc-registration', version: PROVIDER_VERSION, mode: 'qcc',
-    capabilities: [{ id: 'qcc-registration', fields: FIELD_CATALOG.filter(f => !f.anchor).map(f => f.key), paid: true, ...(enableEntitySearch ? {maxCallsPerLookup:2} : {}) }],
+    capabilities: [{ id: 'qcc-registration', fields: Object.keys(fields), paid: true, ...(enableEntitySearch ? {maxCallsPerLookup:2} : {}) }],
     get calls() { return calls; },
     async lookup(request, {signal} = {}) {
       if (request.capability !== 'qcc-registration' || !Array.isArray(request.fields) || request.fields.some(f => !Object.hasOwn(fields, f))) return { status: 'error', code: 'invalid-request' };
-      const searchKey = request.anchor?.company_name;
+      const searchKey = request.anchor?.company_name??request.anchor?.credit_no;
       // Ambiguous/abbreviated entities need a separate user selection, never a guessed name.
       if (!isCompleteAnchor(searchKey) && !enableEntitySearch) return { status: 'ambiguous', code: 'entity-selection-required' };
       const controller = new AbortController(); let timer;

@@ -140,11 +140,21 @@ window.__ModuleLoader__.load({
      window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
     },[view?.id]);
     React.useEffect(()=>{
-     if(!view)return;
-     const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]'),previous=container?.style.paddingRight;
-     const adjust=()=>{if(container)container.style.paddingRight=innerWidth>=1100?(expanded?'calc(min(58vw, 860px) + 1px)':'calc(min(48vw, 640px) + 1px)'):previous||''};
-     adjust();window.addEventListener('resize',adjust);return()=>{window.removeEventListener('resize',adjust);if(container)container.style.paddingRight=previous};
-    },[view?.id,expanded]);
+     if(!view||active!==view.id)return;
+     const touched=new Map();
+     const adjust=()=>{
+      if(current()!==view.id)return;
+      const marker=[...document.querySelectorAll('[data-form-fill-session]')].find(n=>n.dataset.formFillSession===view.id);
+      const container=marker?document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]'):null;
+      for(const node of touched.keys())if(node!==container){node.removeAttribute('data-form-fill-reserve');node.style.removeProperty('--ff-panel-inset')}
+      if(!container)return;
+      if(!touched.has(container))touched.set(container,container.style.getPropertyValue('--ff-panel-inset'));
+      container.setAttribute('data-form-fill-reserve','true');
+      container.style.setProperty('--ff-panel-inset',expanded?'calc(min(58vw, 860px) + 1px)':'calc(min(48vw, 640px) + 1px)');
+     };
+     adjust();const observer=new MutationObserver(adjust);observer.observe(document.body,{childList:true,subtree:true});
+     return()=>{observer.disconnect();for(const [node,previous]of touched){node.removeAttribute('data-form-fill-reserve');if(previous)node.style.setProperty('--ff-panel-inset',previous);else node.style.removeProperty('--ff-panel-inset')}};
+    },[view?.id,expanded,active]);
     if(!view||active!==view.id)return null;
     return portal(h('section',{className:'ff-ui ff-panel','data-ff-theme':theme(),'aria-label':'AI填表工作台',style:{width:modal?'100%':wide?(expanded?'min(58vw, 860px)':'min(48vw, 640px)'):'100%',...(modal?{background:'transparent',border:0}:{})}},
      h('div',{className:'ff-panel-head',hidden:modal},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表')),h('div',{className:'ff-panel-actions'},h('button',{onClick:()=>setExpanded(v=>!v)},expanded?'收起展开':'展开工作台'),h('button',{onClick:()=>setView(null)},'关闭工作台'))),

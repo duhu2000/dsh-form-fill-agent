@@ -1,7 +1,7 @@
 import { digest, parseWorkbook, isBlank, address, inRange, writeWorkbook } from './workbook.js';
 import { fail, FillError } from './zip.js';
 export { parseWorkbook, FillError };
-export const CORE_VERSION = '0.1.0-alpha.8';
+export const CORE_VERSION = '0.1.0-alpha.9';
 export const SCHEMA_VERSION = 1;
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, '').toLowerCase();
 const idFor = value => digest(Buffer.from(JSON.stringify(value)));
@@ -41,7 +41,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
         Object.assign(mapping, { field: override.field, confidence: override.field ? 1 : 0, evidence: 'user-mapping' });
       }
       const mapped = mappings.filter(m => m.field);
-      if (mapped.length >= 2 && mapped.some(m => catalog.find(f => f.key === m.field)?.anchor)) candidates.push({ row: row.number, mappings, score: mapped.length });
+      if (mapped.length >= 2 && mapped.some(m => catalog.find(f => f.key === m.field)?.anchor||catalog.find(f => f.key === m.field)?.anchorFallback)) candidates.push({ row: row.number, mappings, score: mapped.length });
     }
     candidates.sort((a, b) => b.score - a.score || a.row - b.row);
     const header = candidates[0];
@@ -51,7 +51,8 @@ export function analyzeDocument(bytes, catalog, options = {}) {
     if (new Set(fields).size !== fields.length || header.mappings.some(m => m.evidence === 'ambiguous-alias')) {
       incomplete.push({ sheet: sheet.name, reason: 'ambiguous-mapping', message: '重复或冲突字段需人工选择' }); continue;
     }
-    const anchors = header.mappings.filter(m => catalog.find(f => f.key === m.field)?.anchor);
+    let anchors = header.mappings.filter(m => catalog.find(f => f.key === m.field)?.anchor);
+    if(!anchors.length)anchors=header.mappings.filter(m=>catalog.find(f=>f.key===m.field)?.anchorFallback);
     tables.push({ sheet: sheet.name, headerRow: header.row, mappings: header.mappings, anchors: anchors.map(a => a.field) });
     for (const row of sheet.rows.filter(r => r.number > header.row)) {
       const recordCells = cellsByRow.get(row.number)||[];
@@ -79,7 +80,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
         }
         if (cell?.hidden || sheet.hiddenColumns.some(([a, b]) => mapping.column >= a && mapping.column <= b) || sheet.merges.some(r => inRange(row.number, mapping.column, r) || inRange(header.row, mapping.column, r))) { incomplete.push({ ...location, reason: 'hidden-or-merged' }); continue; }
         if (!mapping.field) { incomplete.push({ ...location, reason: mapping.evidence === 'user-mapping' ? 'user-excluded' : 'unknown-field' }); continue; }
-        if (catalog.find(f => f.key === mapping.field)?.anchor) { incomplete.push({ ...location, reason: 'missing-anchor-field' }); continue; }
+        if (anchors.some(a=>a.field===mapping.field)) { incomplete.push({ ...location, reason: 'missing-anchor-field' }); continue; }
         const opportunity = { kind: 'FillOpportunity', ...location, anchor, oldValue: cell?.value ?? '', confidence: mapping.confidence, evidence: mapping.evidence };
         const rules = (sheet.validations ?? []).filter(rule => rule.ranges.some(r => inRange(row.number, mapping.column, r)));
         if (rules.length) opportunity.allowedValues = rules.reduce((values, rule) => values.filter(value => rule.values.includes(value)), rules[0].values);

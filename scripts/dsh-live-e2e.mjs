@@ -54,7 +54,9 @@ try{
   await page.waitForFunction(previous=>{const id=document.querySelector('[data-form-fill-session]')?.getAttribute('data-form-fill-session');return id&&id!==previous},previousSession);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe[title="AI填表任务"]');
- const bytes=fixtureBytes('工商验证',['企业名称','信用代码','法定代表人','成立日期','注册地址','登记状态','登记机关'],[[company,'','','','','','']]);
+ const extended=process.env.FORM_FILL_LIVE_EXTENDED==='1',expectedCount=extended?4:6;
+ const headers=extended?['企业名称','企查查行业','企业简介','开票地址','开户行']:['企业名称','信用代码','法定代表人','成立日期','注册地址','登记状态','登记机关'];
+ const bytes=fixtureBytes('工商验证',headers,[[company,...Array(expectedCount).fill('')]]);
  await frame.locator('#file').setInputFiles({name:'工商验证.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await frame.getByRole('button',{name:'分析表格',exact:true}).click();
  await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
@@ -85,18 +87,18 @@ try{
   await new Promise(ok=>setTimeout(ok,2000));
  }
  assert.ok(preview?.revision>1,'model must invoke form_fill_enrich');
- assert.equal(preview.changeSet.changes.length,6,'six real registration fields');
+ assert.equal(preview.changeSet.changes.length,expectedCount,'real selected fields');
  assert.ok(preview.changeSet.changes.every(c=>c.source.startsWith('qcc://')));
  phase='preview';
- await frame.locator('#changes tr').nth(5).waitFor();
- assert.equal(await frame.locator('#changes tr').count(),6);
+ await frame.locator('#changes tr').nth(expectedCount-1).waitFor();
+ assert.equal(await frame.locator('#changes tr').count(),expectedCount);
  await frame.getByRole('button',{name:'5 确认与下载',exact:true}).click();
  await frame.getByRole('button',{name:'确认这些填写，生成新副本',exact:true}).click();
  const link=frame.getByRole('link',{name:'下载已填副本',exact:true});await link.waitFor();
  const download=await page.request.get(origin+await link.getAttribute('href'));assert.equal(download.status(),200);
  const output=await download.body();assert.ok(parseWorkbook(output).sheets.length);
  assert.equal((await previewBytes(output)).changeSet.changes.length,0);
- console.log(JSON.stringify({kind:'real-dsh-model-qcc-e2e',version,result:'PASS',filled:6,secondPassChanges:0,nativeSend:true,mockProviderUsedForFacts:false,realDataWrittenToRepository:false}));
+ console.log(JSON.stringify({kind:'real-dsh-model-qcc-e2e',version,result:'PASS',extended,filled:expectedCount,secondPassChanges:0,nativeSend:true,mockProviderUsedForFacts:false,realDataWrittenToRepository:false}));
 }catch(error){
  if(browser){
   const page=browser.contexts()[0]?.pages()[0];

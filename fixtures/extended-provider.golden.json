@@ -1,0 +1,1329 @@
+{
+  "schema": 1,
+  "legacyHead": "6cea1667483ccacf410b5a577b27f1be29267f40",
+  "catalog": [
+    {
+      "id": "company_registration",
+      "label": "企业工商信息",
+      "sourceTool": "get_company_registration_info",
+      "releaseBatch": "current",
+      "fields": [
+        {
+          "id": "company_name",
+          "label": "企业名称",
+          "inputAnchor": true,
+          "defaultSelected": true
+        },
+        {
+          "id": "credit_no",
+          "label": "统一社会信用代码",
+          "inputAnchor": true,
+          "defaultSelected": true
+        },
+        {
+          "id": "reg_no",
+          "label": "注册号",
+          "inputAnchor": true
+        },
+        {
+          "id": "org_no",
+          "label": "组织机构代码"
+        },
+        {
+          "id": "tax_no",
+          "label": "纳税人识别号"
+        },
+        {
+          "id": "reg_status",
+          "label": "登记状态",
+          "defaultSelected": true
+        },
+        {
+          "id": "legal_rep",
+          "label": "法定代表人",
+          "defaultSelected": true
+        },
+        {
+          "id": "reg_capital",
+          "label": "注册资本",
+          "defaultSelected": true
+        },
+        {
+          "id": "paid_capital",
+          "label": "实缴资本"
+        },
+        {
+          "id": "establish_date",
+          "label": "成立日期",
+          "defaultSelected": true
+        },
+        {
+          "id": "company_type",
+          "label": "企业类型"
+        },
+        {
+          "id": "approval_date",
+          "label": "核准日期"
+        },
+        {
+          "id": "registration_authority",
+          "label": "登记机关"
+        },
+        {
+          "id": "taxpayer_qualification",
+          "label": "纳税人资质"
+        },
+        {
+          "id": "payment_line_no",
+          "label": "支付系统行号"
+        },
+        {
+          "id": "import_export_company_code",
+          "label": "进出口企业代码"
+        },
+        {
+          "id": "short_name",
+          "label": "企业简称"
+        },
+        {
+          "id": "english_name",
+          "label": "英文名"
+        },
+        {
+          "id": "registered_address",
+          "label": "注册地址",
+          "defaultSelected": true
+        },
+        {
+          "id": "mailing_address",
+          "label": "通信地址"
+        },
+        {
+          "id": "region",
+          "label": "所属地区",
+          "matchAuxiliary": true
+        },
+        {
+          "id": "business_scope",
+          "label": "经营范围"
+        },
+        {
+          "id": "industry_category",
+          "label": "国标行业"
+        },
+        {
+          "id": "operating_period",
+          "label": "营业期限"
+        },
+        {
+          "id": "company_size",
+          "label": "人员规模"
+        },
+        {
+          "id": "insured_count",
+          "label": "参保人数"
+        },
+        {
+          "id": "branch_insured_count",
+          "label": "分支机构参保人数"
+        }
+      ]
+    },
+    {
+      "id": "company_profile",
+      "label": "企业简介",
+      "sourceTool": "get_company_profile",
+      "releaseBatch": "current",
+      "fields": [
+        {
+          "id": "qcc_industry",
+          "label": "企查查行业"
+        },
+        {
+          "id": "company_profile",
+          "label": "企业简介"
+        },
+        {
+          "id": "industry_chain_overview",
+          "label": "产业链概览"
+        }
+      ]
+    },
+    {
+      "id": "contact_info",
+      "label": "联系方式",
+      "sourceTool": "get_contact_info",
+      "releaseBatch": "batch-1",
+      "fields": [
+        {
+          "id": "contact_preferred_phone",
+          "label": "首选联系电话"
+        },
+        {
+          "id": "contact_phone_invalid_flag",
+          "label": "首选电话无效标记"
+        },
+        {
+          "id": "contact_phone_tags",
+          "label": "首选电话标签"
+        },
+        {
+          "id": "contact_preferred_email",
+          "label": "首选邮箱"
+        },
+        {
+          "id": "contact_official_website",
+          "label": "官方网站"
+        },
+        {
+          "id": "contact_official_website_icp",
+          "label": "官网 ICP 备案"
+        }
+      ]
+    },
+    {
+      "id": "listing_info",
+      "label": "上市信息",
+      "sourceTool": "get_listing_info",
+      "releaseBatch": "batch-1",
+      "selectionNote": "首个 A 股或红筹证券快照",
+      "fields": [
+        {
+          "id": "listing_date",
+          "label": "上市日期"
+        },
+        {
+          "id": "listing_short_name",
+          "label": "股票简称"
+        },
+        {
+          "id": "listing_stock_code",
+          "label": "股票代码"
+        },
+        {
+          "id": "listing_exchange",
+          "label": "上市交易所"
+        },
+        {
+          "id": "listing_board",
+          "label": "上市板块"
+        },
+        {
+          "id": "listing_former_short_name",
+          "label": "上市曾用名"
+        },
+        {
+          "id": "listing_total_market_value",
+          "label": "总市值"
+        },
+        {
+          "id": "listing_total_shares",
+          "label": "总股本"
+        },
+        {
+          "id": "listing_predicted_pe",
+          "label": "预测市盈率"
+        },
+        {
+          "id": "listing_float_market_value",
+          "label": "流通值"
+        },
+        {
+          "id": "listing_float_shares",
+          "label": "流通股"
+        },
+        {
+          "id": "listing_pb_ratio",
+          "label": "市净率"
+        },
+        {
+          "id": "listing_eps",
+          "label": "EPS"
+        },
+        {
+          "id": "listing_voting_rights_difference",
+          "label": "表决权差异"
+        },
+        {
+          "id": "listing_registration_based",
+          "label": "是否注册制"
+        }
+      ]
+    },
+    {
+      "id": "tax_invoice_info",
+      "label": "税务开票信息",
+      "sourceTool": "get_tax_invoice_info",
+      "releaseBatch": "batch-1",
+      "fields": [
+        {
+          "id": "tax_company_name",
+          "label": "税务主体名称"
+        },
+        {
+          "id": "tax_identification_no",
+          "label": "税务纳税人识别号"
+        },
+        {
+          "id": "tax_company_type",
+          "label": "税务企业类型"
+        },
+        {
+          "id": "tax_business_status",
+          "label": "税务经营状态"
+        },
+        {
+          "id": "invoice_address",
+          "label": "开票地址"
+        },
+        {
+          "id": "invoice_phone",
+          "label": "开票联系电话"
+        },
+        {
+          "id": "invoice_bank",
+          "label": "开户行"
+        },
+        {
+          "id": "invoice_bank_account",
+          "label": "开户行账号"
+        }
+      ]
+    },
+    {
+      "id": "import_export_credit",
+      "label": "进出口信用",
+      "sourceTool": "get_import_export_credit",
+      "releaseBatch": "batch-1",
+      "fields": [
+        {
+          "id": "import_export_credit_no",
+          "label": "进出口统一社会信用代码"
+        },
+        {
+          "id": "import_export_customs",
+          "label": "所在地海关"
+        },
+        {
+          "id": "import_export_admin_division",
+          "label": "进出口行政区划"
+        },
+        {
+          "id": "import_export_address",
+          "label": "进出口备案地址"
+        },
+        {
+          "id": "import_export_economic_area",
+          "label": "经济区划"
+        },
+        {
+          "id": "import_export_trade_type",
+          "label": "经营类别"
+        },
+        {
+          "id": "import_export_statistical_economic_area",
+          "label": "统计经济区划"
+        },
+        {
+          "id": "import_export_industry",
+          "label": "进出口行业种类"
+        },
+        {
+          "id": "import_export_ecommerce_type",
+          "label": "跨境贸易电子商务类型"
+        },
+        {
+          "id": "import_export_credit_grade",
+          "label": "海关信用等级"
+        },
+        {
+          "id": "import_export_filing_date",
+          "label": "进出口备案日期"
+        }
+      ]
+    },
+    {
+      "id": "company_risk_scan",
+      "label": "企业自身风险扫描",
+      "sourceTool": "get_company_risk_scan",
+      "releaseBatch": "batch-2",
+      "catalogVersion": "qcc-risk-snapshot-2026-09-05",
+      "fields": [
+        {
+          "id": "risk_recorded_factor_count",
+          "label": "风险有记录因子数"
+        },
+        {
+          "id": "risk_no_record_factor_count",
+          "label": "风险无记录因子数"
+        },
+        {
+          "id": "risk_hit_summary",
+          "label": "企业自身风险命中摘要"
+        },
+        {
+          "id": "risk_dishonest_count",
+          "label": "失信信息条目数"
+        },
+        {
+          "id": "risk_judgment_debtor_count",
+          "label": "被执行人条目数"
+        },
+        {
+          "id": "risk_consumption_restriction_count",
+          "label": "限制高消费条目数"
+        },
+        {
+          "id": "risk_terminated_case_count",
+          "label": "终本案件条目数"
+        },
+        {
+          "id": "risk_judicial_document_count",
+          "label": "裁判文书条目数"
+        },
+        {
+          "id": "risk_case_filing_count",
+          "label": "立案信息条目数"
+        },
+        {
+          "id": "risk_hearing_announcement_count",
+          "label": "开庭公告条目数"
+        },
+        {
+          "id": "risk_court_announcement_count",
+          "label": "法院公告条目数"
+        },
+        {
+          "id": "risk_service_notice_count",
+          "label": "送达公告条目数"
+        },
+        {
+          "id": "risk_bankruptcy_reorganization_count",
+          "label": "破产重整条目数"
+        },
+        {
+          "id": "risk_equity_freeze_count",
+          "label": "股权冻结条目数"
+        },
+        {
+          "id": "risk_judicial_auction_count",
+          "label": "司法拍卖条目数"
+        },
+        {
+          "id": "risk_valuation_inquiry_count",
+          "label": "询价评估条目数"
+        },
+        {
+          "id": "risk_pre_litigation_mediation_count",
+          "label": "诉前调解条目数"
+        },
+        {
+          "id": "risk_exit_restriction_count",
+          "label": "限制出境条目数"
+        },
+        {
+          "id": "risk_administrative_penalty_count",
+          "label": "行政处罚条目数"
+        },
+        {
+          "id": "risk_operating_exception_count",
+          "label": "经营异常条目数"
+        },
+        {
+          "id": "risk_serious_violation_count",
+          "label": "严重违法条目数"
+        },
+        {
+          "id": "risk_environmental_penalty_count",
+          "label": "环保处罚条目数"
+        },
+        {
+          "id": "risk_abnormal_taxpayer_count",
+          "label": "税务非正常户条目数"
+        },
+        {
+          "id": "risk_tax_arrears_count",
+          "label": "欠税公告条目数"
+        },
+        {
+          "id": "risk_tax_violation_count",
+          "label": "税收违法条目数"
+        },
+        {
+          "id": "risk_disciplinary_list_count",
+          "label": "惩戒名单条目数"
+        },
+        {
+          "id": "risk_default_matter_count",
+          "label": "违约事项条目数"
+        },
+        {
+          "id": "risk_guarantee_count",
+          "label": "担保信息条目数"
+        },
+        {
+          "id": "risk_equity_pledge_registration_count",
+          "label": "股权出质条目数"
+        },
+        {
+          "id": "risk_stock_pledge_count",
+          "label": "股权质押条目数"
+        },
+        {
+          "id": "risk_chattel_mortgage_count",
+          "label": "动产抵押条目数"
+        },
+        {
+          "id": "risk_land_mortgage_count",
+          "label": "土地抵押条目数"
+        },
+        {
+          "id": "risk_simple_cancellation_count",
+          "label": "简易注销条目数"
+        },
+        {
+          "id": "risk_cancellation_filing_count",
+          "label": "注销备案条目数"
+        },
+        {
+          "id": "risk_liquidation_count",
+          "label": "清算信息条目数"
+        },
+        {
+          "id": "risk_labor_arbitration_count",
+          "label": "劳动仲裁条目数"
+        },
+        {
+          "id": "risk_public_notice_count",
+          "label": "公示催告条目数"
+        },
+        {
+          "id": "risk_property_reward_notice_count",
+          "label": "财产悬赏公告条目数"
+        }
+      ]
+    },
+    {
+      "id": "company_related_risk_scan",
+      "label": "企业关联风险扫描",
+      "sourceTool": "get_company_related_risk_scan",
+      "releaseBatch": "batch-2",
+      "catalogVersion": "qcc-risk-snapshot-2026-09-05",
+      "fields": [
+        {
+          "id": "related_risk_party_count",
+          "label": "有风险关联方数"
+        },
+        {
+          "id": "related_risk_summary",
+          "label": "企业关联风险摘要"
+        },
+        {
+          "id": "related_risk_dishonest_count",
+          "label": "关联风险-失信被执行人条目数"
+        },
+        {
+          "id": "related_risk_judgment_debtor_count",
+          "label": "关联风险-被执行人条目数"
+        },
+        {
+          "id": "related_risk_consumption_restriction_count",
+          "label": "关联风险-限制高消费条目数"
+        },
+        {
+          "id": "related_risk_serious_violation_count",
+          "label": "关联风险-严重违法条目数"
+        },
+        {
+          "id": "related_risk_tax_violation_count",
+          "label": "关联风险-税收违法条目数"
+        },
+        {
+          "id": "related_risk_administrative_penalty_count",
+          "label": "关联风险-行政处罚条目数"
+        },
+        {
+          "id": "related_risk_bankruptcy_reorganization_count",
+          "label": "关联风险-破产重整条目数"
+        },
+        {
+          "id": "related_risk_terminated_case_count",
+          "label": "关联风险-终本案件条目数"
+        },
+        {
+          "id": "related_risk_equity_freeze_count",
+          "label": "关联风险-股权冻结条目数"
+        },
+        {
+          "id": "related_risk_tax_arrears_count",
+          "label": "关联风险-欠税公告条目数"
+        },
+        {
+          "id": "related_risk_operating_exception_count",
+          "label": "关联风险-经营异常条目数"
+        },
+        {
+          "id": "related_risk_dishonest_party_count",
+          "label": "关联风险-失信被执行人命中关联方数"
+        },
+        {
+          "id": "related_risk_serious_violation_party_count",
+          "label": "关联风险-严重违法命中关联方数"
+        },
+        {
+          "id": "related_risk_bankruptcy_reorganization_party_count",
+          "label": "关联风险-破产重整命中关联方数"
+        },
+        {
+          "id": "related_risk_tax_violation_party_count",
+          "label": "关联风险-税收违法命中关联方数"
+        },
+        {
+          "id": "related_risk_judgment_debtor_party_count",
+          "label": "关联风险-被执行人命中关联方数"
+        },
+        {
+          "id": "related_risk_terminated_case_party_count",
+          "label": "关联风险-终本案件命中关联方数"
+        },
+        {
+          "id": "related_risk_equity_freeze_party_count",
+          "label": "关联风险-股权冻结命中关联方数"
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "tool": "get_company_profile",
+      "mapper": "mapProfileFields",
+      "variant": "full",
+      "input": {
+        "企业名称": "合成-企业名称",
+        "企查查行业": "合成行业",
+        "企业简介": "合成简介",
+        "产业链概览": "合成链条",
+        "上市日期": "合成-上市日期",
+        "股票简称": "合成-股票简称",
+        "股票代码": "000001",
+        "上市交易所": "合成-上市交易所",
+        "上市板块": "合成-上市板块",
+        "上市曾用名": "合成-上市曾用名",
+        "总市值": "123.456789",
+        "总股本": "合成-总股本",
+        "预测市盈率": "合成-预测市盈率",
+        "流通值": "合成-流通值",
+        "流通股": "合成-流通股",
+        "市净率": "合成-市净率",
+        "EPS": "合成-EPS",
+        "表决权差异": "合成-表决权差异",
+        "是否注册制": "合成-是否注册制",
+        "纳税人识别号": "合成-纳税人识别号",
+        "企业类型": "合成-企业类型",
+        "经营状态": "合成-经营状态",
+        "地址": "合成-地址",
+        "联系电话": "合成-联系电话",
+        "开户行": "合成-开户行",
+        "开户行账号": "0000123",
+        "统一社会信用代码": "合成-统一社会信用代码",
+        "所在地海关": "合成-所在地海关",
+        "行政区划": "合成-行政区划",
+        "经济区划": "合成-经济区划",
+        "经营类别": "合成-经营类别",
+        "统计经济区划": "合成-统计经济区划",
+        "行业种类": "合成-行业种类",
+        "跨境贸易电子商务类型": "合成-跨境贸易电子商务类型",
+        "信用等级": "合成-信用等级",
+        "备案日期": "合成-备案日期"
+      },
+      "expected": {
+        "qcc_industry": "合成行业",
+        "company_profile": "合成简介",
+        "industry_chain_overview": "合成链条"
+      }
+    },
+    {
+      "tool": "get_company_profile",
+      "mapper": "mapProfileFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {
+        "qcc_industry": "",
+        "company_profile": "",
+        "industry_chain_overview": ""
+      }
+    },
+    {
+      "tool": "get_company_profile",
+      "mapper": "mapProfileFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    },
+    {
+      "tool": "get_contact_info",
+      "mapper": "mapContactFields",
+      "variant": "full",
+      "input": {
+        "联系方式信息": {
+          "电话": [
+            {
+              "电话号码": "合成号码",
+              "是否无效": "是",
+              "标签": [
+                "总机",
+                "客服"
+              ]
+            },
+            {
+              "电话号码": "不得选用"
+            }
+          ],
+          "邮箱": [
+            {
+              "邮箱": "synthetic@example.invalid"
+            }
+          ],
+          "网址": [
+            {
+              "网址": "https://not-official.invalid",
+              "是否是官网": "否"
+            },
+            {
+              "网址": "https://official.invalid",
+              "是否是官网": "是",
+              "ICP备案": "合成备案"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "contact_preferred_phone": "合成号码",
+        "contact_phone_invalid_flag": "是",
+        "contact_phone_tags": "总机；客服",
+        "contact_preferred_email": "synthetic@example.invalid",
+        "contact_official_website": "https://official.invalid",
+        "contact_official_website_icp": "合成备案"
+      }
+    },
+    {
+      "tool": "get_contact_info",
+      "mapper": "mapContactFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {
+        "contact_preferred_phone": "",
+        "contact_phone_invalid_flag": "",
+        "contact_phone_tags": "",
+        "contact_preferred_email": "",
+        "contact_official_website": "",
+        "contact_official_website_icp": ""
+      }
+    },
+    {
+      "tool": "get_contact_info",
+      "mapper": "mapContactFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {
+        "contact_preferred_phone": "",
+        "contact_phone_invalid_flag": "",
+        "contact_phone_tags": "",
+        "contact_preferred_email": "",
+        "contact_official_website": "",
+        "contact_official_website_icp": ""
+      }
+    },
+    {
+      "tool": "get_listing_info",
+      "mapper": "mapListingFields",
+      "variant": "full",
+      "input": {
+        "企业名称": "合成-企业名称",
+        "企查查行业": "合成行业",
+        "企业简介": "合成简介",
+        "产业链概览": "合成链条",
+        "上市日期": "合成-上市日期",
+        "股票简称": "合成-股票简称",
+        "股票代码": "000001",
+        "上市交易所": "合成-上市交易所",
+        "上市板块": "合成-上市板块",
+        "上市曾用名": "合成-上市曾用名",
+        "总市值": "123.456789",
+        "总股本": "合成-总股本",
+        "预测市盈率": "合成-预测市盈率",
+        "流通值": "合成-流通值",
+        "流通股": "合成-流通股",
+        "市净率": "合成-市净率",
+        "EPS": "合成-EPS",
+        "表决权差异": "合成-表决权差异",
+        "是否注册制": "合成-是否注册制",
+        "纳税人识别号": "合成-纳税人识别号",
+        "企业类型": "合成-企业类型",
+        "经营状态": "合成-经营状态",
+        "地址": "合成-地址",
+        "联系电话": "合成-联系电话",
+        "开户行": "合成-开户行",
+        "开户行账号": "0000123",
+        "统一社会信用代码": "合成-统一社会信用代码",
+        "所在地海关": "合成-所在地海关",
+        "行政区划": "合成-行政区划",
+        "经济区划": "合成-经济区划",
+        "经营类别": "合成-经营类别",
+        "统计经济区划": "合成-统计经济区划",
+        "行业种类": "合成-行业种类",
+        "跨境贸易电子商务类型": "合成-跨境贸易电子商务类型",
+        "信用等级": "合成-信用等级",
+        "备案日期": "合成-备案日期"
+      },
+      "expected": {
+        "listing_date": "合成-上市日期",
+        "listing_short_name": "合成-股票简称",
+        "listing_stock_code": "000001",
+        "listing_exchange": "合成-上市交易所",
+        "listing_board": "合成-上市板块",
+        "listing_former_short_name": "合成-上市曾用名",
+        "listing_total_market_value": "123.456789",
+        "listing_total_shares": "合成-总股本",
+        "listing_predicted_pe": "合成-预测市盈率",
+        "listing_float_market_value": "合成-流通值",
+        "listing_float_shares": "合成-流通股",
+        "listing_pb_ratio": "合成-市净率",
+        "listing_eps": "合成-EPS",
+        "listing_voting_rights_difference": "合成-表决权差异",
+        "listing_registration_based": "合成-是否注册制"
+      }
+    },
+    {
+      "tool": "get_listing_info",
+      "mapper": "mapListingFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {
+        "listing_date": "",
+        "listing_short_name": "",
+        "listing_stock_code": "",
+        "listing_exchange": "",
+        "listing_board": "",
+        "listing_former_short_name": "",
+        "listing_total_market_value": "",
+        "listing_total_shares": "",
+        "listing_predicted_pe": "",
+        "listing_float_market_value": "",
+        "listing_float_shares": "",
+        "listing_pb_ratio": "",
+        "listing_eps": "",
+        "listing_voting_rights_difference": "",
+        "listing_registration_based": ""
+      }
+    },
+    {
+      "tool": "get_listing_info",
+      "mapper": "mapListingFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    },
+    {
+      "tool": "get_tax_invoice_info",
+      "mapper": "mapTaxInvoiceFields",
+      "variant": "full",
+      "input": {
+        "企业名称": "合成-企业名称",
+        "企查查行业": "合成行业",
+        "企业简介": "合成简介",
+        "产业链概览": "合成链条",
+        "上市日期": "合成-上市日期",
+        "股票简称": "合成-股票简称",
+        "股票代码": "000001",
+        "上市交易所": "合成-上市交易所",
+        "上市板块": "合成-上市板块",
+        "上市曾用名": "合成-上市曾用名",
+        "总市值": "123.456789",
+        "总股本": "合成-总股本",
+        "预测市盈率": "合成-预测市盈率",
+        "流通值": "合成-流通值",
+        "流通股": "合成-流通股",
+        "市净率": "合成-市净率",
+        "EPS": "合成-EPS",
+        "表决权差异": "合成-表决权差异",
+        "是否注册制": "合成-是否注册制",
+        "纳税人识别号": "合成-纳税人识别号",
+        "企业类型": "合成-企业类型",
+        "经营状态": "合成-经营状态",
+        "地址": "合成-地址",
+        "联系电话": "合成-联系电话",
+        "开户行": "合成-开户行",
+        "开户行账号": "0000123",
+        "统一社会信用代码": "合成-统一社会信用代码",
+        "所在地海关": "合成-所在地海关",
+        "行政区划": "合成-行政区划",
+        "经济区划": "合成-经济区划",
+        "经营类别": "合成-经营类别",
+        "统计经济区划": "合成-统计经济区划",
+        "行业种类": "合成-行业种类",
+        "跨境贸易电子商务类型": "合成-跨境贸易电子商务类型",
+        "信用等级": "合成-信用等级",
+        "备案日期": "合成-备案日期"
+      },
+      "expected": {
+        "tax_company_name": "合成-企业名称",
+        "tax_identification_no": "合成-纳税人识别号",
+        "tax_company_type": "合成-企业类型",
+        "tax_business_status": "合成-经营状态",
+        "invoice_address": "合成-地址",
+        "invoice_phone": "合成-联系电话",
+        "invoice_bank": "合成-开户行",
+        "invoice_bank_account": "0000123"
+      }
+    },
+    {
+      "tool": "get_tax_invoice_info",
+      "mapper": "mapTaxInvoiceFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {
+        "tax_company_name": "",
+        "tax_identification_no": "",
+        "tax_company_type": "",
+        "tax_business_status": "",
+        "invoice_address": "",
+        "invoice_phone": "",
+        "invoice_bank": "",
+        "invoice_bank_account": ""
+      }
+    },
+    {
+      "tool": "get_tax_invoice_info",
+      "mapper": "mapTaxInvoiceFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    },
+    {
+      "tool": "get_import_export_credit",
+      "mapper": "mapImportExportCreditFields",
+      "variant": "full",
+      "input": {
+        "企业名称": "合成-企业名称",
+        "企查查行业": "合成行业",
+        "企业简介": "合成简介",
+        "产业链概览": "合成链条",
+        "上市日期": "合成-上市日期",
+        "股票简称": "合成-股票简称",
+        "股票代码": "000001",
+        "上市交易所": "合成-上市交易所",
+        "上市板块": "合成-上市板块",
+        "上市曾用名": "合成-上市曾用名",
+        "总市值": "123.456789",
+        "总股本": "合成-总股本",
+        "预测市盈率": "合成-预测市盈率",
+        "流通值": "合成-流通值",
+        "流通股": "合成-流通股",
+        "市净率": "合成-市净率",
+        "EPS": "合成-EPS",
+        "表决权差异": "合成-表决权差异",
+        "是否注册制": "合成-是否注册制",
+        "纳税人识别号": "合成-纳税人识别号",
+        "企业类型": "合成-企业类型",
+        "经营状态": "合成-经营状态",
+        "地址": "合成-地址",
+        "联系电话": "合成-联系电话",
+        "开户行": "合成-开户行",
+        "开户行账号": "0000123",
+        "统一社会信用代码": "合成-统一社会信用代码",
+        "所在地海关": "合成-所在地海关",
+        "行政区划": "合成-行政区划",
+        "经济区划": "合成-经济区划",
+        "经营类别": "合成-经营类别",
+        "统计经济区划": "合成-统计经济区划",
+        "行业种类": "合成-行业种类",
+        "跨境贸易电子商务类型": "合成-跨境贸易电子商务类型",
+        "信用等级": "合成-信用等级",
+        "备案日期": "合成-备案日期"
+      },
+      "expected": {
+        "import_export_credit_no": "合成-统一社会信用代码",
+        "import_export_customs": "合成-所在地海关",
+        "import_export_admin_division": "合成-行政区划",
+        "import_export_address": "合成-地址",
+        "import_export_economic_area": "合成-经济区划",
+        "import_export_trade_type": "合成-经营类别",
+        "import_export_statistical_economic_area": "合成-统计经济区划",
+        "import_export_industry": "合成-行业种类",
+        "import_export_ecommerce_type": "合成-跨境贸易电子商务类型",
+        "import_export_credit_grade": "合成-信用等级",
+        "import_export_filing_date": "合成-备案日期"
+      }
+    },
+    {
+      "tool": "get_import_export_credit",
+      "mapper": "mapImportExportCreditFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {
+        "import_export_credit_no": "",
+        "import_export_customs": "",
+        "import_export_admin_division": "",
+        "import_export_address": "",
+        "import_export_economic_area": "",
+        "import_export_trade_type": "",
+        "import_export_statistical_economic_area": "",
+        "import_export_industry": "",
+        "import_export_ecommerce_type": "",
+        "import_export_credit_grade": "",
+        "import_export_filing_date": ""
+      }
+    },
+    {
+      "tool": "get_import_export_credit",
+      "mapper": "mapImportExportCreditFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    },
+    {
+      "tool": "get_company_risk_scan",
+      "mapper": "mapCompanyRiskScanFields",
+      "variant": "full",
+      "input": {
+        "有记录因子数": 2,
+        "无记录因子数": 33,
+        "风险因子扫描": [
+          {
+            "风险因子": "失信信息",
+            "条目数": 1
+          },
+          {
+            "风险因子": "被执行人",
+            "条目数": 2
+          },
+          {
+            "风险因子": "限制高消费",
+            "条目数": 0
+          },
+          {
+            "风险因子": "终本案件",
+            "条目数": 0
+          },
+          {
+            "风险因子": "裁判文书",
+            "条目数": 0
+          },
+          {
+            "风险因子": "立案信息",
+            "条目数": 0
+          },
+          {
+            "风险因子": "开庭公告",
+            "条目数": 0
+          },
+          {
+            "风险因子": "法院公告",
+            "条目数": 0
+          },
+          {
+            "风险因子": "送达公告",
+            "条目数": 0
+          },
+          {
+            "风险因子": "破产重整",
+            "条目数": 0
+          },
+          {
+            "风险因子": "股权冻结",
+            "条目数": 0
+          },
+          {
+            "风险因子": "司法拍卖",
+            "条目数": 0
+          },
+          {
+            "风险因子": "询价评估",
+            "条目数": 0
+          },
+          {
+            "风险因子": "诉前调解",
+            "条目数": 0
+          },
+          {
+            "风险因子": "限制出境",
+            "条目数": 0
+          },
+          {
+            "风险因子": "行政处罚",
+            "条目数": 0
+          },
+          {
+            "风险因子": "经营异常",
+            "条目数": 0
+          },
+          {
+            "风险因子": "严重违法",
+            "条目数": 0
+          },
+          {
+            "风险因子": "环保处罚",
+            "条目数": 0
+          },
+          {
+            "风险因子": "税务非正常户",
+            "条目数": 0
+          },
+          {
+            "风险因子": "欠税公告",
+            "条目数": 0
+          },
+          {
+            "风险因子": "税收违法",
+            "条目数": 0
+          },
+          {
+            "风险因子": "惩戒名单",
+            "条目数": 0
+          },
+          {
+            "风险因子": "违约事项",
+            "条目数": 0
+          },
+          {
+            "风险因子": "担保信息",
+            "条目数": 0
+          },
+          {
+            "风险因子": "股权出质",
+            "条目数": 0
+          },
+          {
+            "风险因子": "股权质押",
+            "条目数": 0
+          },
+          {
+            "风险因子": "动产抵押",
+            "条目数": 0
+          },
+          {
+            "风险因子": "土地抵押",
+            "条目数": 0
+          },
+          {
+            "风险因子": "简易注销",
+            "条目数": 0
+          },
+          {
+            "风险因子": "注销备案",
+            "条目数": 0
+          },
+          {
+            "风险因子": "清算信息",
+            "条目数": 0
+          },
+          {
+            "风险因子": "劳动仲裁",
+            "条目数": 0
+          },
+          {
+            "风险因子": "公示催告",
+            "条目数": 0
+          },
+          {
+            "风险因子": "财产悬赏公告",
+            "条目数": 0
+          }
+        ]
+      },
+      "expected": {
+        "risk_recorded_factor_count": 2,
+        "risk_no_record_factor_count": 33,
+        "risk_hit_summary": "失信信息(1)；被执行人(2)",
+        "risk_dishonest_count": 1,
+        "risk_judgment_debtor_count": 2,
+        "risk_consumption_restriction_count": 0,
+        "risk_terminated_case_count": 0,
+        "risk_judicial_document_count": 0,
+        "risk_case_filing_count": 0,
+        "risk_hearing_announcement_count": 0,
+        "risk_court_announcement_count": 0,
+        "risk_service_notice_count": 0,
+        "risk_bankruptcy_reorganization_count": 0,
+        "risk_equity_freeze_count": 0,
+        "risk_judicial_auction_count": 0,
+        "risk_valuation_inquiry_count": 0,
+        "risk_pre_litigation_mediation_count": 0,
+        "risk_exit_restriction_count": 0,
+        "risk_administrative_penalty_count": 0,
+        "risk_operating_exception_count": 0,
+        "risk_serious_violation_count": 0,
+        "risk_environmental_penalty_count": 0,
+        "risk_abnormal_taxpayer_count": 0,
+        "risk_tax_arrears_count": 0,
+        "risk_tax_violation_count": 0,
+        "risk_disciplinary_list_count": 0,
+        "risk_default_matter_count": 0,
+        "risk_guarantee_count": 0,
+        "risk_equity_pledge_registration_count": 0,
+        "risk_stock_pledge_count": 0,
+        "risk_chattel_mortgage_count": 0,
+        "risk_land_mortgage_count": 0,
+        "risk_simple_cancellation_count": 0,
+        "risk_cancellation_filing_count": 0,
+        "risk_liquidation_count": 0,
+        "risk_labor_arbitration_count": 0,
+        "risk_public_notice_count": 0,
+        "risk_property_reward_notice_count": 0
+      }
+    },
+    {
+      "tool": "get_company_risk_scan",
+      "mapper": "mapCompanyRiskScanFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {}
+    },
+    {
+      "tool": "get_company_risk_scan",
+      "mapper": "mapCompanyRiskScanFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    },
+    {
+      "tool": "get_company_related_risk_scan",
+      "mapper": "mapCompanyRelatedRiskScanFields",
+      "variant": "full",
+      "input": {
+        "有风险关联方数": 3,
+        "维度计数汇总": {
+          "重要风险": {
+            "失信被执行人": 4,
+            "被执行人": 0,
+            "限制高消费": 0,
+            "严重违法": 0,
+            "税收违法": 0,
+            "行政处罚": 0,
+            "破产重整": 0,
+            "终本案件": 0,
+            "股权冻结": 0,
+            "欠税公告": 0,
+            "经营异常": 0
+          }
+        },
+        "重点维度关联方定位": [
+          {
+            "维度": "失信被执行人",
+            "命中关联方数": 2,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "严重违法",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "破产重整",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "税收违法",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "被执行人",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "终本案件",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          },
+          {
+            "维度": "股权冻结",
+            "命中关联方数": 0,
+            "关联方": [
+              {
+                "名称": "明细不输出"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "related_risk_party_count": 3,
+        "related_risk_summary": "有风险关联方3个；失信被执行人(4)",
+        "related_risk_dishonest_count": 4,
+        "related_risk_judgment_debtor_count": 0,
+        "related_risk_consumption_restriction_count": 0,
+        "related_risk_serious_violation_count": 0,
+        "related_risk_tax_violation_count": 0,
+        "related_risk_administrative_penalty_count": 0,
+        "related_risk_bankruptcy_reorganization_count": 0,
+        "related_risk_terminated_case_count": 0,
+        "related_risk_equity_freeze_count": 0,
+        "related_risk_tax_arrears_count": 0,
+        "related_risk_operating_exception_count": 0,
+        "related_risk_dishonest_party_count": 2,
+        "related_risk_serious_violation_party_count": 0,
+        "related_risk_bankruptcy_reorganization_party_count": 0,
+        "related_risk_tax_violation_party_count": 0,
+        "related_risk_judgment_debtor_party_count": 0,
+        "related_risk_terminated_case_party_count": 0,
+        "related_risk_equity_freeze_party_count": 0
+      }
+    },
+    {
+      "tool": "get_company_related_risk_scan",
+      "mapper": "mapCompanyRelatedRiskScanFields",
+      "variant": "empty",
+      "input": {},
+      "expected": {}
+    },
+    {
+      "tool": "get_company_related_risk_scan",
+      "mapper": "mapCompanyRelatedRiskScanFields",
+      "variant": "missing",
+      "input": {
+        "无匹配项": true
+      },
+      "expected": {}
+    }
+  ]
+}

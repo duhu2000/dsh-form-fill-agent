@@ -77,6 +77,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   await page.getByRole('button',{name:'导入表格',exact:true}).click();
   const frame=page.frameLocator('iframe[title="AI填表任务"]');
   phase='sample';
+  await page.waitForFunction(()=>{const c=document.querySelector('[data-composer-card]')?.getBoundingClientRect(),p=document.querySelector('.ff-panel')?.getBoundingClientRect();return c&&p&&c.right<=p.left+1});
   const composer=await page.locator('[data-composer-card]').boundingBox(),panel=await page.getByRole('region',{name:'AI填表工作台'}).boundingBox();
   if(composer?.x+composer?.width>panel?.x+1)console.log('Composer ancestors:',await page.locator('[data-composer-card]').evaluate(e=>{const rows=[];for(let n=e;n&&rows.length<9;n=n.parentElement)rows.push({tag:n.tagName,attributes:[...n.attributes].map(a=>[a.name,a.value]).filter(([k])=>k!=='style')});return rows}));
   assert.ok(composer&&panel&&composer.x+composer.width<=panel.x+1,'workbench must not cover native composer: '+JSON.stringify({composer,panel}));
@@ -102,7 +103,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   await page.getByRole('button',{name:'填写预览',exact:true}).click();
   await frame.locator('#changes tr').nth(5).waitFor();
   phase='ordinary-session';
-  if(process.env.LEGACY_TARBALL){
+  if(process.env.LEGACY_TARBALL)for(let round=0;round<3;round++){
    const formUrl=await page.evaluate(()=>window.__coinstallProbe.current());assert.notEqual(formUrl,cleaningUrl,'native sessions must have distinct identities');
    await page.evaluate(id=>window.__coinstallProbe.open(id),cleaningUrl);await page.locator('.ff-hero').waitFor({state:'hidden'});
    assert.equal(await page.evaluate(id=>window.__coinstallProbe.draft(id),cleaningUrl),'合成清洗手写草稿，保留验证');

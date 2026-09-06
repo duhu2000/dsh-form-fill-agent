@@ -1,5 +1,5 @@
 import { createFormFillHandler } from './http.js';
-import { createQccProvider, REGISTRATION_TOOL, ENTITY_TOOL } from 'qcc-form-fill-provider';
+import { createCatalogProvider, CATALOG_TOOL_DOMAINS, runtimeToolNames, REGISTRATION_TOOL, ENTITY_TOOL } from 'qcc-form-fill-provider';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 export { previewBytes, previewFile, writeCopy } from './workflow.js';
@@ -23,9 +23,9 @@ export function apply(ctx, config = {}) {
         },
         async execute(args, execution) {
           if (!execution?.agent || !execution?.token) throw Error('需要 Agent-owned 工具执行上下文');
-          const provider = createQccProvider({ enableEntitySearch: ['mcp__qcc-company__','mcp__company__','mcp__qcc_company__'].some(p=>tools.get(p+ENTITY_TOOL)), callTool: async (name, arguments_, { signal }) => {
-            if (![REGISTRATION_TOOL,ENTITY_TOOL].includes(name)) throw Error('不支持的 QCC 工具');
-            const names = ['mcp__qcc-company__', 'mcp__company__', 'mcp__qcc_company__'].map(prefix => prefix + name);
+          const provider = createCatalogProvider({ availableTools:Object.keys(CATALOG_TOOL_DOMAINS).filter(name=>runtimeToolNames(name).some(n=>tools.get(n))), enableEntitySearch: ['mcp__qcc-company__','mcp__company__','mcp__qcc_company__'].some(p=>tools.get(p+ENTITY_TOOL)), callTool: async (name, arguments_, { signal }) => {
+            if (!Object.hasOwn(CATALOG_TOOL_DOMAINS,name)) throw Error('不支持的 QCC 工具');
+            const names = runtimeToolNames(name);
             const selected = names.find(candidate => tools.get(candidate));
             if (!selected) throw Error('请先连接企查查企业数据 MCP');
             const result = await tools.execute({ name: selected, arguments: arguments_, signal, callId: randomUUID(), rootCallId: execution.rootCallId, parent: execution.token, agent: execution.agent });

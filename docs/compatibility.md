@@ -8,7 +8,7 @@
 
 清洗 0.8.8 明确在离开后释放业务所有权；返回原会话保留手写草稿，但不自动重挂清洗首页，点击清洗入口会创建新业务会话。这是该版本自身契约，测试不冒充它支持跨会话自动恢复工作台。填表按自己的 sessionId 恢复任务。
 
-共享 Provider 当前扩展工商 26 字段，并非旧 128 字段完整迁移。非工商 catalog/bridge 需独立批次 golden/parity 和工具契约，不能由 parseCsv parity 外推。
+alpha.9 已另行迁移旧 128 字段目录及七组非工商投影：抽取前 21 项 golden 保持一致；真实工具响应七组通过，并显式增加关联惩戒名单维度。不是用 parseCsv parity 外推 Provider 兼容。
 
 以下为移交与早期版本的历史证据；旧版本结论不代表当前状态。
 
@@ -44,4 +44,4 @@ alpha.2 Host SHA256：a28fa9a5ffad5d2e7af427c0410e973a5e14a36bc070eecf8735b77b95
 
 兼容工作树只将 lib/engine.js 的 parseCsv 改为 core 子路径导出、package.json 加入本地 tarball 依赖。24 个 golden 的语义，以及工具/路由/任务/制品/字段目录源码指纹全部保持一致。默认发布主线尚未合入 core。
 
-Node 22.19.0 和 24.19.0 已在 macOS 验证；当时 Windows/Linux 仅有 CI 草案；后续发布已运行三系统 × Node 22/24，当前提交结果见 U5-ACCEPTANCE.md。DSH rc.2 和 alpha.2 均通过全新隔离 Host 中的三套表格上传/确认/下载/二次零变更及浏览器验收；这不代表 alpha 的所有宿主能力均获得支持。完整真实 QCC Bridge 及 128 字段目录尚未迁移，新 mock Provider 不能等同于旧 Provider 已完成 parity。
+Node 22.19.0 和 24.19.0 已在 macOS 验证；当时 Windows/Linux 仅有 CI 草案；后续发布已运行三系统 × Node 22/24，当前提交结果见 U5-ACCEPTANCE.md。DSH rc.2 和 alpha.2 均通过全新隔离 Host 中的三套表格上传/确认/下载/二次零变更及浏览器验收；这不代表 alpha 的所有宿主能力均获得支持。该早期阶段完整 Bridge 与目录尚未迁移；后续 alpha.9 的独立投影 parity、真实响应和宿主验收见 U6-ACCEPTANCE.md。

@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtemp, mkdir, cp, readFile, writeFile, lstat } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -55,6 +55,11 @@ if(latestGolden){
  assert.deepEqual(actual,latestGolden);
  console.log('Latest baseline '+execFileSync('git',['rev-parse','HEAD'],{cwd:legacy,encoding:'utf8'}).trim()+': before/after full checks + 24 golden parity PASS');
 }
+if(process.env.LEGACY_ADAPT==='1'){
+ const fixture=JSON.parse(await readFile(join(root,'fixtures/extended-provider.golden.json'))),old=await import(pathToFileURL(join(legacy,'lib/qcc.js'))),catalog=await import(pathToFileURL(join(legacy,'lib/qcc-field-catalog.js')));
+ assert.deepEqual(catalog.QCC_FIELD_CATALOG,fixture.catalog);for(const c of fixture.cases)assert.deepEqual(old[c.mapper](c.input),c.expected);
+ console.log('Latest legacy Provider: 128 catalog + 21 projection golden parity PASS');
+}
 const newConsumer = join(sandbox, 'standalone-form-fill');
 await mkdir(newConsumer);
 execFileSync('npm', [...npmArgs, ...tarballs], { cwd: newConsumer, stdio: 'inherit' });
@@ -66,6 +71,10 @@ const code = [
   'import {readFileSync} from "node:fs";',
   'import assert from "node:assert/strict";',
   'import {previewBytes} from "dsh-form-fill-agent";',
+  'import {createCatalogProvider,QCC_FIELD_CATALOG} from "qcc-form-fill-provider";',
+  'const extra=JSON.parse(readFileSync(process.env.EXTENDED_GOLDEN));assert.deepEqual(QCC_FIELD_CATALOG,extra.catalog);',
+  'for(const c of extra.cases.filter(c=>c.variant==="full")){const company="合成扩展有限公司",source={...c.input,...(c.input.企业名称?{企业名称:company}:{})},group=extra.catalog.find(g=>g.sourceTool===c.tool);const provider=createCatalogProvider({availableTools:[c.tool],callTool:async(name,args)=>name==="get_company_registration_info"?{企业名称:args.searchKey}:source});const result=await provider.lookup({capability:"qcc-"+c.tool,anchor:{company_name:company},fields:group.fields.map(f=>f.id)});assert.equal(result.status,"exact");for(const [field,fact]of Object.entries(result.values))assert.equal(fact.value,String(field==="tax_company_name"?company:c.expected[field]));}',
+  'console.log("standalone Provider tarball: 7 groups PASS");',
   'import {applyChangeSet,parseWorkbook} from "form-fill-core";',
   'for (const name of ["客户台账","供应商准入表","合同主体信息表"]) {',
   ' const bytes=readFileSync(process.env.FIXTURE_ROOT+"/"+name+".xlsx");',
@@ -74,5 +83,5 @@ const code = [
   ' assert.equal((await previewBytes(out.bytes)).changeSet.changes.length,0);',
   '} console.log("standalone tarball E2E: 3/3 PASS; no workspace symlinks");',
 ].join('\n');
-execFileSync(process.execPath, ['--input-type=module', '-e', code], { cwd: newConsumer, env: { ...process.env, FIXTURE_ROOT: join(root, 'fixtures/xlsx'), EXPECTED_ROOT: join(root, 'fixtures/expected') }, stdio: 'inherit' });
+execFileSync(process.execPath, ['--input-type=module', '-e', code], { cwd: newConsumer, env: { ...process.env, EXTENDED_GOLDEN:join(root,'fixtures/extended-provider.golden.json'), FIXTURE_ROOT: join(root, 'fixtures/xlsx'), EXPECTED_ROOT: join(root, 'fixtures/expected') }, stdio: 'inherit' });
 console.log(JSON.stringify({ kind: 'consumer-contract', legacy: 'full-check + 24 golden cases PASS', formFill: '3 fixture E2E PASS', workspaceLinks: false, published: false, sandbox }));

@@ -77,7 +77,7 @@ function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suf
 function businessSummary(){return current?(retryIntent?'仅重试失败、取消或未执行的部分，保留成功结果。':'')+'填写文件“'+current.filename+'”中的空白字段。工作表：'+current.analysis.tables.map(t=>t.sheet).join('、')+'。填写字段：'+current.catalog.filter(f=>wizardFields.has(f.key)).map(f=>f.label).join('、')+'。保留原值，核验预览后生成新副本。':'请先上传 XLSX 文件。'}
 function command(){return current?businessSummary()+'\n'+$('requirements').value+'\n执行关联：调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+(retryIntent?'，mode=retry':'')+'。字段范围以工作台确认设置为准。':''}
 function saveWizard(){if(current)sessionStorage.setItem('ff-wizard:'+current.id,JSON.stringify({fields:[...wizardFields],requirements:$('requirements').value,step:wizardStep}))}
-function initWizard(){const structure=JSON.stringify(current?.analysis.tables);if(wizardTask===current?.id&&wizardStructure===structure)return;wizardTask=current?.id;wizardStructure=structure;const available=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field))||[];let saved;try{saved=JSON.parse(sessionStorage.getItem('ff-wizard:'+current?.id))}catch{}wizardFields=new Set((saved?.fields||current?.selectedFields||available).filter(k=>available.includes(k)));$('requirements').value=saved?.requirements||'';wizardStep=saved?.step||0}
+function initWizard(){const structure=JSON.stringify(current?.analysis.tables);if(wizardTask===current?.id&&wizardStructure===structure)return;wizardTask=current?.id;wizardStructure=structure;const available=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[];let saved;try{saved=JSON.parse(sessionStorage.getItem('ff-wizard:'+current?.id))}catch{}wizardFields=new Set((saved?.fields||current?.selectedFields||available).filter(k=>available.includes(k)));$('requirements').value=saved?.requirements||'';wizardStep=saved?.step||0}
 function renderWizard(){
  initWizard();
  document.querySelectorAll('[data-wizard-pane]').forEach(p=>p.setAttribute('aria-current',String(Number(p.dataset.wizardPane)===wizardStep)));
@@ -86,10 +86,11 @@ function renderWizard(){
  $('wizard-rules').textContent=current?current.analysis.tables.map(t=>t.sheet+'：第 '+t.headerRow+' 行表头').join('；'):'请先上传并识别表格。';
  $('wizard-fields').replaceChildren();
  const available=new Set(current?.analysis.tables.flatMap(t=>t.mappings.map(m=>m.field))||[]);
+ const fillable=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);
  for(const field of current?.catalog||[]){
-  const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';input.checked=field.anchor||wizardFields.has(field.key);input.disabled=field.anchor||!available.has(field.key);input.dataset.field=field.key;
+  const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';const fixed=field.anchor||available.has(field.key)&&!fillable.has(field.key);input.checked=fixed||wizardFields.has(field.key);input.disabled=fixed||!available.has(field.key);input.dataset.field=field.key;
   input.onchange=()=>{if(input.checked)wizardFields.add(field.key);else wizardFields.delete(field.key);saveWizard();renderWizard()};
-  label.append(input,document.createTextNode(field.label+(field.anchor?'（固定）':!available.has(field.key)?'（原表未映射）':'')));$('wizard-fields').append(label);
+  label.append(input,document.createTextNode(field.label+(fixed?'（固定）':!available.has(field.key)?'（原表未映射）':'')));$('wizard-fields').append(label);
  }
  $('field-count').textContent='已选 '+wizardFields.size+' 个填写字段';
  $('business-summary').textContent=businessSummary();$('qcc-command').textContent=command();
@@ -100,7 +101,7 @@ function openWizard(retry=false){retryIntent=retry===true;initWizard();renderWiz
 function closeWizard(focusComposer=false){saveWizard();$('draft-conflict').close();$('wizard').close();document.body.classList.remove('ff-modal-host');if(parent!==window)parent.postMessage({type:'ff-wizard-state',open:false,focusComposer},location.origin);if(!focusComposer)$('wizard-open').focus()}
 async function applyScope(){
  if(!current||!wizardFields.size)throw Error('请至少选择一个已映射的填写字段');
- const original=current.selectedFields||[...new Set(current.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field)))];
+ const original=current.selectedFields||[...new Set(current.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field)))];
  if(retryIntent&&JSON.stringify([...original].sort())!==JSON.stringify([...wizardFields].sort()))throw Error('重试时请保留原字段范围；如需更改，请重新生成完整核验指令。');
  if(JSON.stringify([...original].sort())!==JSON.stringify([...wizardFields].sort()))render(await api('/scope',{id:current.id,selectedFields:[...wizardFields]}));
 }
@@ -138,7 +139,7 @@ function renderSettings(data){
  const seen=new Set();
  for(const item of data.changeSet.incomplete.filter(i=>i.reason==='candidate-review-required')){
   const key=JSON.stringify([item.sheet,item.row]);if(seen.has(key))continue;seen.add(key);
-  const box=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=item.sheet+' 第 '+item.row+' 行 · '+(item.anchor?.company_name||'');box.append(legend);
+  const box=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=item.sheet+' 第 '+item.row+' 行 · '+(item.anchor?.company_name||item.anchor?.credit_no||'');box.append(legend);
   const choice=document.createElement('select');choice.setAttribute('aria-label','候选 '+item.sheet+' '+item.row);
   const blank=document.createElement('option');blank.value='';blank.textContent='请选择候选（不自动选择）';choice.append(blank);
   for(const c of item.candidates||[]){const option=document.createElement('option');option.value=c.id;option.textContent=c.company_name+' '+c.credit_no;choice.append(option)}
@@ -184,7 +185,7 @@ document.querySelectorAll('[data-wizard-step]').forEach(b=>b.onclick=()=>{wizard
 $('wizard-prev').onclick=()=>{wizardStep=Math.max(0,wizardStep-1);saveWizard();renderWizard()};$('wizard-next').onclick=()=>{wizardStep=Math.min(3,wizardStep+1);saveWizard();renderWizard()};
 $('wizard-file').onchange=async()=>{const file=$('wizard-file').files[0];if(file){await preview(await file.arrayBuffer(),file.name);renderWizard()}};
 $('wizard-edit-rules').onclick=()=>{closeWizard();navigate('rules')};
-$('field-search').oninput=renderWizard;$('fields-all').onclick=()=>{wizardFields=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&m.field!=='company_name').map(m=>m.field))||[]);saveWizard();renderWizard()};$('fields-clear').onclick=()=>{wizardFields.clear();saveWizard();renderWizard()};
+$('field-search').oninput=renderWizard;$('fields-all').onclick=()=>{wizardFields=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);saveWizard();renderWizard()};$('fields-clear').onclick=()=>{wizardFields.clear();saveWizard();renderWizard()};
 $('requirements').oninput=()=>{saveWizard();$('qcc-command').textContent=command()};
 $('copy-command').onclick=async()=>{try{await applyScope();saveWizard();await navigator.clipboard.writeText(command());$('status').textContent='已复制，请在 DSH 对话中发送。'}catch(e){$('status').textContent=e.message}};
 $('draft').onclick=()=>sendDraft();
