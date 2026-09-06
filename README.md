@@ -2,9 +2,9 @@
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前源码为 0.1.0-alpha.5，npm 发布收口中；已发布默认版本为 alpha.4。alpha.5 增加工作表/表头/字段映射修正、主体候选人工确认、固定文本下拉选项保真及设置持久化。支持六类工商字段、来源追溯、未完成清单和任务恢复。没有 LLM 猜值；已有内容默认保留。
+当前已发布版本为 0.1.0-alpha.5，GitHub 与 npm Latest 一致。alpha.5 增加工作表/表头/字段映射修正、主体候选人工确认、固定文本下拉选项保真及设置持久化。支持六类工商字段、来源追溯、未完成清单和任务恢复。没有 LLM 猜值；已有内容默认保留。
 
-alpha.4 修复 npm README 缺失并已验证 registry 与安装包说明。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环通过；当前 npm 发布需要完成身份验证，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段。
+alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
 ## 本地体验
 

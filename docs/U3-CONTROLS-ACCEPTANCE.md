@@ -1,6 +1,6 @@
 # U3 首批填写控制与下拉保真验收
 
-源码候选：三个包 0.1.0-alpha.5。不是完整 U3/U4 交付；本批范围如下。
+已发布：三个包 0.1.0-alpha.5。不是完整 U3/U4 交付；本批范围如下。
 
 ## 实现
 
@@ -24,7 +24,11 @@
 
 scripts/dsh-live-e2e.mjs 在已配置测试模型的两个隔离 DSH_HOME、端口 52173/52174 通过真实原生发送 → QCC 六字段 → 自动预览 → 下载闭环，filled=6、secondPassChanges=0。真实数据不进仓库，测试后子进程关闭。此真实测试验证既有精确查询闭环；新增候选异常分支使用合成响应契约测试，不冒充真实模糊检索验收。
 
-提交 32d8abf 的 [最终 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34040997267) 六组全部 success（Windows/Linux/macOS × Node 22/24）。v0.1.0-alpha.5 tag 已推送。qcc-form-fill-provider@0.1.0-alpha.5 已发布且官方 registry 查询可用；内核发布仍等待账号验证，智能体在依赖发布后继续发布。暂未将 GitHub Latest 从 alpha.4 改为 alpha.5，发布后再同步。
+提交 32d8abf 的 [最终 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34040997267) 六组全部 success（Windows/Linux/macOS × Node 22/24）。v0.1.0-alpha.5 tag 已推送，三个 npm 包均已发布至 latest。GitHub [0.1.0-alpha.5](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.5) 为 Latest、非 Pre-release，标题仅版本号，附三包 tarball。智能体 npm 默认 version/latest=0.1.0-alpha.5；next 仍为此前 alpha.3，请使用 latest。
+
+发布后验证：node scripts/registry-smoke.mjs 退出 0，registry README 与安装包 README 一致、integrity 3/3、fixture E2E 3/3、无 workspace 链接 PASS。设置 DSH_RC_BIN/DSH_ALPHA_BIN 后 node scripts/dsh-registry-install.mjs 退出 0，两版均 registryInstall/bundleReconcile/uninstall PASS；使用全新隔离 DSH_HOME，未读取生产 profile，未开启端口。两个共享包的官方 README 与 tarball integrity 也逐一通过。
+
+最终 tarball SHA-256：core 40551876bae717667f6e503620735ec12bb07855f29c2adca18b58dc45ccf728；Provider a670d5e2c016c9a9a7ca38378c6f050aaac89c7a3b82b8baa50046db8ab265b4；agent 940b00d14b76718e49ae4c56599184fd07af35ebd65e2cf4690142f0c88f8cc8。
 
 ## 当前限制与后续
 
