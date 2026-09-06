@@ -3,7 +3,7 @@ import { join, resolve, dirname, basename } from 'node:path';
 import { analyzeDocument, buildFillPlan, executePlan, applyChangeSet, serialize, FillError } from 'form-fill-core';
 import { createMockProvider, FIELD_CATALOG } from 'qcc-form-fill-provider';
 
-export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = 100, confirmPaidCalls = false, configuration = {}, selectedFields } = {}) {
+export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = 100, confirmPaidCalls = false, configuration = {}, selectedFields, signal, onProgress, previousChangeSet, retryOnly } = {}) {
   if (provider.mode !== 'mock' && (provider.mode !== 'qcc' || confirmPaidCalls !== true)) throw new FillError('REAL_PROVIDER_DISABLED', '真实来源需要调用方明确授权');
   const { analysis } = analyzeDocument(bytes, FIELD_CATALOG, configuration);
   if (selectedFields !== undefined) {
@@ -12,7 +12,7 @@ export async function previewBytes(bytes, { provider = createMockProvider(), max
     analysis.opportunities=analysis.opportunities.filter(o=>selectedFields.includes(o.field));
   }
   const plan = buildFillPlan(analysis, provider.capabilities, provider.version);
-  const changeSet = await executePlan(plan, provider, { maxCalls, confirmPaidCalls });
+  const changeSet = await executePlan(plan, provider, { maxCalls, confirmPaidCalls, signal, onProgress:onProgress?p=>onProgress({...p,analysis,plan}):undefined, previousChangeSet, retryOnly });
   return { analysis, plan, changeSet };
 }
 export async function previewFile(path, options) {

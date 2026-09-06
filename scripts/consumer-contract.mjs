@@ -28,6 +28,20 @@ for (const file of files) {
   await cp(join(legacy, file), target);
 }
 const npmArgs = ['install', '--offline', '--ignore-scripts', '--legacy-peer-deps', '--no-audit', '--no-fund', '--package-lock=false'];
+let latestGolden;
+if(process.env.LEGACY_ADAPT==='1'){
+ execFileSync('npm',npmArgs,{cwd:oldConsumer,stdio:'pipe'});
+ execFileSync('npm',['run','check'],{cwd:oldConsumer,stdio:'pipe',maxBuffer:16*1024*1024});
+ await mkdir(join(oldConsumer,'test/helpers'),{recursive:true});
+ await cp(join(root,'fixtures/legacy-characterization.mjs'),join(oldConsumer,'test/helpers/form-fill-parity.mjs'));
+ const collect=()=>execFileSync(process.execPath,['--input-type=module','-e','import {collectLegacy} from "./test/helpers/form-fill-parity.mjs";console.log(JSON.stringify(await collectLegacy()))'],{cwd:oldConsumer,encoding:'utf8'});
+ latestGolden=JSON.parse(collect());
+ assert.equal(latestGolden.cases.length,24);
+ const enginePath=join(oldConsumer,'lib/engine.js'),source=await readFile(enginePath,'utf8');
+ const start=source.indexOf('export function parseCsv(text) {'),end=source.indexOf('/** 懒加载 xlsx',start);
+ assert.ok(start>=0&&end>start,'recognized latest parser boundary');
+ await writeFile(enginePath,source.slice(0,start)+'export { parseCsv } from "form-fill-core/legacy-csv";\n\n'+source.slice(end));
+}
 const legacyManifest=JSON.parse(await readFile(join(oldConsumer,'package.json')));
 legacyManifest.dependencies['form-fill-core']='file:'+tarballs[0];
 await writeFile(join(oldConsumer,'package.json'),JSON.stringify(legacyManifest,null,2));
@@ -36,6 +50,11 @@ assert.equal(JSON.parse(await readFile(join(oldConsumer,'node_modules/form-fill-
 assert.equal((await lstat(join(oldConsumer, 'node_modules/form-fill-core'))).isSymbolicLink(), false);
 const oldLog = execFileSync('npm', ['run', 'check'], { cwd: oldConsumer, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
 console.log(oldLog);
+if(latestGolden){
+ const actual=JSON.parse(execFileSync(process.execPath,['--input-type=module','-e','import {collectLegacy} from "./test/helpers/form-fill-parity.mjs";console.log(JSON.stringify(await collectLegacy()))'],{cwd:oldConsumer,encoding:'utf8'}));
+ assert.deepEqual(actual,latestGolden);
+ console.log('Latest baseline '+execFileSync('git',['rev-parse','HEAD'],{cwd:legacy,encoding:'utf8'}).trim()+': before/after full checks + 24 golden parity PASS');
+}
 const newConsumer = join(sandbox, 'standalone-form-fill');
 await mkdir(newConsumer);
 execFileSync('npm', [...npmArgs, ...tarballs], { cwd: newConsumer, stdio: 'inherit' });

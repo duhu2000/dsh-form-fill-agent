@@ -1,6 +1,6 @@
 {
   "name": "form-fill-core",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.8",
   "private": false,
   "description": "Bounded XLSX parsing, fill planning and non-destructive cell writeback.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/form-fill-core" },

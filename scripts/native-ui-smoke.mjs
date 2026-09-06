@@ -48,7 +48,7 @@ try{
  const id=await page.evaluate(()=>probe.active);assert.match(id,/^session-dsh-form-fill-agent-/);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe');
- await frame.locator('details').first().evaluate(e=>e.open=true);
+ await frame.locator('details:has(#samples)').evaluate(e=>e.open=true);
  await frame.getByRole('button',{name:'客户台账',exact:true}).click();
  await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
  assert.equal(await frame.locator('#changes tr').count(),6);

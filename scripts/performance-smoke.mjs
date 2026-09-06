@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {performance} from 'node:perf_hooks';
+import {fixtureBytes} from './generate-fixtures.mjs';
+import {analyzeDocument,buildFillPlan} from 'form-fill-core';
+import {FIELD_CATALOG,createMockProvider} from 'qcc-form-fill-provider';
+import {gridPage} from '../packages/dsh-form-fill-agent/lib/grid.js';
+const start=performance.now();
+const bytes=fixtureBytes('合成大表',['企业名称','法定代表人',...Array.from({length:8},(_,i)=>'保留列'+i)],Array.from({length:4999},(_,i)=>['合成主体'+i+'有限公司','',...Array.from({length:8},(_,j)=>'v'+i+'-'+j)]),{title:false});
+const generated=performance.now();
+const {analysis}=analyzeDocument(bytes,FIELD_CATALOG),plan=buildFillPlan(analysis,createMockProvider().capabilities,'benchmark');
+const analyzed=performance.now();
+const grid=gridPage({bytes,revision:1,preview:{changeSet:{changes:[]}}},new URLSearchParams({q:'v4998-7',columnStart:'1'}));
+const searched=performance.now();
+assert.equal(plan.calls.length,4999);assert.equal(grid.totalRows,5000);assert.equal(grid.rows.length,1);assert.equal(grid.rows[0].number,5000);
+assert.ok(analyzed-generated<15000,'50k cell analysis must finish within 15s');assert.ok(searched-analyzed<5000,'50k cell full search must finish within 10s');
+console.log(JSON.stringify({synthetic:true,rows:5000,cells:50000,inputBytes:bytes.length,analysisMs:Math.round(analyzed-generated),searchMs:Math.round(searched-analyzed),totalMs:Math.round(searched-start),rssMiB:Math.round(process.memoryUsage().rss/1048576),result:'PASS'}));

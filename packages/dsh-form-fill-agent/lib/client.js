@@ -121,7 +121,7 @@ window.__ModuleLoader__.load({
       try{
        const shell=ctx.conversation?.input?.shell?.(view.id);
        if(!shell?.setDraft)throw Error('missing input');
-       const prompt=String(event.data.summary||'填写已上传表格中的空白字段，保留原值，核验后生成新副本。').slice(0,1000)+'\n'+String(requirements||'').slice(0,1000)+'\n执行关联：调用 form_fill_enrich，taskId='+taskId+'，expectedRevision='+revision+'。字段范围以工作台确认设置为准。';
+       const prompt=String(event.data.summary||'填写已上传表格中的空白字段，保留原值，核验后生成新副本。').slice(0,1000)+'\n'+String(requirements||'').slice(0,1000)+'\n执行关联：调用 form_fill_enrich，taskId='+taskId+'，expectedRevision='+revision+(event.data.retryOnly===true?'，mode=retry（只重试失败、取消或未开始的查询，保留成功结果）':'')+'。字段范围以工作台确认设置为准。';
        const readDraft=()=>shell.state?.getSnapshot?.()?.draft??document.querySelector('[data-composer-card] textarea')?.value;
        let draft=readDraft();if(typeof draft!=='string')throw Error('cannot read draft');
        const mode=event.data.mode;

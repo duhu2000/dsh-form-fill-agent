@@ -136,7 +136,7 @@ for (const [label, name, transform, code] of [
   ['external link', 'xl/_rels/workbook.xml.rels', s => s.replace('Target="worksheets/sheet1.xml"', 'TargetMode="External" Target="https://invalid/"'), 'EXTERNAL_LINK'],
   ['protection', 'xl/worksheets/sheet1.xml', s => s.replace('</worksheet>', '<sheetProtection sheet="1"/></worksheet>'), 'UNSUPPORTED_STRUCTURE'],
   ['validation', 'xl/worksheets/sheet1.xml', s => s.replace('</worksheet>', '<dataValidations count="0"/></worksheet>'), 'UNSUPPORTED_STRUCTURE'],
-  ['formula cache', 'xl/worksheets/sheet1.xml', s => s.replace('<c r="B2"', '<c r="B2"').replace('<row r="2" ht="24" customHeight="1">', '<row r="2" ht="24" customHeight="1"><c r="C2" t="str"><f>""</f><v></v></c>'), 'UNSUPPORTED_FORMULA'],
+  ['external formula', 'xl/worksheets/sheet1.xml', s => s.replace('<row r="2" ht="24" customHeight="1">', '<row r="2" ht="24" customHeight="1"><c r="C2" t="str"><f>WEBSERVICE(&quot;https://invalid/&quot;)</f><v></v></c>'), 'UNSUPPORTED_FORMULA'],
   ['conditional format', 'xl/worksheets/sheet1.xml', s => s.replace('</worksheet>', '<conditionalFormatting sqref="B2"/></worksheet>'), 'UNSUPPORTED_STRUCTURE'],
   ['huge dimension', 'xl/worksheets/sheet1.xml', s => s.replace('A1:B2','A1:XFD1048576'), 'SHEET_LIMIT'],
   ['duplicate cell', 'xl/worksheets/sheet1.xml', s => s.replace('</row>', '<c r="A1"><v>1</v></c></row>'), 'CELL_REFERENCE'],

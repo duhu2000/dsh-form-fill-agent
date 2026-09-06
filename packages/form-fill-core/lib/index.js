@@ -1,7 +1,7 @@
 import { digest, parseWorkbook, isBlank, address, inRange, writeWorkbook } from './workbook.js';
 import { fail, FillError } from './zip.js';
 export { parseWorkbook, FillError };
-export const CORE_VERSION = '0.1.0-alpha.5';
+export const CORE_VERSION = '0.1.0-alpha.8';
 export const SCHEMA_VERSION = 1;
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, '').toLowerCase();
 const idFor = value => digest(Buffer.from(JSON.stringify(value)));
@@ -27,12 +27,13 @@ export function analyzeDocument(bytes, catalog, options = {}) {
   for (const x of options.mappings ?? []) if (!Number.isInteger(x.column) || x.column < 1 || x.column > 128 || (x.field !== null && !catalog.some(f => f.key === x.field))) fail('CONFIG_INVALID', '字段映射无效');
   for (const x of options.anchors ?? []) if (!Number.isInteger(x.row) || !document.sheets.find(s => s.name === x.sheet).rows.some(row => row.number === x.row && !row.hidden) || typeof x.value !== 'string' || !x.value.trim() || x.value.length > 256 || /[\x00-\x1f]/.test(x.value)) fail('CONFIG_INVALID', '主体确认无效');
   for (const sheet of document.sheets) {
+    const cellsByRow=new Map();for(const cell of Object.values(sheet.cells)){if(!cellsByRow.has(cell.row))cellsByRow.set(cell.row,[]);cellsByRow.get(cell.row).push(cell)}
     if (sheet.hidden) { incomplete.push({ sheet: sheet.name, reason: 'hidden-sheet', message: '隐藏工作表未处理' }); continue; }
     if (!selected.includes(sheet.name)) { incomplete.push({ sheet: sheet.name, reason: 'sheet-excluded' }); continue; }
     const explicitHeader = options.headers?.find(x => x.sheet === sheet.name);
     const candidates = [];
     for (const row of (explicitHeader ? sheet.rows.filter(r => r.number === explicitHeader.row) : sheet.rows.filter(r => !r.hidden).slice(0, 30))) {
-      const headers = Object.values(sheet.cells).filter(c => c.row === row.number && !c.hidden && !c.formula && c.type !== 'e' && c.value.trim()).map(c => ({ cell: c.ref, column: c.column, value: c.value }));
+      const headers = (cellsByRow.get(row.number)||[]).filter(c => !c.hidden && !c.formula && c.type !== 'e' && c.value.trim()).map(c => ({ cell: c.ref, column: c.column, value: c.value }));
       const mappings = mapFields(headers, catalog);
       for (const override of options.mappings?.filter(x => x.sheet === sheet.name) ?? []) {
         const mapping = mappings.find(m => m.column === override.column);
@@ -53,7 +54,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
     const anchors = header.mappings.filter(m => catalog.find(f => f.key === m.field)?.anchor);
     tables.push({ sheet: sheet.name, headerRow: header.row, mappings: header.mappings, anchors: anchors.map(a => a.field) });
     for (const row of sheet.rows.filter(r => r.number > header.row)) {
-      const recordCells = Object.values(sheet.cells).filter(c => c.row === row.number);
+      const recordCells = cellsByRow.get(row.number)||[];
       if (!recordCells.some(c => c.value.trim() || c.formula)) continue;
       if (row.hidden) { incomplete.push({ sheet: sheet.name, row: row.number, reason: 'hidden-row' }); continue; }
       const anchor = {};
@@ -70,6 +71,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
       for (const mapping of header.mappings) {
         const ref = address(row.number, mapping.column), cell = sheet.cells[ref];
         const location = { sheet: sheet.name, row: row.number, cell: ref, field: mapping.field, label: mapping.label };
+        if((sheet.readOnlyRanges||[]).some(r=>inRange(row.number,mapping.column,r))){incomplete.push({...location,reason:'protected-source-range'});continue;}
         if (cell?.formula || cell?.type === 'e') { incomplete.push({ ...location, reason: cell.formula ? 'formula-preserved' : 'error-cell' }); continue; }
         if (!isBlank(cell)) {
           if (/^(?:待填|待补充|待填写|—|-|N\/A|\{\{.*\}\})$/i.test(cell.value.trim())) incomplete.push({ ...location, reason: 'placeholder-needs-confirmation' });
@@ -88,18 +90,18 @@ export function analyzeDocument(bytes, catalog, options = {}) {
   return { document, analysis: { kind: 'Analysis', schemaVersion: SCHEMA_VERSION, ...versions, documentHash: document.documentHash, sheets: document.sheets.map(s => ({ name: s.name, hidden: s.hidden })), tables, opportunities, incomplete } };
 }
 export function buildFillPlan(analysis, capabilities, providerVersion) {
-  const calls = [], eligible = [], incomplete = [...analysis.incomplete];
+  const calls = [], callIndex = new Map(), eligible = [], incomplete = [...analysis.incomplete];
   for (const item of analysis.opportunities) {
     const sources = capabilities.filter(c => c.fields.includes(item.field));
     if (sources.length !== 1) { incomplete.push({ ...item, reason: sources.length ? 'ambiguous-source' : 'provider-unavailable' }); continue; }
     const capability = sources[0];
     const key = idFor([item.anchor, capability.id]);
-    let call = calls.find(c => c.id === key);
-    if (!call) { call = { id: key, anchor: item.anchor, capability: capability.id, paid: capability.paid === true, fields: [] }; calls.push(call); }
+    let call = callIndex.get(key);
+    if (!call) { call = { id: key, anchor: item.anchor, capability: capability.id, paid: capability.paid === true, ...(capability.maxCallsPerLookup>1?{maxCallsPerLookup:capability.maxCallsPerLookup}:{}), fields: [] }; calls.push(call);callIndex.set(key,call); }
     if (!call.fields.includes(item.field)) call.fields.push(item.field);
     eligible.push({ ...item, callId: key });
   }
-  const body = { kind: 'FillPlan', schemaVersion: SCHEMA_VERSION, ...versions, providerVersion, documentHash: analysis.documentHash, policy: 'fill-blanks-only', estimatedCalls: calls.length, paidCalls: calls.filter(c => c.paid).length, calls, opportunities: eligible, incomplete };
+  const body = { kind: 'FillPlan', schemaVersion: SCHEMA_VERSION, ...versions, providerVersion, documentHash: analysis.documentHash, policy: 'fill-blanks-only', estimatedCalls: calls.reduce((n,c)=>n+(c.maxCallsPerLookup??1),0), paidCalls: calls.filter(c => c.paid).reduce((n,c)=>n+(c.maxCallsPerLookup??1),0), calls, opportunities: eligible, incomplete };
   return { ...body, planId: idFor(body) };
 }
 export function assertPlan(plan) {
@@ -112,15 +114,36 @@ export async function executePlan(plan, provider, options = {}) {
   if (plan.estimatedCalls > (options.maxCalls ?? 100)) fail('BUDGET_EXCEEDED', '预计调用量超出预算');
   if (plan.paidCalls && options.confirmPaidCalls !== true) fail('PAID_CONFIRMATION_REQUIRED', '付费调用需要明确确认');
   const results = new Map();
-  for (const call of plan.calls) {
-    try { results.set(call.id, await provider.lookup(call)); }
-    catch { results.set(call.id, { status: 'error', code: 'provider-error' }); }
+  const previous=options.previousChangeSet;
+  if(previous){assertChangeSet(previous);if(previous.planId!==plan.planId)fail('PLAN_INVALID','重试计划已变化');}
+  const retryReasons=new Set(['provider-error','cancelled','not-started']);
+  const retryIds=new Set(previous?.incomplete.filter(i=>retryReasons.has(i.reason)).map(i=>i.id));
+  if(options.retryOnly&&!previous)fail('RETRY_INVALID','没有可重试的记录');
+  const calls=options.retryOnly?plan.calls.filter(c=>plan.opportunities.some(o=>o.callId===c.id&&retryIds.has(o.id))):plan.calls;
+  let completed=0;
+  for (const call of calls) {
+    if(options.signal?.aborted)break;
+    const fields=options.retryOnly?call.fields.filter(f=>plan.opportunities.some(o=>o.callId===call.id&&o.field===f&&retryIds.has(o.id))):call.fields;
+    let abort;
+    try { results.set(call.id, await Promise.race([provider.lookup({...call,fields},{signal:options.signal}),new Promise((_,reject)=>{abort=()=>reject(Error('cancelled'));options.signal?.addEventListener('abort',abort,{once:true})})])); }
+    catch { results.set(call.id, { status: options.signal?.aborted?'cancelled':'error', code: 'provider-error' }); }
+    finally {if(abort)options.signal?.removeEventListener('abort',abort)}
+    completed++;
+    await options.onProgress?.({completed,total:calls.length,changeSet:assembleChangeSet(plan,provider,results,previous,options.retryOnly?retryIds:undefined,options.signal?.aborted)});
   }
+  return assembleChangeSet(plan,provider,results,previous,options.retryOnly?retryIds:undefined,options.signal?.aborted);
+}
+function assembleChangeSet(plan,provider,results,previous,retryIds,cancelled){
   const changes = [], incomplete = [...plan.incomplete];
   for (const item of plan.opportunities) {
+    if(retryIds&&!retryIds.has(item.id)){
+      const change=previous.changes.find(c=>c.id===item.id),issue=previous.incomplete.find(c=>c.id===item.id);
+      if(change)changes.push(change);else if(issue)incomplete.push(issue);continue;
+    }
+    if(!results.has(item.callId)){incomplete.push({...item,reason:cancelled?'cancelled':'not-started'});continue;}
     const result = results.get(item.callId), candidate = result?.values?.[item.field];
     let reason;
-    if (result?.status !== 'exact') reason = result?.status === 'ambiguous' ? 'candidate-review-required' : result?.status === 'not-found' ? 'no-match' : 'provider-error';
+    if (result?.status !== 'exact') reason = result?.status === 'cancelled'?'cancelled':result?.status === 'ambiguous' ? 'candidate-review-required' : result?.status === 'not-found' ? 'no-match' : 'provider-error';
     else if (!candidate || candidate.value === null || candidate.value === undefined || String(candidate.value).trim() === '') reason = 'no-data';
     else if (candidate.confidence < 0.95 || !Number.isFinite(candidate.confidence)) reason = 'low-confidence';
     else if (!candidate.source || typeof candidate.source !== 'string' || !candidate.acquiredAt || !Number.isFinite(Date.parse(candidate.acquiredAt))) reason = 'missing-provenance';

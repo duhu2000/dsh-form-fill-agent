@@ -17,7 +17,7 @@ try {
   await page.goto(base);
   for (const [name, count] of [['客户台账',6],['供应商准入表',4],['合同主体信息表',6]]) {
     await page.getByRole('button', { name: '1 导入与识别', exact: true }).click();
-    await page.locator('details').evaluate(el => el.open = true);
+    await page.locator('details:has(#samples)').evaluate(el => el.open = true);
     await page.getByRole('button', { name, exact: true }).click();
     await page.getByText('预览已准备好，请检查后确认。', { exact: true }).waitFor();
     assert.equal(await page.locator('#changes tr').count(), count);

@@ -118,7 +118,7 @@ test('literal dropdown is preserved byte-for-byte and only permitted values are 
  assert.equal(denied.changeSet.changes.length,0);
  assert.equal(denied.changeSet.incomplete[0].reason,'validation-conflict');
 });
-test('formula/area-based dropdown remains rejected',()=>{
+test('unsupported, missing-source and external dropdown remain rejected',()=>{
  for(const value of ['Sheet2!A1:A2','INDIRECT(A1)','[outside.xlsx]Sheet1!A1'])assert.throws(()=>parseWorkbook(validated(value)),{code:'UNSUPPORTED_STRUCTURE'});
 });
 test('selected worksheet is the only source of opportunities',async()=>{

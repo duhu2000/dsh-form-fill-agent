@@ -23,6 +23,12 @@ try{
  assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
  await page.reload();await page.getByRole('button',{name:'2 字段与规则',exact:true}).click();
  assert.equal(await page.getByLabel('配置表 字段 单位',{exact:true}).inputValue(),'company_name');
+ await page.getByRole('button',{name:'保存字段规则',exact:true}).click();
+ await page.getByText('字段规则已保存在本浏览器。',{exact:true}).waitFor();
+ await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('');
+ await page.getByRole('button',{name:'复用字段规则',exact:true}).click();
+ await page.getByText('字段规则已复用，请检查后重新核验。',{exact:true}).waitFor();
+ assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
  // Seed synthetic Provider responses through the same HTTP service; choices remain native UI.
  const candidateBytes=fixtureBytes('候选表',['企业名称','法定代表人'],[['合成待选主体有限公司','']],{title:false});
  const created=await page.evaluate(async base64=>{
@@ -37,6 +43,24 @@ try{
  await page.getByText('主体已确认，请重新发送查询指令。',{exact:true}).waitFor();
  await page.getByRole('button',{name:'4 填写预览',exact:true}).click();
  assert.ok((await page.locator('#changes').innerText()).includes('合成人员乙'));
+ const check=page.locator('#changes input[type=checkbox]').first();await check.uncheck();await page.locator('#selection').click();
+ await page.getByText('选择已应用，请核对新的预览。',{exact:true}).waitFor();assert.equal(await check.isChecked(),false);
+ await page.reload();await page.getByRole('button',{name:'4 填写预览',exact:true}).click();assert.equal(await check.isChecked(),false);
+ await check.check();await page.locator('#selection').click();await page.getByText('选择已应用，请核对新的预览。',{exact:true}).waitFor();
+ await page.locator('#grid summary').click();await page.locator('#grid-body tr').first().waitFor();
+ await page.locator('#grid-view').selectOption('result');await page.locator('#grid-body .grid-changed').first().waitFor();
+ await page.locator('#grid-query').fill('合成人员乙');await page.locator('#grid-search').click();
+ await page.waitForFunction(()=>document.querySelectorAll('#grid-body tr').length===1);
  for(const viewport of [{width:390,height:700},{width:1024,height:768}]){await page.setViewportSize(viewport);await page.getByRole('button',{name:'2 字段与规则',exact:true}).click();await page.getByRole('button',{name:'应用字段设置',exact:true}).scrollIntoViewIfNeeded();assert.ok(await page.getByRole('button',{name:'应用字段设置',exact:true}).isVisible())}
- console.log('Configuration UI: mapping, reload, unselected candidates, explicit second choice, preview, narrow layouts PASS');
+ await page.setViewportSize({width:1440,height:900});
+ const controlled=await page.evaluate(async base64=>(await fetch('/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base64,analyzeOnly:true})})).json(),fixtureBytes('取消演示',['企业名称','法定代表人'],[['合成取消有限公司','']],{title:false}).toString('base64'));
+ await page.goto('http://127.0.0.1:'+server.address().port+'/#task='+controlled.id);
+ const {createQccProvider}=await import('qcc-form-fill-provider');
+ let entered;const started=new Promise(ok=>entered=ok);
+ const run=service.enrich(controlled.id,createQccProvider({callTool:async(_a,_b,{signal})=>{entered();await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Error('cancelled')),{once:true}))}}),controlled.revision);
+ await started;await page.reload();await page.locator('#cancel-run').click();await run;
+ await page.waitForFunction(()=>!document.querySelector('#retry-run').disabled);
+ await page.locator('#retry-run').click();await page.getByText('仅重试失败、取消或未执行的部分，保留成功结果。',{exact:false}).first().waitFor();
+ assert.match(await page.locator('#qcc-command').textContent(),/mode=retry/);
+ console.log('Configuration UI: cancellation and retry instruction, restored selection, full grid/search, mapping reuse, mapping, reload, unselected candidates, explicit second choice, preview, narrow layouts PASS');
 }finally{await browser?.close();service.dispose();await new Promise(ok=>server.close(ok))}
