@@ -1,0 +1,54 @@
+# AI填表智能体
+
+[![npm](https://img.shields.io/npm/v/dsh-form-fill-agent)](https://www.npmjs.com/package/dsh-form-fill-agent)
+[![GitHub release](https://img.shields.io/github/v/release/duhu2000/dsh-form-fill-agent)](https://github.com/duhu2000/dsh-form-fill-agent/releases)
+
+AI填表是 DeepSeek Harness（DSH）的企业表格填写插件：识别已有 XLSX 中的空白字段，通过企查查 MCP 补全工商信息，展示单元格级预览，在用户确认后生成新的 XLSX 副本。
+
+由企查查 MCP 服务团队开发。产品仍处于 alpha 阶段。
+
+## 安装
+
+需要 Node.js 22 或以上，以及 DSH。已验证的 DSH 基线为 0.1.1-rc.2 和 0.1.2-alpha.2。
+
+```sh
+dsh plugin --profile web add dsh-form-fill-agent@latest
+```
+
+建议先使用专用测试 profile。在 DSH 设置中配置模型，并连接已授权的企查查企业工商 MCP。插件不附带模型或企查查访问凭据。
+
+## 使用流程
+
+1. 从 DSH 的“AI填表”入口进入专属会话，打开工作台并上传 XLSX。
+2. 首次分析仅识别表格结构、主体锚点和空白字段，不发起企查查查询。
+3. 在“主体核验”中生成填写指令，回填到对话框并发送；模型调用 form_fill_enrich 完成查询。
+4. 在“填写预览”检查各单元格的事实值、来源及未完成项，可排除不需要填写的单元格。
+5. 确认后下载新 XLSX 副本、变更清单和未完成清单。原文件不覆盖，已有内容默认保留。
+
+同源独立入口为 /form-fill/。工作台附带客户台账、供应商准入表和合同主体信息表三套合成演示，不使用真实客户数据。
+
+## 当前能力
+
+- 简单 XLSX 安全解析、工作表与表头识别、企业名称或信用代码锚点识别。
+- 确定性字段语义映射、只填空白、单元格级预览与来源追溯。
+- 六类工商字段：统一社会信用代码、法定代表人、成立日期、注册地址、登记状态和登记机关。
+- 五步工作台、指令回填、任务历史、单元格排除与重启恢复。
+- 共享内核 form-fill-core 和企查查适配包 qcc-form-fill-provider。
+
+## 使用边界与数据保存
+
+支持企业完整登记名称或 18 位信用代码；简称、主体不一致或多候选不会自动猜选。字段映射采用确定性规则，不让模型编造事实。复杂 Excel 结构和 Word 暂不支持，保真边界见下方安全说明。
+
+真实查询使用用户连接的企查查 MCP 账号，积分规则以该账号为准。模型服务也需单独配置。
+
+显式设置 DSH_HOME 时，任务保存至其 form-fill-tasks 目录，默认 24 小时过期；未设置时使用内存。任务保存输入表格和归一化预览，不持久化原始 MCP 响应，可主动删除任务。模型及 MCP 凭据由宿主管理。
+
+## 文档与反馈
+
+- [源码与完整说明](https://github.com/duhu2000/dsh-form-fill-agent)
+- [安全与保真边界](https://github.com/duhu2000/dsh-form-fill-agent/blob/main/docs/security.md)
+- [双基线原生验收](https://github.com/duhu2000/dsh-form-fill-agent/blob/main/docs/U2-NATIVE-ACCEPTANCE.md)
+- [版本记录](https://github.com/duhu2000/dsh-form-fill-agent/blob/main/CHANGELOG.md)
+- [问题反馈](https://github.com/duhu2000/dsh-form-fill-agent/issues)
+
+MIT License.
