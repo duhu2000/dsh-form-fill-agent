@@ -2,6 +2,8 @@
 
 本轮增量：0.1.0-alpha.2 已实现五步工作台、原生业务会话导航、指令回填、任务历史与 revision、单元格排除。49 项测试通过；原生 React 契约验收通过；双基线 DSH 网页/重启验收通过。下文为此前 M0–M2 阶段记录；最新范围、命令、发布状态以 [U1-ACCEPTANCE.md](U1-ACCEPTANCE.md) 为准。
 
+发布收口：代码 4f74b41 与 v0.1.0-alpha.2 已推送，GitHub Release 和 npm alpha.2 已发布；next=alpha.2、latest=alpha.1。发布后三包 integrity、三模板 registry E2E、两版全新隔离 DSH 安装/卸载均通过。
+
 更新：2026-09-06。本地 M0/M1 已完成，M1.1 工作台上传、预览、确认、下载及双基线隔离验收已完成；原生侧栏入口仍需人工宿主界面验收。整体产品尚未完成。完整命令与结果见 M1-ACCEPTANCE.md。
 
 后续 M2 已完成工商 Provider、真实 MCP 写回验证、Agent-owned 高层工具和任务持久化，当前 46 项测试通过。项目所有者已授权真实调用及发布；渠道状态以 M2-ACCEPTANCE.md 为准。

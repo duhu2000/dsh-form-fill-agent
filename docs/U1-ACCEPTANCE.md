@@ -24,6 +24,8 @@
 | node scripts/native-ui-smoke.mjs | React / Chromium 业务会话、导航、草稿回填、关闭恢复、宽窄屏、普通新会话通过；page errors 0 |
 | node scripts/dsh-smoke.mjs | rc.2 / alpha.2 各三套 HTTP + 浏览器闭环、零变更二次填写、重启恢复、卸载组成检查通过 |
 | LEGACY_REPO=../dsh-data-cleaning-agent-form-fill-compat-v086 npm run test:consumer | 旧插件 211 tests + 24 golden 通过；独立 tarball 三模板 E2E 3/3，无 workspace 链接 |
+| node scripts/registry-smoke.mjs | 发布后从公共 registry 全新安装；三包 integrity 3/3、三模板 E2E 3/3，无 workspace 链接 |
+| node scripts/dsh-registry-install.mjs | DSH 0.1.1-rc.2 / 0.1.2-alpha.2 各自全新 DSH_HOME；registry 安装、bundle 配置与卸载全部通过，未使用生产 profile，开放端口数为 0 |
 
 浏览器覆盖浅/深色及四组向导视口，真实文件上传、任务历史、来源和下载访问守卫。原生 UI 自动测试使用复刻宿主槽位的真实 React，不能代替真实宿主原生入口和模型对话全链路验收。
 
@@ -57,5 +59,5 @@ DSH 安装后从 AI填表入口创建业务会话，打开工作台导入，生�
 
 ## 发布状态
 
-代码 4f74b41 已提交并推送；v0.1.0-alpha.2 标签及 [GitHub 预览 Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.2) 已发布。npm alpha.2 发布请求正在等待 npm 账户验证；尚不能视为公开可安装。form-fill-core 和 qcc-form-fill-provider 保持已发布 alpha.1，不重复发布。
+代码 4f74b41 已提交并推送；v0.1.0-alpha.2 标签及 [GitHub 预览 Release](https://github.com/duhu2000/dsh-form-fill-agent/releases/tag/v0.1.0-alpha.2) 已发布。[npm dsh-form-fill-agent@0.1.0-alpha.2](https://www.npmjs.com/package/dsh-form-fill-agent/v/0.1.0-alpha.2) 已成功公开发布并完成全新安装验收。npm next 指向 alpha.2，latest 保持 alpha.1；使用精确版本或 next 安装新版。首次认证回调失效后，重新完成 npm 账户验证并发布成功。form-fill-core 和 qcc-form-fill-provider 保持已发布 alpha.1，不重复发布。
 市场草稿 PR #4487 仍受仓库年龄和维护者审核约束；此版不代表市场已上架。
