@@ -1,4 +1,6 @@
-# 0.1.0-alpha.9 次日发布清单
+# 0.1.0-alpha.9 发布清单
+
+当前状态（2026-09-07）：三包已发布 npm latest，完整性、README、三模板和双宿主隔离安装验收通过，详见 RELEASE-alpha9-PUBLISHED.md。以下保留发布前计划及包哈希作为审计记录。
 
 今晚仅 commit / push / tag，未执行 npm publish。alpha.8 是中间验证 tag，次日直接发布最终 alpha.9 三包。GitHub Latest 保持已发布 alpha.7，避免向用户推荐 registry 中不存在的版本。
 

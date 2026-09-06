@@ -1,6 +1,6 @@
 # AI填表开发进度
 
-更新：2026-09-07。当前开发版本 **0.1.0-alpha.9**（三包同版），npm 已发布版本仍为 **0.1.0-alpha.7**。本轮按所有者要求先开发、提交和 tag，npm 等所有者次日认证；不能把本地打包当成 npm 发布。
+更新：2026-09-07。当前版本 **0.1.0-alpha.9**（三包同版），三包均已发布 npm latest，registry 完整性、README、三模板独立安装及双宿主隔离安装/卸载验收通过。发布回执见 [RELEASE-alpha9-PUBLISHED.md](RELEASE-alpha9-PUBLISHED.md)。
 
 | 优先级 | 当前交付 | 验收与边界 |
 |---|---|---|
@@ -22,6 +22,6 @@
 
 后续受限事项：非技术用户正式签收、Excel 桌面实际重算验收；新增工具或未来风险目录变化须独立验证；市场须通过门禁并由维护者合并。不能把上述状态写成“全部完成”或“已上架”。
 
-本轮版本：alpha.8 已 commit/push/tag、六组 CI 通过；alpha.9 已 commit/push/tag（e4a17ad），96 项测试及六组 CI 通过；npm 两版均未发布。次日仅发布最终 alpha.9 三包，不必补发中间 alpha.8。
+本轮版本：alpha.8 已 commit/push/tag、六组 CI 通过，未发布 npm；最终 alpha.9 已 commit/push/tag（e4a17ad），96 项测试及六组 CI 通过，三包 npm 发布及安装回归完成。
 
 历史发布记录： [alpha.7](RELEASE-alpha7.md)、[alpha.6](U4-UI-ACCEPTANCE.md)、[alpha.5](U3-CONTROLS-ACCEPTANCE.md)、[alpha.3](U2-NATIVE-ACCEPTANCE.md)、[alpha.2](U1-ACCEPTANCE.md)、[M2](M2-ACCEPTANCE.md)、[M1](M1-ACCEPTANCE.md)。这些文档的测试/版本仅对其当时提交有效。

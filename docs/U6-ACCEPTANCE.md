@@ -1,6 +1,6 @@
 # alpha.9：剩余 Provider 批次与兼容收口
 
-更新：2026-09-07。三包版本 0.1.0-alpha.9。alpha.8 的网格、选择、取消/重试与 Excel 保真全部保留；npm 按所有者要求未发布，默认安装仍为已发布 alpha.7。
+更新：2026-09-07。三包版本 0.1.0-alpha.9。alpha.8 的网格、选择、取消/重试与 Excel 保真全部保留；三包已发布 npm latest，安装验收见 RELEASE-alpha9-PUBLISHED.md。
 
 ## 本轮完成
 
@@ -44,10 +44,10 @@
 
 ## 仍需外部条件
 
-- npm：所有者次日认证后发布最终 alpha.9 三包，顺序 core → Provider → agent；无需补发中间 alpha.8。随后核验 registry 完整性、README 和隔离安装，再同步 GitHub Latest 数字标题。
+- npm：已完成最终 alpha.9 三包发布、registry 完整性、README、三模板及双宿主隔离安装验收；中间 alpha.8 不补发。
 - 正式用户签收：USER-ACCEPTANCE.md 未代签；本机未安装 Microsoft Excel。LibreOffice 重算证据不冒充 Microsoft Excel 验收。
 - 市场：PR #4487 的年龄门禁最早北京时间 2026-09-07 19:09 满足，之后还须维护者审核合并。当前仍未上架。
 
 范围边界：只支持 security.md 列明的 Excel 结构，不承诺任意工作簿；默认每个计划最多 100 次预计工具调用，超出需拆分表格或由调用方明确设置预算。大表性能验证覆盖查看/分析，不代表无上限远端批量查询。后续新增 QCC 工具与目录变更必须继续契约验证，不能自动接受未知字段。
 
-Git/CI：运行代码 e4a17ad7c99be983d3d84c5fe1df5cee448e54c9 已提交、推送，v0.1.0-alpha.9 已推送；[CI 34048662436](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34048662436) 六组全部成功。npm：未发布 alpha.9；只读核验 latest=alpha.7、next=alpha.3，GitHub Latest 标题为 0.1.0-alpha.7。次日操作及三包 SHA-256 见 RELEASE-alpha9.md。
+Git/CI：运行代码 e4a17ad7c99be983d3d84c5fe1df5cee448e54c9 已提交、推送，v0.1.0-alpha.9 已推送；[CI 34048662436](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34048662436) 六组全部成功。npm：alpha.9 三包发布及安装验收完成。三包 SHA-256 见 RELEASE-alpha9.md，发布回执见 RELEASE-alpha9-PUBLISHED.md。
