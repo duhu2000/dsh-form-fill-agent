@@ -2,7 +2,7 @@
   "analysis": {
     "kind": "Analysis",
     "schemaVersion": 1,
-    "coreVersion": "0.2.0",
+    "coreVersion": "0.2.8",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
     "documentHash": "2192c92079dce6d772533620b49247e3e120e6239fbfbaa365715b6345131cca",
@@ -177,7 +177,7 @@
   "plan": {
     "kind": "FillPlan",
     "schemaVersion": 1,
-    "coreVersion": "0.2.0",
+    "coreVersion": "0.2.8",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
     "providerVersion": "0.2.0",
@@ -321,17 +321,17 @@
         "reason": "unknown-field"
       }
     ],
-    "planId": "b15c13bc65d0a1c0f513608f574b02a7b409e8c62aa05fcade03f086f104e165"
+    "planId": "363189da03cf6f0b4e7c17b47d35de1bf561fbf4488aa3de6415c168fd756e83"
   },
   "changeSet": {
     "kind": "ChangeSet",
     "schemaVersion": 1,
-    "coreVersion": "0.2.0",
+    "coreVersion": "0.2.8",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
     "providerVersion": "0.2.0",
     "documentHash": "2192c92079dce6d772533620b49247e3e120e6239fbfbaa365715b6345131cca",
-    "planId": "b15c13bc65d0a1c0f513608f574b02a7b409e8c62aa05fcade03f086f104e165",
+    "planId": "363189da03cf6f0b4e7c17b47d35de1bf561fbf4488aa3de6415c168fd756e83",
     "changes": [
       {
         "id": "e9b048491859651f8e295b79ddffdf1f81250c122c92e8a1ca744f288bfcccef",
@@ -452,6 +452,6 @@
         "reason": "unknown-field"
       }
     ],
-    "changeSetId": "f82a98808692e701427682c6cbfc4478bd9a08684d7ec8fecfe7caa036437ba5"
+    "changeSetId": "656c4a858ed879bbcdaaacfb2bcf46ed4901e91f43cf979cd002e94590aea4f7"
   }
 }

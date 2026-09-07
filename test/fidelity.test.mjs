@@ -12,6 +12,30 @@ test('unsafe conditional thresholds, namespaced formulas and reversed dimensions
 });
 function input(){return readZip(fixtureBytes('保真表',['企业名称','法定代表人'],[['合成客户甲有限公司','']],{title:false}))}
 function add(entries,xml){entries.set(path,Buffer.from(entries.get(path).toString().replace('</worksheet>',xml+'</worksheet>')));return entries}
+test('static integer validation is preserved and protected; any-value validation permits filling',async()=>{
+ const rules='<dataValidations count="2"><dataValidation type="whole" operator="between" sqref="B2"><formula1>192107</formula1><formula2>202512</formula2></dataValidation><dataValidation allowBlank="1" sqref="A1:B1"/></dataValidations>';
+ const bytes=writeZip(add(input(),rules)),p=await previewBytes(bytes);
+ assert.equal(p.changeSet.changes.length,0);
+ const out=readZip(applyChangeSet(bytes,p.plan,p.changeSet,{confirmChangeSetId:p.changeSet.changeSetId}).bytes);
+ assert.ok(out.get(path).toString().includes(rules));
+ const any=writeZip(add(input(),'<dataValidations count="1"><dataValidation allowBlank="1" sqref="B2"/></dataValidations>'));
+ assert.equal((await previewBytes(any)).changeSet.changes.length,1);
+ for(const formula of ['WEBSERVICE("https://invalid.test")','202513'])assert.throws(()=>parseWorkbook(writeZip(add(input(),rules.replace('192107',formula)))),{code:'UNSUPPORTED_STRUCTURE'});
+});
+test('duplicate value highlighting survives filling with unchanged rules and styles',async()=>{
+ const rules='<conditionalFormatting sqref="A1:B1"><cfRule type="duplicateValues" dxfId="0" priority="1"/></conditionalFormatting><conditionalFormatting sqref="B2"><cfRule type="duplicateValues" dxfId="0" priority="2"/></conditionalFormatting>';
+ const entries=add(input(),rules);
+ const styles=entries.get('xl/styles.xml').toString().replace('</styleSheet>','<dxfs count="1"><dxf><font><color rgb="FFFF0000"/></font></dxf></dxfs></styleSheet>');
+ entries.set('xl/styles.xml',Buffer.from(styles));
+ const bytes=writeZip(entries),p=await previewBytes(bytes);
+ assert.equal(p.changeSet.changes.length,1);
+ const output=applyChangeSet(bytes,p.plan,p.changeSet,{confirmChangeSetId:p.changeSet.changeSetId}).bytes,out=readZip(output);
+ assert.ok(out.get(path).toString().includes(rules));
+ for(const [name,value]of entries)if(name!==path)assert.deepEqual(out.get(name),value);
+ assert.equal(XLSX.read(output).Sheets['保真表'].B2.v,'合成人员甲');
+ const bad=rules.replace('priority="1"/>','priority="1"><extLst/></cfRule>');
+ assert.throws(()=>parseWorkbook(writeZip(add(input(),bad))),{code:'UNSUPPORTED_STRUCTURE'});
+});
 test('ordinary formula coexists, formula XML retained, stale caches removed and full recalculation requested',async()=>{
  const entries=input();entries.set(path,Buffer.from(entries.get(path).toString().replace('</sheetData>','<row r="3"><c r="A3"/><c r="B3"><f>LEN(B2)</f><v>999</v></c></row></sheetData>')));
  const bytes=writeZip(entries),p=await previewBytes(bytes),output=applyChangeSet(bytes,p.plan,p.changeSet,{confirmChangeSetId:p.changeSet.changeSetId}).bytes,out=readZip(output);

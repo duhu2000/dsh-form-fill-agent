@@ -104,7 +104,7 @@ export function parseWorkbook(input) {
       String(cf['@_sqref']||'').split(/\s+/).forEach(range);
       if(!cf.cfRule)fail('UNSUPPORTED_STRUCTURE','条件格式缺少规则');
       for(const rule of array(cf.cfRule)){
-        if(!['cellIs','expression','colorScale','dataBar','iconSet'].includes(rule['@_type'])||rule.extLst!==undefined)fail('UNSUPPORTED_STRUCTURE','条件格式规则暂不支持');
+        if(!['cellIs','expression','colorScale','dataBar','iconSet','duplicateValues'].includes(rule['@_type'])||rule.extLst!==undefined)fail('UNSUPPORTED_STRUCTURE','条件格式规则暂不支持');
         for(const formula of array(rule.formula))validateFormula(formula);
         for(const group of ['colorScale','dataBar','iconSet'])for(const threshold of array(rule[group]?.cfvo))if(threshold['@_type']==='formula')validateFormula(threshold['@_val']);
       }
@@ -112,13 +112,16 @@ export function parseWorkbook(input) {
     if (sheet.dataValidations !== undefined && !sheet.dataValidations?.dataValidation) fail('UNSUPPORTED_STRUCTURE', '下拉验证结构为空');
     const validations = array(sheet.dataValidations?.dataValidation).map(rule => {
       const literal = text(rule.formula1);
-      if (rule['@_type'] !== 'list' || typeof literal !== 'string' || !literal || rule.formula2 !== undefined || Object.keys(rule).some(k => !k.startsWith('@_') && k !== 'formula1')) fail('UNSUPPORTED_STRUCTURE', '仅支持固定文本或内部区域下拉列表');
       const refs = String(rule['@_sqref'] ?? '').trim().split(/\s+/);
       if (refs.length > 1000) fail('SHEET_LIMIT', '验证区域过多');
       const ranges = refs.map(range);
       if (ranges.some(r => r.start.row > r.end.row || r.start.column > r.end.column)) fail('CELL_REFERENCE', '验证区域无效');
+      const children=Object.keys(rule).filter(k=>!k.startsWith('@_'));
+      if (!rule['@_type'] && children.length===0) return null;
+      if(rule['@_type']==='whole'&&rule['@_operator']==='between'&&children.every(k=>['formula1','formula2'].includes(k))&&/^-?\d+$/.test(literal)&&/^-?\d+$/.test(text(rule.formula2))&&Number.isSafeInteger(Number(literal))&&Number.isSafeInteger(Number(text(rule.formula2)))&&Number(literal)<=Number(text(rule.formula2)))return {ranges,values:[]};
+      if (rule['@_type'] !== 'list' || typeof literal !== 'string' || !literal || rule.formula2 !== undefined || children.some(k=>k!=='formula1')) fail('UNSUPPORTED_STRUCTURE', '仅支持固定文本或内部区域下拉列表');
       return /^"[^"]*"$/.test(literal)?{ ranges, values: literal.slice(1,-1).split(',') }:{ranges,reference:literal};
-    });
+    }).filter(Boolean);
     if (sheet.dimension?.['@_ref']) range(sheet.dimension['@_ref']);
     const merges = array(sheet.mergeCells?.mergeCell).map(m => range(m['@_ref']));
     const hiddenColumns = array(sheet.cols?.col).filter(c => c['@_hidden'] === '1').map(c => [Number(c['@_min']), Number(c['@_max'])]);
