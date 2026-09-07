@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { verifyRegistryPackage } from './registry-package.mjs';
 import assert from 'node:assert/strict';
 
 const names = ['form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent'];
@@ -23,7 +23,6 @@ for (const pkg of packages) {
 const missing = [];
 for (const pkg of packages) {
   const file = `./artifacts/${pkg.name}-${pkg.version}.tgz`;
-  const integrity = 'sha512-' + createHash('sha512').update(readFileSync(file)).digest('base64');
   const response = await fetch(`https://registry.npmjs.org/${pkg.name}/${pkg.version}`);
   if (response.status === 404) {
     missing.push({ pkg, file });
@@ -31,7 +30,7 @@ for (const pkg of packages) {
   }
   assert.equal(response.status, 200, 'Registry lookup failed; refusing to assume unpublished');
   const remote = await response.json();
-  assert.equal(remote.dist.integrity, integrity, `Published ${pkg.name}@${pkg.version} differs; bump version`);
+  await verifyRegistryPackage(file, remote);
   console.log(`Verified existing ${pkg.name}@${pkg.version}`);
 }
 for (const { pkg, file } of missing) {

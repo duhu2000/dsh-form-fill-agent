@@ -3,7 +3,7 @@ import { mkdtemp, readFile, lstat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { verifyRegistryPackage } from './registry-package.mjs';
 import assert from 'node:assert/strict';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const version=JSON.parse(await readFile(join(root,'packages/dsh-form-fill-agent/package.json'))).version;
@@ -13,8 +13,8 @@ const registryReadme=JSON.parse(execFileSync('npm',['view','dsh-form-fill-agent'
 assert.equal(registryReadme.trim(),expectedReadme.trim(),'npm package page README matches published source');
 for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
   const version=JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version;
-  const integrity=JSON.parse(execFileSync('npm',['view',name+'@'+version,'dist.integrity','--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
-  assert.equal(integrity,'sha512-'+createHash('sha512').update(await readFile(join(root,'artifacts',name+'-'+version+'.tgz'))).digest('base64'));
+  const remote=JSON.parse(execFileSync('npm',['view',name+'@'+version,'--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
+  await verifyRegistryPackage(join(root,'artifacts',name+'-'+version+'.tgz'),remote);
 }
 execFileSync('npm',['install','--ignore-scripts','--no-audit','--no-fund','--package-lock=false','--registry=https://registry.npmjs.org/','dsh-form-fill-agent@'+version],{cwd:directory,stdio:'inherit'});
 for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent'])assert.equal((await lstat(join(directory,'node_modules',name))).isSymbolicLink(),false);
