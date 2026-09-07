@@ -1,0 +1,53 @@
+name: Release
+on:
+  push:
+    tags: ['V*', 'v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@11.19.0
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/verify-pack.mjs
+      - name: Publish missing versions using OIDC (manual runs only inspect)
+        env:
+          RELEASE_EVENT: ${{ github.event_name }}
+        run: node scripts/publish-release.mjs
+      - run: node scripts/registry-smoke.mjs
+      - name: Create numeric GitHub Latest release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./packages/dsh-form-fill-agent/package.json').version")
+          gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$VERSION" --notes-file "docs/RELEASE-$VERSION.md" --latest
