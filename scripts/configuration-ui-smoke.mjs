@@ -27,7 +27,7 @@ try{
  await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:1440,height:900});
  const bytes=fixtureBytes('配置表',['单位','负责人'],[['合成客户甲有限公司','']],{title:false});
  await page.locator('#file').setInputFiles({name:'合成映射.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
- await page.getByRole('button',{name:'分析表格',exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'分析表格',exact:true}).count(),0);
  await page.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
  assert.equal(await page.locator('#grid').getAttribute('open'),'');
  await page.locator('#grid-body tr').first().waitFor();
@@ -130,9 +130,9 @@ try{
  assert.ok((await phone.innerText()).includes('未匹配'));
  assert.equal(await page.getByLabel('字段搜索 字段 联系电话',{exact:true}).inputValue(),'');
  await phone.locator('summary').click();
- assert.ok(await phone.getByRole('button',{name:'首选联系电话',exact:true}).isVisible());
- assert.ok(await phone.getByRole('button',{name:'开票联系电话',exact:true}).isVisible());
- await phone.getByRole('button',{name:'首选联系电话',exact:true}).click();
+ assert.ok(await phone.getByRole('button',{name:'推荐：首选联系电话',exact:true}).isVisible());
+ assert.ok(await phone.getByRole('button',{name:'推荐：开票联系电话',exact:true}).isVisible());
+ await phone.getByRole('button',{name:'推荐：首选联系电话',exact:true}).click();
  assert.equal(await phone.locator('details').getAttribute('open'),null);
  await phone.locator('summary').click();
  const target=page.getByLabel('字段搜索 字段 联系电话',{exact:true});
@@ -173,7 +173,8 @@ try{
  for(const [label,key] of [['原文件导入名称','company_name'],['地址','registered_address'],['网址','contact_official_website'],['联系电话','contact_preferred_phone']]){
   const row=page.locator('.ff-mapping-row').filter({has:page.getByLabel('覆盖验证 字段 '+label,{exact:true})});
   await row.locator('summary').click();
-  if(label==='地址'||label==='网址')assert.ok(await row.getByRole('button',{name:label==='地址'?'注册地址':'官方网站',exact:true}).isVisible());
+  if(label==='地址'||label==='网址')assert.ok(await row.getByRole('button',{name:label==='地址'?'推荐：注册地址':'推荐：官方网站',exact:true}).isVisible());
+  if(label==='地址')for(const candidate of ['注册地址','通信地址','开票地址'])assert.ok(await row.getByRole('button',{name:'推荐：'+candidate,exact:true}).isVisible());
   await page.getByLabel('覆盖验证 字段 '+label,{exact:true}).selectOption(key);
  }
  await page.locator('#configure').click();await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();

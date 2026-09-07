@@ -12,7 +12,7 @@
 <div class="toolbar ff-execution-toolbar"><span id="execution-progress" role="status"></span><button id="cancel-run" disabled>取消查询</button><button id="retry-run" disabled>仅重试失败 / 未完成查询</button></div>
 <details id="grid" hidden><summary>查看完整原表 / 结果表格</summary><p class="muted">全量行列按页查看，隐藏行列只读标注。结果视图展示当前已选填写；下载不受分页或搜索影响。</p><div class="toolbar"><label>工作表 <select id="grid-sheet"></select></label><label>视图 <select id="grid-view"><option value="original">原表</option><option value="result">结果预览</option></select></label><label>搜索全部行 <input id="grid-query" type="search" maxlength="200"></label><button id="grid-search">搜索</button></div><p id="grid-status" role="status"></p><div class="scroll"><table><thead id="grid-head"></thead><tbody id="grid-body"></tbody></table></div><div class="toolbar"><button id="grid-prev">上一页</button><button id="grid-next">下一页</button><button id="grid-left">前 16 列</button><button id="grid-right">后 16 列</button></div></details>
 <div class="card" data-pane="import"><h2>导入表格</h2><p class="muted">支持 XLSX，最大 8 MiB。支持普通内部公式、固定文本或区域下拉、基础条件格式及普通表格对象；宏、图片、图表及复杂扩展结构暂不支持。上传仅做本地分析，不查询企查查。</p>
-<div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
+<div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><span class="muted">选择文件后自动解析，核对结果后设置填写字段。</span></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
 <div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button><div id="mapping-next" hidden role="status"><p>设置已保存。下一步核验企业主体，确认填写范围后生成指令并发送，查询结果会进入填写预览。</p><button id="mapping-continue" class="primary">下一步：主体核验</button></div></div>
@@ -206,16 +206,16 @@ function renderSettings(data){
     select.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();finish()}};
     search.oninput=options;dimension.onchange=options;
     if(!chosen&&!manual){
-     const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
-     const recommended=(data.catalog||[]).filter(f=>hints.includes(f.key)||matches(f,cell.label)).slice(0,4);
+     const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address','mailing_address','invoice_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
+     const recommended=[...hints.map(key=>data.catalog.find(f=>f.key===key)).filter(Boolean),...(data.catalog||[]).filter(f=>!hints.includes(f.key)&&matches(f,cell.label))].slice(0,4);
      if(recommended.length){const hint=document.createElement('span');hint.textContent='推荐（确认后采用）：';suggestions.append(hint)}
-    for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent=field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
+    for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent='推荐：'+field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
     }
     const filters=document.createElement('div');filters.className='ff-mapping-filters';filters.append(search,dimension);
     select.size=8;
     const done=document.createElement('button');done.type='button';done.textContent='确认选择';done.onclick=finish;
-    panel.append(suggestions,filters,select,count,done);
-    label.append(status,picker);options();fields.append(label);
+    panel.append(filters,select,count,done);
+    label.append(status,suggestions,picker);options();fields.append(label);
    }
   };
   header.onchange=showFields;section.append(header,fields);showFields();$('mapping').append(section);
@@ -257,7 +257,7 @@ initWizard();filterResults();syncActions();if($('wizard').open)renderWizard();
 async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.revision!==current?.revision){render(data);if(!silent){const target=pendingNavigation||(data.confirmed?'download':'preview');pendingNavigation=undefined;if(target==='history')$('history-tab').click();else navigate(target)}}}catch(e){if(!silent)$('status').textContent=e.message}}
 async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));$('grid').open=true;render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message;$('wizard-message').textContent=e.message}finally{controls(false)}}
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>navigate(b.dataset.step));
-$('upload').onclick=async()=>{const f=$('file').files[0];if(!f){$('status').textContent='请先选择 XLSX 文件';return}await preview(await f.arrayBuffer(),f.name)};
+$('file').onchange=async()=>{const input=$('file'),f=input.files[0];if(!f||busy)return;input.disabled=true;controls(true);$('status').textContent='正在自动解析表格…';try{await preview(await f.arrayBuffer(),f.name)}catch(e){$('status').textContent=e.message}finally{input.disabled=false;input.value='';controls(false)}};
 function readMapping(){const configuration={sheets:[],headers:[],mappings:[]};for(const section of $('mapping').querySelectorAll('fieldset')){if(!section.querySelector('.sheet-enabled').checked)continue;const sheet=section.dataset.sheet;configuration.sheets.push(sheet);configuration.headers.push({sheet,row:Number(section.querySelector('.header-row').value)});for(const field of section.querySelectorAll('[data-column]'))configuration.mappings.push({sheet,column:Number(field.dataset.column),field:field.value||null})}return configuration}
 function mappingSignature(configuration){return JSON.stringify(configuration.headers.map(h=>({sheet:h.sheet,row:h.row,cells:current.structure.find(s=>s.name===h.sheet)?.rows.find(r=>r.number===h.row)?.cells}))) }
 $('mapping-save').onclick=()=>{try{if(!current||busy)return;const configuration=readMapping();localStorage.setItem('ff-mapping:'+owner,JSON.stringify({schema:1,signature:mappingSignature(configuration),configuration}));$('status').textContent='字段规则已保存在本浏览器。'}catch{$('status').textContent='浏览器无法保存字段规则。'}};
