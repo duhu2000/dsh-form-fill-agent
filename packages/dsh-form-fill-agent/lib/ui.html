@@ -151,6 +151,10 @@ function renderSettings(data){
     const dimension=document.createElement('select');dimension.setAttribute('aria-label',sheet.name+' 字段维度 '+cell.label);
     const groups=[{id:'',label:'全部维度'},...(data.catalogGroups||[]),{id:'other',label:'其他字段'}];
     for(const g of groups){const option=document.createElement('option');option.value=g.id;option.textContent=g.label;dimension.append(option)}
+    const picker=document.createElement('details');picker.className='ff-field-picker';
+    const trigger=document.createElement('summary');picker.append(trigger);
+    const panel=document.createElement('div');panel.className='ff-field-panel';picker.append(panel);
+    picker.addEventListener('keydown',event=>{if(event.key==='Escape'){picker.open=false;trigger.focus();event.stopPropagation()}});
     const status=document.createElement('p');status.className='ff-mapping-status';status.setAttribute('aria-live','polite');
     const count=document.createElement('small');count.className='muted';
     const suggestions=document.createElement('div');suggestions.className='ff-mapping-suggestions';
@@ -161,19 +165,23 @@ function renderSettings(data){
      select.replaceChildren();
      const list=[{key:'',label:'不填写'},...found];
      if(chosen&&!found.some(f=>f.key===chosen)){const field=data.catalog.find(f=>f.key===chosen);if(field)list.splice(1,0,{...field,label:field.label+'（当前选择，筛选外）'})}
-     for(const field of list){const option=document.createElement('option');option.value=field.key;option.textContent=field.label;select.append(option)}
+     const buckets=new Map();
+     for(const field of list){const option=document.createElement('option');option.value=field.key;option.textContent=field.label;const group=field.key?data.catalogGroups?.find(g=>g.fields.includes(field.key)):null;if(group){if(!buckets.has(group.id)){const optgroup=document.createElement('optgroup');optgroup.label=group.label;select.append(optgroup);buckets.set(group.id,optgroup)}buckets.get(group.id).append(option)}else select.append(option)}
+     trigger.textContent=chosen?(data.catalog.find(f=>f.key===chosen)?.label||chosen):'选择填写字段';
      select.value=chosen;count.textContent=found.length?'匹配 '+found.length+' 个字段':'没有匹配字段，请更换关键词或维度';updateStatus();
     };
     select.onchange=()=>{chosen=select.value;manual=true;suggestions.replaceChildren();options()};
     search.oninput=options;dimension.onchange=options;
     if(!chosen&&!manual){
-     const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'网址':['contact_official_website']}[cell.label.trim()]||[];
+     const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
      const recommended=(data.catalog||[]).filter(f=>hints.includes(f.key)||matches(f,cell.label)).slice(0,4);
      if(recommended.length){const hint=document.createElement('span');hint.textContent='推荐（确认后采用）：';suggestions.append(hint)}
      for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent=field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options()};suggestions.append(button)}
     }
     const filters=document.createElement('div');filters.className='ff-mapping-filters';filters.append(search,dimension);
-    label.append(status,suggestions,filters,select,count);options();fields.append(label);
+    select.size=8;
+    panel.append(suggestions,filters,select,count);
+    label.append(status,picker);options();fields.append(label);
    }
   };
   header.onchange=showFields;section.append(header,fields);showFields();$('mapping').append(section);

@@ -28,7 +28,9 @@ try{
  const bytes=fixtureBytes('配置表',['单位','负责人'],[['合成客户甲有限公司','']],{title:false});
  await page.locator('#file').setInputFiles({name:'合成映射.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await page.getByRole('button',{name:'分析表格',exact:true}).click();
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 单位',{exact:true})}).locator('summary').click();
  await page.getByLabel('配置表 字段 单位',{exact:true}).selectOption('company_name');
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 负责人',{exact:true})}).locator('summary').click();
  await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('legal_person');
  await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
  await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
@@ -37,6 +39,7 @@ try{
  assert.equal(await page.getByLabel('配置表 字段 单位',{exact:true}).inputValue(),'company_name');
  await page.getByRole('button',{name:'保存字段规则',exact:true}).click();
  await page.getByText('字段规则已保存在本浏览器。',{exact:true}).waitFor();
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 负责人',{exact:true})}).locator('summary').click();
  await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('');
  await page.getByRole('button',{name:'复用字段规则',exact:true}).click();
  await page.getByText('字段规则已复用，请检查后重新核验。',{exact:true}).waitFor();
@@ -81,10 +84,12 @@ try{
  const phone=page.locator('.ff-mapping-row').filter({has:page.getByLabel('字段搜索 字段 联系电话',{exact:true})});
  await phone.waitFor();
  assert.equal(await page.getByLabel('字段搜索 字段 法定代表人',{exact:true}).inputValue(),'legal_person');
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('字段搜索 字段 法定代表人',{exact:true})}).locator('summary').click();
  await page.getByLabel('字段搜索 字段维度 法定代表人',{exact:true}).selectOption('company_registration');
  assert.equal(await page.getByLabel('字段搜索 字段 法定代表人',{exact:true}).locator('option[value=legal_person]').innerText(),'法定代表人');
  assert.ok((await phone.innerText()).includes('未匹配'));
  assert.equal(await page.getByLabel('字段搜索 字段 联系电话',{exact:true}).inputValue(),'');
+ await phone.locator('summary').click();
  assert.ok(await phone.getByRole('button',{name:'首选联系电话',exact:true}).isVisible());
  assert.ok(await phone.getByRole('button',{name:'开票联系电话',exact:true}).isVisible());
  await phone.getByRole('button',{name:'首选联系电话',exact:true}).click();
@@ -102,6 +107,11 @@ try{
  await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
  await page.reload();await page.getByRole('button',{name:'字段设置',exact:true}).click();
  assert.equal(await target.inputValue(),'invoice_phone');
+ await phone.locator('summary').click();
+ assert.ok(await target.locator('optgroup').count()>0);
+ await search.focus();await page.keyboard.press('Escape');
+ assert.equal(await phone.locator('details').getAttribute('open'),null);
+ await phone.locator('summary').click();
  for(const colorScheme of ['light','dark']){await page.emulateMedia({colorScheme});await page.setViewportSize({width:390,height:800});await phone.scrollIntoViewIfNeeded();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:'/tmp/form-fill-mapping-'+colorScheme+'.png'})}
  // Reproduce the seven-column user flow using synthetic data only.
  await page.setViewportSize({width:1440,height:900});
@@ -113,7 +123,12 @@ try{
  assert.ok((await page.locator('#scope-review').innerText()).includes('缺少可用主体'));
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  await page.getByRole('button',{name:'字段设置',exact:true}).click();
- for(const [label,key] of [['原文件导入名称','company_name'],['地址','registered_address'],['网址','contact_official_website'],['联系电话','contact_preferred_phone']])await page.getByLabel('覆盖验证 字段 '+label,{exact:true}).selectOption(key);
+ for(const [label,key] of [['原文件导入名称','company_name'],['地址','registered_address'],['网址','contact_official_website'],['联系电话','contact_preferred_phone']]){
+  const row=page.locator('.ff-mapping-row').filter({has:page.getByLabel('覆盖验证 字段 '+label,{exact:true})});
+  await row.locator('summary').click();
+  if(label==='地址'||label==='网址')assert.ok(await row.getByRole('button',{name:label==='地址'?'注册地址':'官方网站',exact:true}).isVisible());
+  await page.getByLabel('覆盖验证 字段 '+label,{exact:true}).selectOption(key);
+ }
  await page.locator('#configure').click();await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
  await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.locator('#wizard-open').click();
  await page.getByRole('button',{name:'3 填写字段',exact:true}).click();
