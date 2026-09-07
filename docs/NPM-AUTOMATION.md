@@ -26,6 +26,6 @@
 5. registry 独立安装、三模板回归通过后创建数字标题的 GitHub Latest Release。
 
 workflow_dispatch 仅执行检查和 registry 回归，不发布，不创建 Release。用于配置后的无新版本演练。
-真正 OIDC 发布能力需在下一次新版本发布时验证 provenance；dry run 不能证明认证成功。
+实际 OIDC 发布已在 V0.2.2 验收通过：运行 34073171720，npm 发布者为 GitHub Actions，provenance 对应 release.yml、V0.2.2 和提交 f340ff1065ecea54cd1e00388693e63ebe553850。本次无需浏览器认证；历史 dry run 本身不代表认证成功。
 
 如 npm 部分成功后失败，保留不可变标签，重跑失败工作流；已成功包核验一致后跳过。若需修改包内容，使用新版本和新标签。
