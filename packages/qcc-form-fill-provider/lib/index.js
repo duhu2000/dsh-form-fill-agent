@@ -1,9 +1,11 @@
-export const PROVIDER_VERSION = '0.2.0';
+export const PROVIDER_VERSION = '0.2.1';
 import {ADDITIONAL_FIELDS} from './extended.js';
 import {QCC_FIELD_CATALOG} from './catalog.js';
 export {createCatalogProvider,CATALOG_TOOL_DOMAINS,runtimeToolNames} from './extended.js';
 export {QCC_FIELD_CATALOG} from './catalog.js';
 import { EXTRA_FIELDS } from './fields.js';
+import { ACTUAL_CONTROLLER_GROUP } from 'qcc-field-contracts';
+export { ACTUAL_CONTROLLER_GROUP, projectActualController } from 'qcc-field-contracts';
 export { createQccProvider, decodeRegistration, isCompleteAnchor, REGISTRATION_TOOL, ENTITY_TOOL, decodeCandidates } from './qcc.js';
 // Provider-owned vocabulary; the caller supplies the authorized transport.
 export const FIELD_CATALOG = Object.freeze([
@@ -17,6 +19,7 @@ export const FIELD_CATALOG = Object.freeze([
   ...EXTRA_FIELDS,
   ...QCC_FIELD_CATALOG.slice(1).flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[]}))),
   ...ADDITIONAL_FIELDS,
+  ...ACTUAL_CONTROLLER_GROUP.fields.map(f=>({key:f.id,label:f.label,aliases:f.aliases,type:'string'})),
 ]);
 const synthetic = Object.freeze({
   '合成客户甲有限公司': { credit_no: 'SYNTHETIC-CUSTOMER-A', legal_person: '合成人员甲', established_date: '2020-01-02', registered_address: '合成市示例路 1 号' },

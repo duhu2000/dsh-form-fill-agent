@@ -9,7 +9,7 @@ const destination = join(root, 'artifacts');
 const npmCommand = process.env.npm_execpath ? process.execPath : 'npm';
 const npmPrefix = process.env.npm_execpath ? [process.env.npm_execpath] : [];
 await mkdir(destination, { recursive: true });
-for (const name of ['form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent']) {
+for (const name of ['qcc-field-contracts', 'form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent']) {
   const cwd = join(root, 'packages', name);
   const pack = JSON.parse(execFileSync(npmCommand, [...npmPrefix, 'pack', '--ignore-scripts', '--json', '--pack-destination', destination], { cwd, encoding: 'utf8' }))[0];
   assert.ok(pack.files.length > 2);

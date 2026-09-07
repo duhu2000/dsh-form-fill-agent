@@ -11,13 +11,13 @@ const directory=await mkdtemp(join(tmpdir(),'form-fill-registry-'));
 const expectedReadme=await readFile(join(root,'packages/dsh-form-fill-agent/README.md'),'utf8');
 const registryReadme=JSON.parse(execFileSync('npm',['view','dsh-form-fill-agent','readme','--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
 assert.equal(registryReadme.trim(),expectedReadme.trim(),'npm package page README matches published source');
-for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
+for(const name of ['qcc-field-contracts','form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
   const version=JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version;
   const remote=JSON.parse(execFileSync('npm',['view',name+'@'+version,'--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
   await verifyRegistryPackage(join(root,'artifacts',name+'-'+version+'.tgz'),remote);
 }
 execFileSync('npm',['install','--ignore-scripts','--no-audit','--no-fund','--package-lock=false','--registry=https://registry.npmjs.org/','dsh-form-fill-agent@'+version],{cwd:directory,stdio:'inherit'});
-for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent'])assert.equal((await lstat(join(directory,'node_modules',name))).isSymbolicLink(),false);
+for(const name of ['qcc-field-contracts','form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent'])assert.equal((await lstat(join(directory,'node_modules',name))).isSymbolicLink(),false);
 assert.equal(await readFile(join(directory,'node_modules/dsh-form-fill-agent/README.md'),'utf8'),expectedReadme);
 console.log('Registry README and installed README PASS');
 const code=`

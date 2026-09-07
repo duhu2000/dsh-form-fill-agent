@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { verifyRegistryPackage } from './registry-package.mjs';
 import assert from 'node:assert/strict';
 
-const names = ['form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent'];
+const names = ['qcc-field-contracts', 'form-fill-core', 'qcc-form-fill-provider', 'dsh-form-fill-agent'];
 const packages = names.map(name => JSON.parse(readFileSync(`packages/${name}/package.json`)));
 const version = packages.at(-1).version;
 const publish = process.env.RELEASE_EVENT === 'push';

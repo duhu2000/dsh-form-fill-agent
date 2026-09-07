@@ -7,6 +7,7 @@ export const REASON_LABELS = {
  'candidate-review-required':'需要人工确认主体候选',
  'no-match':'数据来源未匹配到主体',
  'no-data':'查询成功，但该字段未返回数据',
+ 'field-review-required':'字段返回多值或不完整，需人工核验',
  'provider-error':'调用失败，请检查连接或重试',
  'cancelled':'查询已取消',
  'not-started':'尚未执行',

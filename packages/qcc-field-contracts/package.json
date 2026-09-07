@@ -1,0 +1,27 @@
+{
+  "name": "qcc-field-contracts",
+  "version": "0.1.0",
+  "description": "Shared QCC scalar field contracts for cleaning and form filling.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git",
+    "directory": "packages/qcc-field-contracts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

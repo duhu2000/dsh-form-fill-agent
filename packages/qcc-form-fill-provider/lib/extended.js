@@ -2,7 +2,9 @@ import {QCC_FIELD_CATALOG} from './catalog.js';
 import * as project from './projections.js';
 import {createQccProvider,decodeRegistration} from './qcc.js';
 import {PROVIDER_VERSION} from './index.js';
+import {ACTUAL_CONTROLLER_GROUP,projectActualController} from 'qcc-field-contracts';
 const definitions={
+ get_actual_controller:{map:data=>projectActualController(data).values,domain:'company'},
  get_company_profile:{map:project.mapProfileFields,domain:'company'},
  get_contact_info:{map:project.mapContactFields,domain:'company',args:{excludeInvalidPhone:false}},
  get_listing_info:{map:project.mapListingFields,domain:'company'},
@@ -17,7 +19,7 @@ export const ADDITIONAL_FIELDS=Object.freeze([{key:'related_risk_disciplinary_li
 export function runtimeToolNames(tool){const domain=CATALOG_TOOL_DOMAINS[tool];return domain?['mcp__qcc-'+domain+'__','mcp__'+domain+'__','mcp__qcc_'+domain+'__'].map(p=>p+tool):[]}
 export function createCatalogProvider({callTool,availableTools=[],enableEntitySearch=false,timeoutMs=120000,now=()=>new Date().toISOString()}={}){
  const registration=createQccProvider({callTool,enableEntitySearch,timeoutMs,now});let calls=0;
- const groups=QCC_FIELD_CATALOG.filter(g=>definitions[g.sourceTool]&&availableTools.includes(g.sourceTool)).map(g=>g.sourceTool==='get_company_related_risk_scan'?{...g,fields:[...g.fields,...ADDITIONAL_FIELDS.map(f=>({id:f.key,label:f.label}))]}:g);
+ const groups=[...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP].filter(g=>definitions[g.sourceTool]&&availableTools.includes(g.sourceTool)).map(g=>g.sourceTool==='get_company_related_risk_scan'?{...g,fields:[...g.fields,...ADDITIONAL_FIELDS.map(f=>({id:f.key,label:f.label}))]}:g);
  return {
   id:'qcc-catalog',version:PROVIDER_VERSION,mode:'qcc',
   capabilities:[...registration.capabilities,...groups.map(g=>({id:'qcc-'+g.sourceTool,fields:g.fields.map(f=>f.id),paid:true,maxCallsPerLookup:2}))],
@@ -59,7 +61,8 @@ export function createCatalogProvider({callTool,availableTools=[],enableEntitySe
     for(const field of request.fields){const value=projected[field];if(!['string','number'].includes(typeof value)||!String(value).trim()||String(value).includes('[object Object]')||typeof value==='number'&&!Number.isFinite(value))continue;
      values[field]={value:String(value),source:'qcc://'+group.sourceTool+'/projection/'+field,acquiredAt,confidence:1};
     }
-    return {status:'exact',values};
+    const fieldIssues=group.sourceTool==='get_actual_controller'?Object.fromEntries(Object.entries(projectActualController(data).issues).filter(([field])=>request.fields.includes(field))):{};
+    return {status:'exact',values,...(Object.keys(fieldIssues).length?{fieldIssues}:{})};
    }catch{return signal?.aborted?{status:'cancelled'}:{status:'error',code:controller.signal.aborted?'qcc-timeout':'qcc-call-failed'}}
    finally{clearTimeout(timer);if(abort)controller.signal.removeEventListener('abort',abort);signal?.removeEventListener('abort',cancel)}
   }

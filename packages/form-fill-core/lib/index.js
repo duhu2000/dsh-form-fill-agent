@@ -1,7 +1,7 @@
 import { digest, parseWorkbook, isBlank, address, inRange, writeWorkbook } from './workbook.js';
 import { fail, FillError } from './zip.js';
 export { parseWorkbook, FillError };
-export const CORE_VERSION = '0.2.8';
+export const CORE_VERSION = '0.2.9';
 export const SCHEMA_VERSION = 1;
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, '').toLowerCase();
 const idFor = value => digest(Buffer.from(JSON.stringify(value)));
@@ -143,8 +143,10 @@ function assembleChangeSet(plan,provider,results,previous,retryIds,cancelled){
     }
     if(!results.has(item.callId)){incomplete.push({...item,reason:cancelled?'cancelled':'not-started'});continue;}
     const result = results.get(item.callId), candidate = result?.values?.[item.field];
+    const fieldIssue=result?.fieldIssues?.[item.field];
     let reason;
     if (result?.status !== 'exact') reason = result?.status === 'cancelled'?'cancelled':result?.status === 'ambiguous' ? 'candidate-review-required' : result?.status === 'not-found' ? 'no-match' : 'provider-error';
+    else if (fieldIssue) reason = fieldIssue.reviewRequired ? 'field-review-required' : 'no-data';
     else if (!candidate || candidate.value === null || candidate.value === undefined || String(candidate.value).trim() === '') reason = 'no-data';
     else if (candidate.confidence < 0.95 || !Number.isFinite(candidate.confidence)) reason = 'low-confidence';
     else if (!candidate.source || typeof candidate.source !== 'string' || !candidate.acquiredAt || !Number.isFinite(Date.parse(candidate.acquiredAt))) reason = 'missing-provenance';
@@ -154,7 +156,7 @@ function assembleChangeSet(plan,provider,results,previous,retryIds,cancelled){
     if (reason) {
       const candidates = reason === 'candidate-review-required' && Array.isArray(result?.candidates)
         ? result.candidates.filter(c => typeof c?.company_name === 'string' && c.company_name.length <= 256 && typeof c.credit_no === 'string' && c.credit_no.length <= 32).slice(0,20).map(c => ({ id: idFor([c.company_name,c.credit_no]), company_name: c.company_name, credit_no: c.credit_no })) : [];
-      incomplete.push({ ...item, reason, ...(candidates.length ? { candidates } : {}) }); continue;
+      incomplete.push({ ...item, reason, ...(fieldIssue && typeof fieldIssue.message==='string' ? {detail:fieldIssue.message.slice(0,500)} : {}), ...(candidates.length ? { candidates } : {}) }); continue;
     }
     changes.push({ id: item.id, sheet: item.sheet, cell: item.cell, field: item.field, label: item.label, anchor: item.anchor, oldValue: item.oldValue, newValue: String(candidate.value), source: candidate.source, acquiredAt: candidate.acquiredAt, confidence: candidate.confidence, changeType: 'fill-blank', basis: item.evidence, status: 'preview' });
   }

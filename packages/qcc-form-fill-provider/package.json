@@ -1,6 +1,6 @@
 {
   "name": "qcc-form-fill-provider",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": false,
   "description": "Qichacha field catalog, synthetic fixtures and injected MCP registration provider.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/qcc-form-fill-provider" },
@@ -19,5 +19,5 @@
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {}
+  "dependencies": { "qcc-field-contracts": "0.1.0" }
 }
