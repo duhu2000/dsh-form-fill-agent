@@ -1,8 +1,8 @@
-# AI填表 alpha.11 用户验收清单
+# AI填表 0.2.0 用户验收清单
 
 本清单供非技术用户和 Excel 桌面使用者签收，当前未代签。只使用三套合成模板或自有获授权测试表格。
 
-验收基线：dsh-form-fill-agent 0.1.0-alpha.11、form-fill-core 0.1.0-alpha.10、qcc-form-fill-provider 0.1.0-alpha.9。菜单为「导入表格 / 字段设置 / 主体核验 / 填写预览 / 确认下载」。自动化通过不替代本人签收。
+验收基线：dsh-form-fill-agent、form-fill-core、qcc-form-fill-provider 均为 0.2.0。菜单为「导入表格 / 字段设置 / 主体核验 / 填写预览 / 确认下载」。自动化通过不替代本人签收；历史 alpha.11 合成验收包可用于操作参照，实际签收须记录当前安装版本。
 
 | 场景 | 操作与期望 | 签收 |
 |---|---|---|
