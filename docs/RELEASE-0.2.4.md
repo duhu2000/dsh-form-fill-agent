@@ -6,4 +6,11 @@
 
 ## 验证
 
-发布检查包含 99 项测试、三包打包检查、配置与原生界面回归，以及 registry 独立安装和双版本 DSH 隔离安装。发布结果核验后补充回执。
+99 项测试、三包打包检查、配置与原生界面回归全部通过。六组 CI、registry 内容和 README 比对、独立安装通过；DSH rc.2 / alpha.2 隔离安装和卸载通过，无生产 profile 或端口操作。
+
+## 发布回执
+
+- 提交 bbee7b4da2fb3cb62a8d1c2037f8018e7667feb0，标签 V0.2.4。
+- [发布工作流](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34077848517) 已成功；首次 npm 发布后 README 读取仍为旧版，重跑失败作业后完整验收通过，未重复发布已存在版本。
+- npm latest 为 0.2.4，OIDC provenance 对应仓库、标签和代码提交。GitHub Latest 标题 0.2.4，非预发布。
+- 用户另报的追加列文件符合清洗插件导出路径，不能将本次选择器发布宣称为该客户任务自动重填成功。
