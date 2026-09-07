@@ -40,6 +40,27 @@ try{
  assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
  await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
  assert.ok(await page.locator('#wizard-open').isVisible());
+ // A saved mapping is not necessarily executable: report the exact conflict,
+ // retain the settings for correction, and allow a corrected task to continue.
+ await page.getByRole('button',{name:'字段设置',exact:true}).click();
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 负责人',{exact:true})}).locator('summary').click();
+ await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('company_name');
+ await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
+ await page.getByText(/设置已保存，但尚不能执行。字段映射存在重复或冲突/).waitFor();
+ assert.equal(await page.locator('#mapping-next').isVisible(),false);
+ assert.match(await page.locator('#anchor-alert').textContent(),/企业名称/);
+ await page.getByRole('button',{name:'主体核验',exact:true}).click();
+ await page.locator('#wizard-open').click();
+ assert.ok(await page.locator('#configure').isVisible(),'blocked draft returns to actionable mapping settings');
+ await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 负责人',{exact:true})}).locator('summary').click();
+ await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('legal_person');
+ await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
+ await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
+ await page.locator('#wizard-open').click();
+ await page.getByText('指令已生成，请复制到 DSH 对话框发送。',{exact:true}).waitFor();
+ assert.match(await page.locator('#direct-command').inputValue(),/form_fill_enrich/);
+ assert.equal(await page.locator('#wizard').isVisible(),false);
  await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  assert.ok(await page.locator('#wizard').isVisible());
  for(const colorScheme of ['light','dark'])for(const [width,height] of [[1440,1000],[1024,768],[390,844],[900,500]]){
