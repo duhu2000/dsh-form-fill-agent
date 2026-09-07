@@ -95,7 +95,7 @@ window.__ModuleLoader__.load({
     if(!owned(sessionId))return null;
     const content=h('div',{className:'ff-ui','data-ff-theme':theme()},h('nav',{className:'ff-shortcuts','aria-label':'AI填表快捷菜单'},...[
      ['导入表格','import','upload'],['字段设置','rules','check'],['主体核验','identity','search'],['填写预览','preview','table'],['任务历史','history','history']
-    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),label))));
+    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),h('span',{className:'ff-shortcut-label'},label)))));
     return h('div',{ref,'data-form-fill-session':sessionId},h(Hero,{sessionId}),mount?portal(content,mount):content);
    }
    function Panel(){
@@ -157,7 +157,7 @@ window.__ModuleLoader__.load({
     },[view?.id,expanded,active]);
     if(!view||active!==view.id)return null;
     return portal(h('section',{className:'ff-ui ff-panel','data-ff-theme':theme(),'aria-label':'AI填表工作台',style:{width:modal?'100%':wide?(expanded?'min(58vw, 860px)':'min(48vw, 640px)'):'100%',...(modal?{background:'transparent',border:0}:{})}},
-     h('div',{className:'ff-panel-head',hidden:modal},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表')),h('div',{className:'ff-panel-actions'},h('button',{onClick:()=>setExpanded(v=>!v)},expanded?'收起展开':'展开工作台'),h('button',{onClick:()=>setView(null)},'关闭工作台'))),
+     h('div',{className:'ff-panel-head',hidden:modal},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表工作台')),h('div',{className:'ff-panel-actions'},h('button',{onClick:()=>setExpanded(v=>!v)},expanded?'收起展开':'展开工作台'),h('button',{onClick:()=>setView(null)},'关闭工作台'))),
      h('iframe',{ref:frame,title:'AI填表任务',src:'/form-fill/?session='+encodeURIComponent(view.id)+(sessionTasks.has(view.id)?'#task='+sessionTasks.get(view.id):''),onLoad:()=>{frame.current.contentWindow.postMessage({type:'ff-theme',theme:theme()},location.origin);frame.current.contentWindow.postMessage({type:'ff-navigate',step:view.step},location.origin)}})),document.body);
    }
    register('conversation.input.dock',Menu);

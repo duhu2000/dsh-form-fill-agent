@@ -44,10 +44,26 @@ try{
  assert.equal(await page.locator('.ff-hero h1').innerText(),'AI填表智能体');
  assert.ok(await page.locator('[data-form-fill-top]').evaluate(e=>e.nextElementSibling.dataset.slot==='sidebar.workspaces'));
  assert.equal(await page.locator('.headlineText').isVisible(),false);
+ for(const dark of [false,true])for(const width of [320,390,640,1440]){
+  await page.setViewportSize({width,height:900});
+  await page.evaluate(dark=>document.documentElement.toggleAttribute('data-ds-dark-theme',dark),dark);
+  const menu=page.getByRole('navigation',{name:'AI填表快捷菜单'});
+  const layout=await menu.evaluate(nav=>({count:nav.children.length,overflow:document.documentElement.scrollWidth>innerWidth,inside:!nav.closest('[data-composer-card]'),items:[...nav.children].map(b=>{const r=b.getBoundingClientRect(),i=b.querySelector('svg').getBoundingClientRect(),l=b.querySelector('.ff-shortcut-label').getBoundingClientRect();return {top:r.top,height:r.height,border:getComputedStyle(b).borderTopWidth,iconBottom:i.bottom,labelTop:l.top}})}));
+  assert.equal(layout.count,5);assert.equal(layout.overflow,false);assert.equal(layout.inside,true);
+  for(const item of layout.items){assert.ok(item.height>=54);assert.equal(item.top,layout.items[0].top);assert.equal(item.border,'1px');assert.ok(item.iconBottom<=item.labelTop)}
+  await menu.evaluate(n=>n.scrollLeft=n.scrollWidth);
+  assert.ok(await menu.getByRole('button',{name:'任务历史',exact:true}).isVisible());
+  await menu.evaluate(n=>n.scrollLeft=0);
+  if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/home-'+(dark?'dark':'light')+'-'+width+'.png'})}
+ }
+ await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>document.documentElement.removeAttribute('data-ds-dark-theme'));
  if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/home.png'})}
  const id=await page.evaluate(()=>probe.active);assert.match(id,/^session-dsh-form-fill-agent-/);
  await page.getByRole('button',{name:'导入表格',exact:true}).click();
  const frame=page.frameLocator('iframe');
+ await frame.locator('body.ff-embedded').waitFor();assert.equal(await frame.locator('.ff-workbench-head').isVisible(),false);
+ assert.equal(await frame.locator('.ff-execution-toolbar').isVisible(),false);
+ if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/workbench.png'});
  await frame.locator('details:has(#samples)').evaluate(e=>e.open=true);
  await frame.getByRole('button',{name:'客户台账',exact:true}).click();
  await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
