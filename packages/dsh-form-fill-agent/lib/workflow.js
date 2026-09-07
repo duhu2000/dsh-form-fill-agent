@@ -3,7 +3,12 @@ import { join, resolve, dirname, basename } from 'node:path';
 import { analyzeDocument, buildFillPlan, executePlan, applyChangeSet, serialize, FillError } from 'form-fill-core';
 import { createMockProvider, FIELD_CATALOG } from 'qcc-form-fill-provider';
 
-export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = 100, confirmPaidCalls = false, configuration = {}, selectedFields, signal, onProgress, previousChangeSet, retryOnly } = {}) {
+export function configuredCallLimit(value = process.env.DSH_FORM_FILL_MAX_CALLS) {
+  if (value === undefined || value === '' || value === '0') return Infinity;
+  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) throw new FillError('CALL_LIMIT_CONFIG', 'DSH_FORM_FILL_MAX_CALLS 必须为非负整数，0 表示不限次数');
+  return Number(value);
+}
+export async function previewBytes(bytes, { provider = createMockProvider(), maxCalls = configuredCallLimit(), confirmPaidCalls = false, configuration = {}, selectedFields, signal, onProgress, previousChangeSet, retryOnly } = {}) {
   if (provider.mode !== 'mock' && (provider.mode !== 'qcc' || confirmPaidCalls !== true)) throw new FillError('REAL_PROVIDER_DISABLED', '真实来源需要调用方明确授权');
   const { analysis } = analyzeDocument(bytes, FIELD_CATALOG, configuration);
   if (selectedFields !== undefined) {
@@ -12,6 +17,7 @@ export async function previewBytes(bytes, { provider = createMockProvider(), max
     analysis.opportunities=analysis.opportunities.filter(o=>selectedFields.includes(o.field));
   }
   const plan = buildFillPlan(analysis, provider.capabilities, provider.version);
+  if (plan.estimatedCalls > maxCalls) throw new FillError('BUDGET_EXCEEDED', '预计 '+plan.estimatedCalls+' 次调用，超过本地插件上限 '+maxCalls+'；这不是企查查余额限制。请调整 DSH_FORM_FILL_MAX_CALLS（0 为不限）并重启 DSH；retry 不绕过此计划检查。');
   const changeSet = await executePlan(plan, provider, { maxCalls, confirmPaidCalls, signal, onProgress:onProgress?p=>onProgress({...p,analysis,plan}):undefined, previousChangeSet, retryOnly });
   return { analysis, plan, changeSet };
 }

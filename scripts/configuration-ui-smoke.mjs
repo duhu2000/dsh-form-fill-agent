@@ -28,6 +28,8 @@ try{
  const bytes=fixtureBytes('配置表',['单位','负责人'],[['合成客户甲有限公司','']],{title:false});
  await page.locator('#file').setInputFiles({name:'合成映射.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await page.getByRole('button',{name:'分析表格',exact:true}).click();
+ assert.equal(await page.locator('#grid').getAttribute('open'),'');
+ await page.locator('#grid-body tr').first().waitFor();
  await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 单位',{exact:true})}).locator('summary').click();
  await page.getByLabel('配置表 字段 单位',{exact:true}).selectOption('company_name');
  await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 负责人',{exact:true})}).locator('summary').click();
