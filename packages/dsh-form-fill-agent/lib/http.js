@@ -1,11 +1,12 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { applyChangeSet, parseWorkbook } from 'form-fill-core';
-import { FIELD_CATALOG, isCompleteAnchor } from 'qcc-form-fill-provider';
+import { FIELD_CATALOG, QCC_FIELD_CATALOG, isCompleteAnchor } from 'qcc-form-fill-provider';
 import { previewBytes } from './workflow.js';
 import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
 import { gridPage } from './grid.js';
+import { diagnostics } from './diagnostics.js';
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FIXTURES = ['客户台账', '供应商准入表', '合同主体信息表'];
 export function createFormFillHandler({ basePath = '', getPort, now = Date.now, ttlMs = 15 * 60 * 1000, maxTasks = 10, taskDirectory, getQccStatus = () => false } = {}) {
@@ -17,12 +18,14 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   const visible = (task, owner) => task && (!task.owner || task.owner === owner);
   const metadata = (id, task) => ({ id, filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
   const settings = task => ({
+    diagnostics: diagnostics(task.preview),
     configuration: task.configuration ?? {},
     selectedFields: task.selectedFields,
     progress: task.progress,
     candidates: allCandidates(task).changes,
     selectedIds: task.preview.changeSet.changes.map(c=>c.id),
     catalog: FIELD_CATALOG,
+    catalogGroups: QCC_FIELD_CATALOG.map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
     structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
       name: s.name,
       rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value })) })),
@@ -172,7 +175,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         const preview = await previewBytes(task.bytes, { provider, confirmPaidCalls: true, configuration: task.configuration, selectedFields: task.selectedFields,signal:controller.signal,retryOnly,previousChangeSet:retryOnly?allCandidates(task):undefined,onProgress:async({analysis,plan,changeSet,completed,total})=>update({analysis,plan,changeSet},'enriching',{completed,total}) });
         if (disposed || tasks.get(id) !== active) throw Error('任务已过期或被替换');
         update(preview,controller.signal.aborted?'cancelled':preview.changeSet.incomplete.some(i => i.reason === 'provider-error') ? 'partial' : 'preview_ready',active.progress);
-        return { taskId: id, filled: active.preview.changeSet.changes.length, incomplete: active.preview.changeSet.incomplete.length, previewPath: basePath + '/#task=' + id };
+        return { taskId: id, filled: active.preview.changeSet.changes.length, incomplete: active.preview.changeSet.incomplete.length, diagnostics:diagnostics(active.preview), previewPath: basePath + '/#task=' + id };
       } catch (error) {
         if (!disposed && tasks.get(id) === active) tasks.set(id, { ...active, state: 'failed', updatedAt: now(), revision: active.revision + 1 });
         throw error;

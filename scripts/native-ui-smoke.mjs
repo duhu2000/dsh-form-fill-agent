@@ -116,6 +116,7 @@ try{
  if(process.env.FORM_FILL_SCREENSHOTS)await page.screenshot({path:process.env.FORM_FILL_SCREENSHOTS+'/wizard-dark.png'});
  await page.evaluate(()=>document.documentElement.removeAttribute('data-ds-dark-theme'));
  await frame.getByRole('button',{name:'4 确认描述',exact:true}).click();
+ if(await frame.locator('#scope-ack-label').isVisible())await frame.locator('#scope-ack').check();
  await frame.locator('#requirements').fill('只补工商字段');
  await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
  await frame.getByRole('button',{name:'取消',exact:true}).click();

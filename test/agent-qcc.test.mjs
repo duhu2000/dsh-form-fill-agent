@@ -24,7 +24,8 @@ test('Agent-owned QCC tool enriches uploaded task and preserves nested execution
    const p=await request('/preview',{base64:bytes.toString('base64')});assert.equal(calls,0);
    await assert.rejects(tool.execute({taskId:p.data.id},{}),/Agent-owned/);assert.equal(calls,0);
    const result=await tool.execute({taskId:p.data.id},exec);assert.equal(result.filled,1);assert.equal(calls,1);
-   assert.deepEqual(Object.keys(result).sort(),['filled','incomplete','previewPath','taskId']);
+   assert.deepEqual(Object.keys(result).sort(),['diagnostics','filled','incomplete','previewPath','taskId']);
+   assert.match(tool.output.render({},result)[0].text,/尚未写入副本/);
    const restored=await request('/task/'+p.data.id);
    assert.equal(restored.data.changeSet.changes[0].newValue,'SYNTHETIC-LIVE-CONTRACT');
    assert.equal((await request('/confirm',{id:p.data.id,confirmChangeSetId:p.data.changeSet.changeSetId})).status,409);

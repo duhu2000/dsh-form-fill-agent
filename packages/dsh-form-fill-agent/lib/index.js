@@ -2,6 +2,7 @@ import { createFormFillHandler } from './http.js';
 import { createCatalogProvider, CATALOG_TOOL_DOMAINS, runtimeToolNames, REGISTRATION_TOOL, ENTITY_TOOL } from 'qcc-form-fill-provider';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
+import { renderEnrichmentResult } from './diagnostics.js';
 export { previewBytes, previewFile, writeCopy } from './workflow.js';
 export const name = 'form-fill-agent';
 export const inject = [];
@@ -18,8 +19,8 @@ export function apply(ctx, config = {}) {
         description: 'Use QCC to fill an uploaded AI填表 task. Invoke only when the user requests QCC enrichment. Returns counts and a preview link; the user confirms cell changes in the workbench.',
         parameters: { type: 'object', additionalProperties: false, properties: { taskId: { type: 'string' }, expectedRevision: { type: 'integer' }, mode:{type:'string',enum:['all','retry']} }, required: ['taskId'] },
         output: {
-          schema: { type: 'object', properties: { taskId: { type: 'string' }, filled: { type: 'integer' }, incomplete: { type: 'integer' }, previewPath: { type: 'string' } }, required: ['taskId','filled','incomplete','previewPath'] },
-          render: (_args, value) => [{ type: 'text', text: 'AI填表：可填写 ' + value.filled + ' 格，未完成 ' + value.incomplete + ' 项。预览：' + value.previewPath }],
+          schema: { type: 'object', properties: { taskId: { type: 'string' }, filled: { type: 'integer' }, incomplete: { type: 'integer' }, diagnostics:{type:'object'}, previewPath: { type: 'string' } }, required: ['taskId','filled','incomplete','previewPath'] },
+          render: (_args, value) => [{ type: 'text', text: renderEnrichmentResult(value) }],
         },
         async execute(args, execution) {
           if (!execution?.agent || !execution?.token) throw Error('需要 Agent-owned 工具执行上下文');
