@@ -28,6 +28,7 @@ try{
  const bytes=fixtureBytes('配置表',['单位','负责人'],[['合成客户甲有限公司','']],{title:false});
  await page.locator('#file').setInputFiles({name:'合成映射.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await page.getByRole('button',{name:'分析表格',exact:true}).click();
+ await page.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
  assert.equal(await page.locator('#grid').getAttribute('open'),'');
  await page.locator('#grid-body tr').first().waitFor();
  await page.locator('.ff-mapping-row').filter({has:page.getByLabel('配置表 字段 单位',{exact:true})}).locator('summary').click();
@@ -41,6 +42,17 @@ try{
  assert.ok(await page.locator('#wizard-open').isVisible());
  await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  assert.ok(await page.locator('#wizard').isVisible());
+ for(const colorScheme of ['light','dark'])for(const [width,height] of [[1440,1000],[1024,768],[390,844],[900,500]]){
+  await page.emulateMedia({colorScheme});await page.setViewportSize({width,height});
+  for(let step=0;step<4;step++){
+   await page.locator('[data-wizard-step="'+step+'"]').click();
+   const layout=await page.locator('#wizard').evaluate(d=>{const box=d.getBoundingClientRect(),footer=d.querySelector('footer').getBoundingClientRect();return {left:box.left,right:box.right,bottom:footer.bottom,overflow:d.scrollWidth>d.clientWidth}});
+   assert.ok(layout.left>=0&&layout.right<=width+1&&layout.bottom<=height+1&&!layout.overflow);
+  }
+  await page.locator('[data-wizard-step="0"]').click();
+  await page.screenshot({path:'/tmp/ff-wizard-'+colorScheme+'-'+width+'.png'});
+ }
+ await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:1440,height:900});
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  await page.reload();await page.getByRole('button',{name:'字段设置',exact:true}).click();
  assert.equal(await page.getByLabel('配置表 字段 单位',{exact:true}).inputValue(),'company_name');
