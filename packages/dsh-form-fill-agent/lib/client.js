@@ -99,13 +99,36 @@ window.__ModuleLoader__.load({
     return h('div',{ref,'data-form-fill-session':sessionId},h(Hero,{sessionId}),mount?portal(content,mount):content);
    }
    function Panel(){
-    const [view,setView]=React.useState(null),frame=React.useRef(null),[active,setActive]=React.useState(current()),[wide,setWide]=React.useState(innerWidth>=1100),[expanded,setExpanded]=React.useState(false),[modal,setModal]=React.useState(false);
+    const [view,setView]=React.useState(null),frame=React.useRef(null),[active,setActive]=React.useState(current()),[available,setAvailable]=React.useState(innerWidth),[expanded,setExpanded]=React.useState(false),[modal,setModal]=React.useState(false);
+    const [preferred,setPreferred]=React.useState(null),[dragging,setDragging]=React.useState(false),drag=React.useRef(null);
+    const wide=available>=740&&innerWidth>760,maxWidth=Math.max(320,available-420);
+    const clamp=value=>Math.round(Math.max(320,Math.min(maxWidth,value)));
+    const panelWidth=clamp(expanded?maxWidth:preferred??Math.min(640,available*.48));
+    const finishDrag=(cancel=false)=>{
+     const prior=drag.current;if(!prior)return;drag.current=null;setDragging(false);
+     if(cancel){setPreferred(prior.preferred);setExpanded(prior.expanded)}
+     if(prior.node.hasPointerCapture(prior.id))prior.node.releasePointerCapture(prior.id);
+    };
+    const resizeKeys=event=>{
+     if(event.key==='Escape'&&drag.current){event.preventDefault();event.stopPropagation();finishDrag(true);return}
+     if(drag.current)return;
+     const amount=event.shiftKey?48:16,value={ArrowLeft:panelWidth+amount,ArrowRight:panelWidth-amount,Home:320,End:maxWidth}[event.key];
+     if(value===undefined)return;event.preventDefault();setExpanded(false);setPreferred(clamp(value));
+    };
     React.useEffect(()=>{
      const sync=()=>{const value=theme();document.querySelectorAll('.ff-ui').forEach(n=>n.dataset.ffTheme=value);frame.current?.contentWindow?.postMessage({type:'ff-theme',theme:value},location.origin)};
      const observer=new MutationObserver(sync);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-ds-dark-theme']});const media=matchMedia('(prefers-color-scheme:dark)');media.addEventListener('change',sync);sync();
      return()=>{observer.disconnect();media.removeEventListener('change',sync)};
     },[]);
-    React.useEffect(()=>{const resize=()=>setWide(innerWidth>=1100);window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[]);
+    React.useEffect(()=>{
+     const measure=()=>{const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]');setAvailable(Math.max(0,innerWidth-Math.max(0,container?.getBoundingClientRect().left||0)))};
+     const resize=()=>{finishDrag(true);measure()},blur=()=>finishDrag(true);
+     const escape=event=>{if(event.key==='Escape'&&drag.current){event.preventDefault();event.stopImmediatePropagation();finishDrag(true)}};
+     const observer=new ResizeObserver(measure);observer.observe(document.body);
+     const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]');if(container)observer.observe(container);
+     measure();window.addEventListener('resize',resize);window.addEventListener('blur',blur);window.addEventListener('keydown',escape,true);
+     return()=>{finishDrag(true);observer.disconnect();window.removeEventListener('resize',resize);window.removeEventListener('blur',blur);window.removeEventListener('keydown',escape,true)};
+    },[view?.id,active,modal]);
     React.useEffect(()=>{panel=setView;const timer=setInterval(()=>setActive(current()),200);return()=>{panel=null;clearInterval(timer)}},[]);
     React.useEffect(()=>{if(view&&current()!==view.id)setView(null);setModal(false)},[active,view?.id]);
     React.useEffect(()=>{frame.current?.contentWindow?.postMessage({type:'ff-navigate',step:view?.step},location.origin)},[view]);
@@ -140,7 +163,7 @@ window.__ModuleLoader__.load({
      window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
     },[view?.id]);
     React.useEffect(()=>{
-     if(!view||active!==view.id)return;
+     if(!view||active!==view.id||!wide||modal)return;
      const touched=new Map();
      const adjust=()=>{
       if(current()!==view.id)return;
@@ -150,13 +173,19 @@ window.__ModuleLoader__.load({
       if(!container)return;
       if(!touched.has(container))touched.set(container,container.style.getPropertyValue('--ff-panel-inset'));
       container.setAttribute('data-form-fill-reserve','true');
-      container.style.setProperty('--ff-panel-inset',expanded?'calc(min(58vw, 860px) + 1px)':'calc(min(48vw, 640px) + 1px)');
+      container.style.setProperty('--ff-panel-inset',panelWidth+'px');
      };
      adjust();const observer=new MutationObserver(adjust);observer.observe(document.body,{childList:true,subtree:true});
      return()=>{observer.disconnect();for(const [node,previous]of touched){node.removeAttribute('data-form-fill-reserve');if(previous)node.style.setProperty('--ff-panel-inset',previous);else node.style.removeProperty('--ff-panel-inset')}};
-    },[view?.id,expanded,active]);
+    },[view?.id,panelWidth,active,wide,modal]);
     if(!view||active!==view.id)return null;
-    return portal(h('section',{className:'ff-ui ff-panel','data-ff-theme':theme(),'aria-label':'AI填表工作台',style:{width:modal?'100%':wide?(expanded?'min(58vw, 860px)':'min(48vw, 640px)'):'100%',...(modal?{background:'transparent',border:0}:{})}},
+    return portal(h('section',{className:'ff-ui ff-panel'+(dragging?' ff-resizing':''),'data-ff-theme':theme(),'aria-label':'AI填表工作台',style:{width:modal?'100%':wide?panelWidth+'px':'100%',...(modal?{background:'transparent',border:0}:{})}},
+     wide&&!modal?h('div',{className:'ff-panel-resize',role:'separator',tabIndex:0,'aria-label':'调整工作台宽度','aria-orientation':'vertical','aria-valuemin':320,'aria-valuemax':maxWidth,'aria-valuenow':panelWidth,'aria-valuetext':panelWidth+' 像素',title:'拖动调宽；左右键微调，Home/End 最小/最大；双击恢复默认',onKeyDown:resizeKeys,
+      onDoubleClick:()=>{finishDrag(true);setPreferred(null);setExpanded(false)},
+      onPointerDown:event=>{if(event.button!==0||drag.current)return;event.preventDefault();event.currentTarget.focus();drag.current={id:event.pointerId,node:event.currentTarget,x:event.clientX,width:panelWidth,preferred,expanded};event.currentTarget.setPointerCapture(event.pointerId);setDragging(true)},
+      onPointerMove:event=>{const prior=drag.current;if(prior?.id!==event.pointerId)return;setPreferred(clamp(prior.width+prior.x-event.clientX));setExpanded(false)},
+      onPointerUp:()=>finishDrag(),onPointerCancel:()=>finishDrag(true),onLostPointerCapture:()=>finishDrag(true)
+     }):null,
      h('div',{className:'ff-panel-head',hidden:modal},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表工作台')),h('div',{className:'ff-panel-actions'},h('button',{onClick:()=>setExpanded(v=>!v)},expanded?'收起展开':'展开工作台'),h('button',{onClick:()=>setView(null)},'关闭工作台'))),
      h('iframe',{ref:frame,title:'AI填表任务',src:'/form-fill/?session='+encodeURIComponent(view.id)+(sessionTasks.has(view.id)?'#task='+sessionTasks.get(view.id):''),onLoad:()=>{frame.current.contentWindow.postMessage({type:'ff-theme',theme:theme()},location.origin);frame.current.contentWindow.postMessage({type:'ff-navigate',step:view.step},location.origin)}})),document.body);
    }
