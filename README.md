@@ -2,7 +2,7 @@
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-开发分支为 0.1.0-alpha.9，包含完整网格、恢复选择、取消/重试、129 字段目录和受限 Excel 保真；npm 发布待所有者认证。已发布版本 0.1.0-alpha.7：企查查蓝深浅色、左上入口、专属品牌首页、四步字段向导、手写草稿保护和结果筛选。字段范围实际约束查询和填写，支持六类工商字段、来源追溯、未完成清单和任务恢复。没有 LLM 猜值；已有内容默认保留。alpha.7 修复侧栏左对齐，见 [发布记录](docs/RELEASE-alpha7.md)。此前功能发布验收见 [U4 验收](docs/U4-UI-ACCEPTANCE.md)。
+当前正式编号版本为 **0.2.0**，包含完整网格、恢复选择、取消/重试、129 字段目录、受限 Excel 保真及企查查蓝工作台。默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。发布记录见 [0.2.0](docs/RELEASE-0.2.0.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -21,7 +21,7 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。开发版三包 alpha.9 使用精确依赖；推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。三包 0.2.0 使用精确依赖；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
 ```sh

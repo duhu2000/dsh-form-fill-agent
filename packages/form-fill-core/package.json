@@ -1,10 +1,10 @@
 {
   "name": "form-fill-core",
-  "version": "0.1.0-alpha.10",
+  "version": "0.2.0",
   "private": false,
   "description": "Bounded XLSX parsing, fill planning and non-destructive cell writeback.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/form-fill-core" },
-  "publishConfig": { "access": "public", "tag": "next", "registry": "https://registry.npmjs.org/" },
+  "publishConfig": { "access": "public", "tag": "latest", "registry": "https://registry.npmjs.org/" },
   "type": "module",
   "main": "lib/index.js",
   "exports": {

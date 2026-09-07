@@ -2,7 +2,7 @@
   "analysis": {
     "kind": "Analysis",
     "schemaVersion": 1,
-    "coreVersion": "0.1.0-alpha.9",
+    "coreVersion": "0.2.0",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
     "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
@@ -248,10 +248,10 @@
   "plan": {
     "kind": "FillPlan",
     "schemaVersion": 1,
-    "coreVersion": "0.1.0-alpha.9",
+    "coreVersion": "0.2.0",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
-    "providerVersion": "0.1.0-alpha.9",
+    "providerVersion": "0.2.0",
     "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
     "policy": "fill-blanks-only",
     "estimatedCalls": 2,
@@ -455,17 +455,17 @@
         "message": "隐藏工作表未处理"
       }
     ],
-    "planId": "19baaa48ff0c8d3e6971966f9e8b44ca972d28c39da250c71b96b10366d43ecc"
+    "planId": "9d2b0d9176484bed6fb44ea5ade4eec8ee16f53ff1188c58d44c3fe2408f3d87"
   },
   "changeSet": {
     "kind": "ChangeSet",
     "schemaVersion": 1,
-    "coreVersion": "0.1.0-alpha.9",
+    "coreVersion": "0.2.0",
     "rulesetVersion": "1",
     "documentSchemaVersion": 1,
-    "providerVersion": "0.1.0-alpha.9",
+    "providerVersion": "0.2.0",
     "documentHash": "b04f28d82800e8b69084e0d23ed0eb8177e86634792f5683432f04ccfa81dde8",
-    "planId": "19baaa48ff0c8d3e6971966f9e8b44ca972d28c39da250c71b96b10366d43ecc",
+    "planId": "9d2b0d9176484bed6fb44ea5ade4eec8ee16f53ff1188c58d44c3fe2408f3d87",
     "changes": [
       {
         "id": "ca4efc5bd9180e90ddb9f4ee1abd1725be695923f87ccfa144587dc4b7f63c06",
@@ -647,6 +647,6 @@
         "reason": "candidate-review-required"
       }
     ],
-    "changeSetId": "6bff40dbba4a93738a474e23c9abeb06eb196e1fa3ed9db88e6ab44dfdfa2040"
+    "changeSetId": "e391412b017f9a4270790d12bf820bbb4f44b7a1ac94e4d154774fb11e6f87d7"
   }
 }

@@ -1,4 +1,4 @@
-export const PROVIDER_VERSION = '0.1.0-alpha.9';
+export const PROVIDER_VERSION = '0.2.0';
 import {ADDITIONAL_FIELDS} from './extended.js';
 import {QCC_FIELD_CATALOG} from './catalog.js';
 export {createCatalogProvider,CATALOG_TOOL_DOMAINS,runtimeToolNames} from './extended.js';

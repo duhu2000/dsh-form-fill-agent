@@ -1,10 +1,10 @@
 {
   "name": "qcc-form-fill-provider",
-  "version": "0.1.0-alpha.9",
+  "version": "0.2.0",
   "private": false,
   "description": "Qichacha field catalog, synthetic fixtures and injected MCP registration provider.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/qcc-form-fill-provider" },
-  "publishConfig": { "access": "public", "tag": "next", "registry": "https://registry.npmjs.org/" },
+  "publishConfig": { "access": "public", "tag": "latest", "registry": "https://registry.npmjs.org/" },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
