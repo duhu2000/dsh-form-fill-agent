@@ -15,7 +15,7 @@
 <div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><button id="upload">分析表格</button></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
-<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button></div>
+<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button><div id="mapping-next" hidden role="status"><p>设置已保存。下一步核验企业主体，确认填写范围后生成指令并发送，查询结果会进入填写预览。</p><button id="mapping-continue" class="primary">下一步：主体核验</button></div></div>
 <div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
 <div class="card" data-pane="preview"><h2>填写预览</h2><p id="summary"></p><details><summary>逐列填写结果</summary><p class="muted">按单元格统计；整行缺少主体标识的情况另见下方原因分类。</p><div class="scroll"><table><thead><tr><th>原表字段</th><th>映射字段</th><th>预览可填写格数</th><th>未完成项</th></tr></thead><tbody id="field-results"></tbody></table></div></details><p class="muted">每格显示原值、准备填写值和来源。取消勾选后点击“应用选择”，再确认新的预览。</p>
 <div class="toolbar"><label>筛选单元格 <input id="result-search" type="search" placeholder="位置、字段或值"></label><span id="result-count" class="muted"></span></div>
@@ -170,17 +170,22 @@ function renderSettings(data){
      trigger.textContent=chosen?(data.catalog.find(f=>f.key===chosen)?.label||chosen):'选择填写字段';
      select.value=chosen;count.textContent=found.length?'匹配 '+found.length+' 个字段':'没有匹配字段，请更换关键词或维度';updateStatus();
     };
-    select.onchange=()=>{chosen=select.value;manual=true;suggestions.replaceChildren();options()};
+    const choose=()=>{chosen=select.value;manual=true;suggestions.replaceChildren();trigger.textContent=chosen?(data.catalog.find(f=>f.key===chosen)?.label||chosen):'不填写';updateStatus();$('mapping-next').hidden=true};
+    const finish=()=>{choose();picker.open=false;trigger.focus()};
+    select.onchange=choose;
+    select.ondblclick=finish;
+    select.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();finish()}};
     search.oninput=options;dimension.onchange=options;
     if(!chosen&&!manual){
      const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
      const recommended=(data.catalog||[]).filter(f=>hints.includes(f.key)||matches(f,cell.label)).slice(0,4);
      if(recommended.length){const hint=document.createElement('span');hint.textContent='推荐（确认后采用）：';suggestions.append(hint)}
-     for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent=field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options()};suggestions.append(button)}
+    for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent=field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
     }
     const filters=document.createElement('div');filters.className='ff-mapping-filters';filters.append(search,dimension);
     select.size=8;
-    panel.append(suggestions,filters,select,count);
+    const done=document.createElement('button');done.type='button';done.textContent='确认选择';done.onclick=finish;
+    panel.append(suggestions,filters,select,count,done);
     label.append(status,picker);options();fields.append(label);
    }
   };
@@ -200,6 +205,7 @@ function renderSettings(data){
  for(const selection of data.configuration?.anchors||[]){const p=document.createElement('p');p.textContent=selection.sheet+' 第 '+selection.row+' 行：人工确认 '+selection.value;$('entities').append(p)}
 }
 function render(data){
+ $('mapping-next').hidden=true;
 current=data;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
 if(gridTask!==data.id){gridTask=data.id;gridPageNumber=1;gridColumn=1;$('grid-sheet').replaceChildren();$('grid-query').value=''}$('grid').hidden=false;loadGrid();
 if(parent!==window)parent.postMessage({type:'ff-task',taskId:data.id},location.origin);
@@ -227,7 +233,7 @@ function readMapping(){const configuration={sheets:[],headers:[],mappings:[]};fo
 function mappingSignature(configuration){return JSON.stringify(configuration.headers.map(h=>({sheet:h.sheet,row:h.row,cells:current.structure.find(s=>s.name===h.sheet)?.rows.find(r=>r.number===h.row)?.cells}))) }
 $('mapping-save').onclick=()=>{try{if(!current||busy)return;const configuration=readMapping();localStorage.setItem('ff-mapping:'+owner,JSON.stringify({schema:1,signature:mappingSignature(configuration),configuration}));$('status').textContent='字段规则已保存在本浏览器。'}catch{$('status').textContent='浏览器无法保存字段规则。'}};
 $('mapping-load').onclick=async()=>{if(!current||busy)return;controls(true);try{const saved=JSON.parse(localStorage.getItem('ff-mapping:'+owner)||'null');if(saved?.schema!==1||saved.signature!==mappingSignature(saved.configuration))throw Error('没有与当前工作表及表头一致的规则，请手动设置。');render(await api('/configure',{id:current.id,configuration:saved.configuration}));$('status').textContent='字段规则已复用，请检查后重新核验。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
-$('configure').onclick=async()=>{if(!current||busy)return;const configuration=readMapping();controls(true);try{render(await api('/configure',{id:current.id,configuration}));$('status').textContent='字段设置已应用，旧预览已清除，请重新核验。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
+$('configure').onclick=async()=>{if(!current||busy)return;const configuration=readMapping();controls(true);$('mapping-next').hidden=true;try{render(await api('/configure',{id:current.id,configuration}));$('status').textContent='字段设置已应用，旧预览已清除，请重新核验。';$('mapping-next').hidden=false;$('mapping-next').scrollIntoView({block:'nearest'});}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('samples').onclick=async e=>{if(!e.target.dataset.name||busy)return;const name=e.target.dataset.name;try{const response=await fetch(basePath+'/fixture/'+encodeURIComponent(name));if(!response.ok)throw Error('模板读取失败');await preview(await response.arrayBuffer(),name+'.xlsx',true)}catch(e){$('status').textContent=e.message}};
 $('confirm').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/confirm',{id:current.id,confirmChangeSetId:current.changeSet.changeSetId});current=await api('/task/'+current.id);render(current);downloads();$('status').textContent='副本已生成，原文件保持不变。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('selection').onclick=async()=>{if(!current||busy)return;controls(true);try{render(await api('/select',{id:current.id,selectedIds:[...$('changes').querySelectorAll('input:checked')].map(x=>x.value)}));$('status').textContent='选择已应用，请核对新的预览。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
@@ -251,5 +257,7 @@ $('mapping-search').oninput=()=>{const query=$('mapping-search').value.trim().to
 $('result-search').oninput=filterResults;$('changes').onchange=filterResults;
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.type==='ff-theme'&&['light','dark'].includes(e.data.theme))document.body.dataset.ffTheme=e.data.theme;if(e.data?.type==='ff-draft-conflict'){expectedDraft=e.data.draft;if(!$('draft-conflict').open)$('draft-conflict').showModal()}if(e.data?.type==='ff-draft-result'){$('status').textContent=e.data.ok?'已回填，请在对话框修改或发送。':'回填失败，任务已保留。';if(e.data.ok)closeWizard(true)}if(e.data?.type==='ff-navigate'){if(!current&&location.hash)pendingNavigation=e.data.step;if(e.data.step==='history')$('history-tab').click();else navigate(e.data.step)}});
 api('/health').then(s=>{$('connection').textContent=s.qccAvailable?'已发现企查查工商工具，可在对话中执行。':'尚未发现企查查工商工具；请先连接 MCP。合成模板仍可体验。'}).catch(()=>{});
+$('mapping-continue').onclick=()=>{if(busy||!current)return;navigate('identity');$('wizard-open').focus()};
+$('mapping').addEventListener('change',()=>{$('mapping-next').hidden=true});
 navigate('import');restore();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
 </script></html>

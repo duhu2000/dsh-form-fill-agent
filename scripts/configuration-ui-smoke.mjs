@@ -35,6 +35,11 @@ try{
  await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
  await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
  assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
+ await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
+ assert.ok(await page.locator('#wizard-open').isVisible());
+ await page.locator('#wizard-open').click();
+ assert.ok(await page.locator('#wizard').isVisible());
+ await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  await page.reload();await page.getByRole('button',{name:'字段设置',exact:true}).click();
  assert.equal(await page.getByLabel('配置表 字段 单位',{exact:true}).inputValue(),'company_name');
  await page.getByRole('button',{name:'保存字段规则',exact:true}).click();
@@ -93,6 +98,8 @@ try{
  assert.ok(await phone.getByRole('button',{name:'首选联系电话',exact:true}).isVisible());
  assert.ok(await phone.getByRole('button',{name:'开票联系电话',exact:true}).isVisible());
  await phone.getByRole('button',{name:'首选联系电话',exact:true}).click();
+ assert.equal(await phone.locator('details').getAttribute('open'),null);
+ await phone.locator('summary').click();
  const target=page.getByLabel('字段搜索 字段 联系电话',{exact:true});
  assert.equal(await target.inputValue(),'contact_preferred_phone');
  const search=page.getByLabel('字段搜索 搜索目标字段 联系电话',{exact:true});
@@ -101,6 +108,11 @@ try{
  await search.fill('电话');await page.getByLabel('字段搜索 字段维度 联系电话',{exact:true}).selectOption('tax_invoice_info');
  assert.ok(await target.locator('option[value=invoice_phone]').count());assert.equal(await target.inputValue(),'contact_preferred_phone');
  await target.selectOption('invoice_phone');
+ await target.locator('option[value=invoice_phone]').dblclick();
+ assert.equal(await phone.locator('details').getAttribute('open'),null);
+ await phone.locator('summary').click();
+ await target.focus();await page.keyboard.press('Enter');
+ assert.equal(await phone.locator('details').getAttribute('open'),null);
  await page.locator('#mapping-search').fill('法定');assert.equal(await phone.isVisible(),false);
  await page.locator('#mapping-search').fill('');
  await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
