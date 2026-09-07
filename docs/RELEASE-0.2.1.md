@@ -13,4 +13,12 @@
 
 主包 tarball SHA-256：fbd2310e5030bbfefe74862df5ce8cafbf7526de3eedff6a8bd41772ebeb5eb3。
 
-发布中：完成 CI 后推送 V0.2.1 tag，npm 发布和安装验收后再同步 GitHub Latest。正式用户签收和市场上架仍单独跟踪。
+## 发布回执
+
+- 代码提交：d54e69341c9f50f875e2368da9fe7ca69fb0df67；标签：V0.2.1，已推送。
+- 六组 CI 全部通过：[运行 34071178806](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34071178806)。
+- npm 主包 dsh-form-fill-agent@0.2.1 已发布，使用 latest 标签；内核和 Provider 保持 0.2.0。
+- node scripts/registry-smoke.mjs：三包完整性 3/3、合成模板端到端 3/3、registry 与安装后 README、无 workspace 链接独立消费全部 PASS。
+- node scripts/dsh-registry-install.mjs：DSH 0.1.1-rc.2 和 0.1.2-alpha.2 的 registry 安装、bundle reconcile、卸载全部 PASS；临时隔离 profile，未打开端口。
+
+正式用户签收和市场上架仍单独跟踪。
