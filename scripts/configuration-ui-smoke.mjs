@@ -197,7 +197,15 @@ try{
  await page.reload();await page.getByRole('button',{name:'填写预览',exact:true}).click();await page.locator('#changes input').nth(5).waitFor();
  assert.equal(await page.locator('#field-results tr').count(),7);
  assert.equal(await page.locator('#reason-summary').innerText(),'暂无未完成项。');
- await page.getByRole('button',{name:'确认下载',exact:true}).click();await page.locator('#confirm').click();await page.getByRole('link',{name:'下载已填副本'}).waitFor();
+ await page.getByRole('button',{name:'填写预览',exact:true}).click();
+ await page.locator('#preview-continue').waitFor();
+ const nextBox=await page.locator('#preview-continue').boundingBox();assert.ok(nextBox.y+nextBox.height<=900,'next action is visible without scrolling through the workbook');
+ assert.equal(await page.locator('#discard').isVisible(),false);
+ await page.setViewportSize({width:390,height:844});
+ const mobileNext=await page.locator('#preview-continue').boundingBox();assert.ok(mobileNext.x>=0&&mobileNext.x+mobileNext.width<=390&&mobileNext.y+mobileNext.height<=844);
+ await page.screenshot({path:'/tmp/ff-next-preview-mobile.png'});
+ await page.setViewportSize({width:1440,height:900});
+ await page.locator('#preview-continue').click();await page.locator('#confirm').click();await page.getByRole('link',{name:'下载已填副本'}).waitFor();
  const output=await page.evaluate(async()=>[...new Uint8Array(await (await fetch(document.querySelector('#downloads a').href)).arrayBuffer())]);
  const {parseWorkbook}=await import('form-fill-core');const sheet=parseWorkbook(Buffer.from(output)).sheets[0];
  for(const column of ['B','C','D','E','F','G'])assert.ok(sheet.cells[column+'2'].value);
