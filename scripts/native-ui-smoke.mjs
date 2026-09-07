@@ -104,7 +104,7 @@ try{
  assert.equal(await frame.locator('#changes tr').count(),6);
  await page.getByRole('button',{name:'主体核验',exact:true}).click();
  await page.getByRole('textbox',{name:'原生输入框'}).fill('保留我的手写要求');
- await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+ await page.getByRole('button',{name:'提示词生成',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.ff-panel').getBoundingClientRect().width===innerWidth);
  const modalPanel=await page.getByRole('region',{name:'AI填表工作台'}).boundingBox();assert.equal(modalPanel.width,1440);
  await frame.getByRole('button',{name:'3 填写字段',exact:true}).click();
@@ -126,13 +126,14 @@ try{
  await page.waitForFunction(()=>probe.draft.includes('form_fill_enrich'));
  assert.ok((await page.evaluate(()=>probe.draft)).startsWith('保留我的手写要求\n\n'));
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
- await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ if(await frame.locator('#direct-ack-label').isVisible()){await frame.locator('#direct-ack').check();await frame.getByRole('button',{name:'生成填写指令',exact:true}).click()}
  await frame.locator('#wizard').waitFor({state:'hidden'});
+ await frame.getByText('已回填，请在对话框修改或发送。',{exact:true}).waitFor();
  assert.equal((await page.evaluate(()=>probe.draft)).match(/form_fill_enrich/g).length,1);
  assert.ok((await page.evaluate(()=>probe.draft)).startsWith('保留我的手写要求\n\n'));
  await page.getByRole('textbox',{name:'原生输入框'}).fill('可以替换的内容');
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
- await frame.getByRole('button',{name:'回填到对话框',exact:true}).click();
+ assert.equal(await frame.locator('#wizard').isVisible(),false);
  await frame.getByRole('button',{name:'替换',exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('textarea').value.includes('可以替换的内容'));
  assert.match(await page.evaluate(()=>probe.draft),/expectedRevision=1/);

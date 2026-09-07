@@ -37,7 +37,7 @@ try{
  assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
  await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
  assert.ok(await page.locator('#wizard-open').isVisible());
- await page.locator('#wizard-open').click();
+ await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  assert.ok(await page.locator('#wizard').isVisible());
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  await page.reload();await page.getByRole('button',{name:'字段设置',exact:true}).click();
@@ -130,7 +130,7 @@ try{
  const coverageTask=await page.evaluate(async base64=>(await fetch('/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base64,analyzeOnly:true})})).json(),fixtureBytes('覆盖验证',['原文件导入名称','法定代表人','登记状态','统一社会信用代码','地址','网址','联系电话'],[['合成覆盖有限公司','','','','','','']],{title:false}).toString('base64'));
  await page.goto('http://127.0.0.1:'+server.address().port+'/#task='+coverageTask.id);
  assert.ok(coverageTask.id,JSON.stringify(coverageTask));await page.locator('#anchor-alert').getByText('有 1 行缺少可用主体标识。',{exact:false}).waitFor();
- await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.locator('#wizard-open').click();
+ await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  await page.getByRole('button',{name:'4 确认描述',exact:true}).click();assert.equal(await page.locator('#copy-command').isEnabled(),false);
  assert.ok((await page.locator('#scope-review').innerText()).includes('缺少可用主体'));
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
@@ -142,7 +142,7 @@ try{
   await page.getByLabel('覆盖验证 字段 '+label,{exact:true}).selectOption(key);
  }
  await page.locator('#configure').click();await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
- await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.locator('#wizard-open').click();
+ await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  await page.getByRole('button',{name:'3 填写字段',exact:true}).click();
  assert.equal(await page.locator('#wizard-fields input:checked:not(:disabled)').count(),6,'mapping edits must discard stale two-field scope');
  await page.locator('#wizard-fields input[data-field=contact_preferred_phone]').uncheck();
@@ -152,7 +152,7 @@ try{
  await page.locator('#scope-ack').check();assert.equal(await page.locator('#copy-command').isEnabled(),true);
  await page.getByRole('button',{name:'3 填写字段',exact:true}).click();await page.locator('#wizard-fields input[data-field=contact_preferred_phone]').check();
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();await page.reload();
- await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.locator('#wizard-open').click();await page.getByRole('button',{name:'3 填写字段',exact:true}).click();
+ await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});await page.getByRole('button',{name:'3 填写字段',exact:true}).click();
  assert.equal(await page.locator('#wizard-fields input:checked:not(:disabled)').count(),6);
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  const taskBefore=await page.evaluate(async id=>(await fetch('/task/'+id)).json(),coverageTask.id);

@@ -1,6 +1,6 @@
 {
   "name": "dsh-form-fill-agent",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": false,
   "description": "AI填表智能体：XLSX blank-cell preview, QCC enrichment and persistent tasks for DSH.",
   "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/dsh-form-fill-agent" },

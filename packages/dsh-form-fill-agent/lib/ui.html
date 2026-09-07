@@ -16,7 +16,7 @@
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
 <div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button><div id="mapping-next" hidden role="status"><p>设置已保存。下一步核验企业主体，确认填写范围后生成指令并发送，查询结果会进入填写预览。</p><button id="mapping-continue" class="primary">下一步：主体核验</button></div></div>
-<div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
+<div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><div id="direct-scope" role="status"></div><label id="direct-ack-label" hidden><input id="direct-ack" type="checkbox">确认仅填写已纳入的原表字段</label><textarea id="direct-command" aria-label="填写指令" readonly hidden></textarea><button id="wizard-open">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
 <div class="card" data-pane="preview"><h2>填写预览</h2><p id="summary"></p><details><summary>逐列填写结果</summary><p class="muted">按单元格统计；整行缺少主体标识的情况另见下方原因分类。</p><div class="scroll"><table><thead><tr><th>原表字段</th><th>映射字段</th><th>预览可填写格数</th><th>未完成项</th></tr></thead><tbody id="field-results"></tbody></table></div></details><p class="muted">每格显示原值、准备填写值和来源。取消勾选后点击“应用选择”，再确认新的预览。</p>
 <div class="toolbar"><label>筛选单元格 <input id="result-search" type="search" placeholder="位置、字段或值"></label><span id="result-count" class="muted"></span></div>
 <div class="scroll"><table><thead><tr><th>位置</th><th>字段</th><th>原值</th><th>准备填写</th><th>依据与来源</th><th>填写</th></tr></thead><tbody id="changes"></tbody></table></div><button id="selection">应用选择</button></div>
@@ -95,7 +95,7 @@ function renderWizard(){
  $('wizard-fields').replaceChildren();
  const available=new Set(current?.analysis.tables.flatMap(t=>t.mappings.map(m=>m.field))||[]);
  const fillable=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);
- for(const field of current?.catalog||[]){
+ for(const field of (current?.catalog||[]).filter(f=>available.has(f.key))){
   const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';const fixed=field.anchor||available.has(field.key)&&!fillable.has(field.key);input.checked=fixed||wizardFields.has(field.key);input.disabled=fixed||!available.has(field.key);input.dataset.field=field.key;
   input.onchange=()=>{if(input.checked)wizardFields.add(field.key);else wizardFields.delete(field.key);saveWizard();renderWizard()};
   label.append(input,document.createTextNode(field.label+(fixed?'（固定）':!available.has(field.key)?'（原表未映射）':'')));$('wizard-fields').append(label);
@@ -123,6 +123,24 @@ async function sendDraft(mode){
  if(parent===window){$('wizard-message').textContent='独立页面请复制指令到 DSH 对话。';return}
  controls(true);$('wizard-message').textContent='';
  try{await applyScope();saveWizard();parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value,summary:businessSummary(),retryOnly:retryIntent,mode,expectedDraft},location.origin)}catch(e){$('wizard-message').textContent=e.message}finally{controls(false)}
+}
+function directScope(){
+ initWizard();retryIntent=false;
+ wizardFields=new Set(current?.selectedFields||current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);
+ const review=scopeReview(),signature=mappingVersion();
+ if($('direct-ack').dataset.signature!==signature){$('direct-ack').checked=false;$('direct-ack').dataset.signature=signature}
+ $('direct-scope').textContent=review.blocked?'缺少可用企业标识，请返回字段设置。':'将填写 '+wizardFields.size+' 个已确认字段。'+(review.omitted.length?'未纳入：'+review.omitted.join('、')+'。':'');
+ $('direct-ack-label').hidden=!review.omitted.length;
+ return review;
+}
+async function directDraft(){
+ if(busy||!current)return;
+ const review=directScope();
+ if(review.blocked||!wizardFields.size){$('status').textContent='请先完善企业标识和填写字段。';return}
+ if(review.omitted.length&&!$('direct-ack').checked){$('status').textContent='请确认本页未纳入的字段，或返回字段设置完善映射。';return}
+ $('scope-ack').checked=$('direct-ack').checked;
+ if(parent===window){$('direct-command').hidden=false;$('direct-command').value=command();$('direct-command').focus();$('direct-command').select();$('status').textContent='指令已生成，请复制到 DSH 对话框发送。';return}
+ $('status').textContent='正在回填到对话框…';await sendDraft();
 }
 function filterResults(){const query=$('result-search').value.trim().toLowerCase(),rows=[...$('changes').rows];let shown=0;for(const tr of rows){tr.hidden=!!query&&!tr.textContent.toLowerCase().includes(query);if(!tr.hidden)shown++}const selected=rows.filter(tr=>tr.querySelector('input')?.checked).length;$('result-count').textContent=rows.length?'显示 '+shown+' / '+rows.length+' 格 · 已选 '+selected+' 格'+(!shown?' · 无匹配结果':''):'暂无可填写单元格'}
 function renderSettings(data){
@@ -206,7 +224,7 @@ function renderSettings(data){
 }
 function render(data){
  $('mapping-next').hidden=true;
-current=data;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
+current=data;directScope();$('direct-command').hidden=true;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
 if(gridTask!==data.id){gridTask=data.id;gridPageNumber=1;gridColumn=1;$('grid-sheet').replaceChildren();$('grid-query').value=''}$('grid').hidden=false;loadGrid();
 if(parent!==window)parent.postMessage({type:'ff-task',taskId:data.id},location.origin);
 $('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').replaceChildren();
@@ -241,7 +259,7 @@ $('refresh').onclick=()=>restore();
 $('discard').onclick=async()=>{if(!current||busy)return;controls(true);try{await api('/discard',{id:current.id});current=null;history.replaceState(null,'',location.pathname+location.search);$('preview').hidden=true;$('grid').hidden=true;gridTask=null;navigate('import');$('status').textContent='任务及保存的表格已删除。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('history-tab').onclick=async()=>{try{const list=await api('/tasks');$('history-list').replaceChildren();for(const item of list){const div=document.createElement('div');div.className='history-item';const button=document.createElement('button');button.textContent=item.filename+' · '+item.state;button.onclick=()=>{location.hash='task='+item.id;restore()};div.append(button);$('history-list').append(div)}$('history').hidden=false;$('current').hidden=true;$('current-tab').setAttribute('aria-pressed','false');$('history-tab').setAttribute('aria-pressed','true');if(!list.length)$('history-list').textContent='暂无可恢复的任务。'}catch(e){$('status').textContent=e.message}};
 $('current-tab').onclick=()=>navigate(step);
-$('wizard-open').onclick=()=>openWizard();$('wizard-close').onclick=()=>closeWizard();$('wizard').addEventListener('cancel',e=>{e.preventDefault();closeWizard()});
+$('wizard-open').onclick=()=>directDraft();$('wizard-close').onclick=()=>closeWizard();$('wizard').addEventListener('cancel',e=>{e.preventDefault();closeWizard()});
 document.querySelectorAll('[data-wizard-step]').forEach(b=>b.onclick=()=>{wizardStep=Number(b.dataset.wizardStep);saveWizard();renderWizard()});
 $('wizard-prev').onclick=()=>{wizardStep=Math.max(0,wizardStep-1);saveWizard();renderWizard()};$('wizard-next').onclick=()=>{wizardStep=Math.min(3,wizardStep+1);saveWizard();renderWizard()};
 $('wizard-file').onchange=async()=>{const file=$('wizard-file').files[0];if(file){await preview(await file.arrayBuffer(),file.name);renderWizard()}};
