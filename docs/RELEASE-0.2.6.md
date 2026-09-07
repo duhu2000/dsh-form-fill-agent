@@ -6,4 +6,11 @@
 
 ## 验证
 
-99 项测试，配置和原生 React 界面回归通过，包括直接回填无任务弹窗、显式提示词入口、范围确认、草稿追加替换与去重、七列合成表六格导出。发布回执待核验。
+99 项测试，配置和原生 React 界面回归通过，包括直接回填无任务弹窗、显式提示词入口、范围确认、草稿追加替换与去重、七列合成表六格导出。
+
+## 发布回执
+
+- 代码提交 d03c68b80256de87ab37d3242e7d5fea4bca9e27，标签 V0.2.6，已推送。
+- [自动发布](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34081493177) 成功，六组 CI、OIDC 发布及 registry 验收通过；首次 README 同步延迟导致检查失败，重跑失败作业后通过。
+- npm latest 与 GitHub Latest 均为 0.2.6，非预发布。
+- DSH rc.2 / alpha.2 隔离安装、bundle reconcile 和卸载通过，未使用生产 profile 或打开端口。
