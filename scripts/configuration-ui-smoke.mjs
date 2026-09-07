@@ -38,7 +38,7 @@ try{
  await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
  await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
  assert.equal(await page.getByLabel('配置表 字段 负责人',{exact:true}).inputValue(),'legal_person');
- await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
+ assert.equal(await page.locator('[data-step=identity]').getAttribute('aria-current'),'true');
  assert.ok(await page.locator('#wizard-open').isVisible());
  // A saved mapping is not necessarily executable: report the exact conflict,
  // retain the settings for correction, and allow a corrected task to continue.
@@ -49,6 +49,8 @@ try{
  await page.getByText(/设置已保存，但尚不能执行。字段映射存在重复或冲突/).waitFor();
  assert.equal(await page.locator('#mapping-next').isVisible(),false);
  assert.match(await page.locator('#anchor-alert').textContent(),/企业名称/);
+ assert.equal(await page.locator('.ff-mapping-conflict').count(),2);
+ assert.equal(await page.locator('select[aria-invalid=true]').count(),2);
  await page.getByRole('button',{name:'主体核验',exact:true}).click();
  await page.locator('#wizard-open').click();
  assert.ok(await page.locator('#configure').isVisible(),'blocked draft returns to actionable mapping settings');
@@ -56,7 +58,7 @@ try{
  await page.getByLabel('配置表 字段 负责人',{exact:true}).selectOption('legal_person');
  await page.getByRole('button',{name:'应用字段设置',exact:true}).click();
  await page.getByText('字段设置已应用，旧预览已清除，请重新核验。',{exact:true}).waitFor();
- await page.getByRole('button',{name:'下一步：主体核验',exact:true}).click();
+ assert.equal(await page.locator('[data-step=identity]').getAttribute('aria-current'),'true');
  await page.locator('#wizard-open').click();
  await page.getByText('指令已生成，请复制到 DSH 对话框发送。',{exact:true}).waitFor();
  assert.match(await page.locator('#direct-command').inputValue(),/form_fill_enrich/);
