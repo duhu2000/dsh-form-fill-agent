@@ -5,7 +5,7 @@
 AI填表智能体：支持自动填表、表格填充、表格补全、Excel填表与 Excel回填；使用企查查 MCP 填写 XLSX 空白字段，预览确认后导出新副本。
 
 ```sh
-dsh plugin --profile web add dsh-form-fill-agent@0.2.14
+dsh plugin --profile web add dsh-form-fill-agent@0.2.15
 ```
 
 请先满足下文的 DSH、连接器及侧边栏依赖要求；安装后完整停止并重启对应 Profile。
