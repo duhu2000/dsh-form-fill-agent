@@ -1,5 +1,11 @@
 # 0.2.16
 
+发布已完成：tag `V0.2.16` 对应 `667b86d`；主包 0.2.16、内核 0.2.10 已通过 OIDC 发布至 npm latest。GitHub Release 标题为数字版本 0.2.16，非预发布、Latest。
+
+[发布 CI](https://github.com/duhu2000/dsh-form-fill-agent/actions/runs/34189354095) 六组平台检查和最终验收通过。首次发布后的 README 元数据尚未同步，验收失败；同步后重跑成功，没有重发或覆盖版本。正式 registry README/包完整性/三套 fixture 安装消费，以及 DSH 0.1.1-rc.2、0.1.2-alpha.2 全新隔离目录安装、bundle 配置和卸载均通过，未使用生产 profile 或启动端口。
+
+市场 [PR #4487](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/4487) 已更新说明与本版本合成截图，保持 Ready for review；尚未合并上架。
+
 统一字段映射状态：明确别名自动通过，多义与重复候选待人工确认，未知字段保留原值。多个原表位置可确认使用同一字段，分别补空并独立取消/恢复。企业定位列与仅接收填写位置分开配置；主体标识冲突仍阻断。
 
 修复相同修订号的跨任务恢复，映射与填写范围持久化；增加页面/Host 草稿能力协商，不在生成草稿时执行查询。保留 0.2.15 搜索和安装文档优化。
