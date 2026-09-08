@@ -23,7 +23,7 @@ dsh plugin --profile web add dsh-form-fill-agent@0.2.15
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前正式编号版本为 **0.2.15**，包含完整网格、恢复选择、取消/重试、133 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。发布记录见 [0.2.14](docs/RELEASE-0.2.14.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
+当前正式编号版本为 **0.2.15**，包含完整网格、恢复选择、取消/重试、133 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.15 仅更新搜索与安装文档，功能沿用 0.2.14。发布记录见 [0.2.15](docs/RELEASE-0.2.15.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -42,7 +42,7 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.14 精确依赖内核 0.2.9 及 Provider 0.2.1，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.15 精确依赖内核 0.2.9 及 Provider 0.2.1，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
 ```sh
