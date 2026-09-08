@@ -1,7 +1,7 @@
 import { digest, parseWorkbook, isBlank, address, inRange, writeWorkbook } from './workbook.js';
 import { fail, FillError } from './zip.js';
 export { parseWorkbook, FillError };
-export const CORE_VERSION = '0.2.9';
+export const CORE_VERSION = '0.2.10';
 export const SCHEMA_VERSION = 1;
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, '').toLowerCase();
 const idFor = value => digest(Buffer.from(JSON.stringify(value)));
