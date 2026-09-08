@@ -135,6 +135,7 @@ window.__ModuleLoader__.load({
     React.useEffect(()=>{
      const receive=async event=>{
       if(event.origin!==location.origin||event.source!==frame.current?.contentWindow||current()!==view?.id)return;
+      if(event.data?.type==='ff-capabilities'){frame.current.contentWindow.postMessage({type:'ff-capabilities-result',mappingDraft:2},location.origin);return}
       if(event.data?.type==='ff-wizard-state'){setModal(event.data.open===true);if(!event.data.open&&event.data.focusComposer)setTimeout(()=>document.querySelector('[data-composer-card] textarea, [data-composer-card] [contenteditable=true]')?.focus(),0);return}
       if(event.data?.type==='ff-task'&&/^[a-f0-9-]{36}$/.test(event.data.taskId)){sessionTasks.set(view.id,event.data.taskId);return}
       if(event.data?.type!=='ff-draft')return;

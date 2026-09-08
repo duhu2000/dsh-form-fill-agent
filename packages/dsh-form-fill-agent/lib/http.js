@@ -18,6 +18,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   const visible = (task, owner) => task && (!task.owner || task.owner === owner);
   const metadata = (id, task) => ({ id, filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
   const settings = task => ({
+    mappingProtocol: 2,
     diagnostics: diagnostics(task.preview),
     configuration: task.configuration ?? {},
     selectedFields: task.selectedFields,

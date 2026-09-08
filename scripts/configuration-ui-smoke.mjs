@@ -129,7 +129,7 @@ try{
  await page.locator('.ff-mapping-row').filter({has:page.getByLabel('字段搜索 字段 法定代表人',{exact:true})}).locator('summary').click();
  await page.getByLabel('字段搜索 字段维度 法定代表人',{exact:true}).selectOption('company_registration');
  assert.equal(await page.getByLabel('字段搜索 字段 法定代表人',{exact:true}).locator('option[value=legal_person]').innerText(),'法定代表人');
- assert.ok((await phone.innerText()).includes('未匹配'));
+ assert.ok((await phone.innerText()).includes('待人工确认'));
  assert.equal(await page.getByLabel('字段搜索 字段 联系电话',{exact:true}).inputValue(),'');
  await phone.locator('summary').click();
  assert.ok(await phone.getByRole('button',{name:'推荐：首选联系电话',exact:true}).isVisible());
@@ -166,10 +166,10 @@ try{
  await page.setViewportSize({width:1440,height:900});
  const coverageTask=await page.evaluate(async base64=>(await fetch('/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base64,analyzeOnly:true})})).json(),fixtureBytes('覆盖验证',['原文件导入名称','法定代表人','登记状态','统一社会信用代码','地址','网址','联系电话'],[['合成覆盖有限公司','','','','','','']],{title:false}).toString('base64'));
  await page.goto('http://127.0.0.1:'+server.address().port+'/#task='+coverageTask.id);
- assert.ok(coverageTask.id,JSON.stringify(coverageTask));await page.locator('#anchor-alert').getByText('有 1 行缺少可用主体标识。',{exact:false}).waitFor();
+ assert.ok(coverageTask.id,JSON.stringify(coverageTask));await page.getByLabel('覆盖验证 字段 地址',{exact:true}).waitFor({state:'attached'});
  await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});
  await page.getByRole('button',{name:'4 确认描述',exact:true}).click();assert.equal(await page.locator('#copy-command').isEnabled(),false);
- assert.ok((await page.locator('#scope-review').innerText()).includes('缺少可用主体'));
+ assert.equal(await page.locator('#copy-command').isEnabled(),false,'unconfirmed address and entity mapping block execution');
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();
  await page.getByRole('button',{name:'字段设置',exact:true}).click();
  for(const [label,key] of [['原文件导入名称','company_name'],['地址','registered_address'],['网址','contact_official_website'],['联系电话','contact_preferred_phone']]){

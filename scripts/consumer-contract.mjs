@@ -31,16 +31,16 @@ const npmArgs = ['install', ...(process.env.CONSUMER_ONLINE==='1'?[]:['--offline
 let latestGolden;
 if(process.env.LEGACY_ADAPT==='1'){
  execFileSync('npm',npmArgs,{cwd:oldConsumer,stdio:'pipe'});
- execFileSync('npm',['run','check'],{cwd:oldConsumer,stdio:'pipe',maxBuffer:16*1024*1024});
+ const baselineLog=execFileSync('npm',['run','check'],{cwd:oldConsumer,encoding:'utf8',maxBuffer:16*1024*1024});
+ console.log('Before tarball installation: '+(baselineLog.match(/tests\s+\d+/)?.[0]||'full check PASS'));
  await mkdir(join(oldConsumer,'test/helpers'),{recursive:true});
  await cp(join(root,'fixtures/legacy-characterization.mjs'),join(oldConsumer,'test/helpers/form-fill-parity.mjs'));
  const collect=()=>execFileSync(process.execPath,['--input-type=module','-e','import {collectLegacy} from "./test/helpers/form-fill-parity.mjs";console.log(JSON.stringify(await collectLegacy()))'],{cwd:oldConsumer,encoding:'utf8'});
  latestGolden=JSON.parse(collect());
  assert.equal(latestGolden.cases.length,24);
- const enginePath=join(oldConsumer,'lib/engine.js'),source=await readFile(enginePath,'utf8');
- const start=source.indexOf('export function parseCsv(text) {'),end=source.indexOf('/** 懒加载 xlsx',start);
- assert.ok(start>=0&&end>start,'recognized latest parser boundary');
- await writeFile(enginePath,source.slice(0,start)+'export { parseCsv } from "form-fill-core/legacy-csv";\n\n'+source.slice(end));
+ // The latest cleaning parser protects duplicate headers. Do not replace it
+ // with the historical legacy-csv API when verifying package coexistence.
+ // A future parser migration requires its own updated contract and golden.
 }
 const legacyManifest=JSON.parse(await readFile(join(oldConsumer,'package.json')));
 legacyManifest.dependencies['form-fill-core']='file:'+tarballs[0];

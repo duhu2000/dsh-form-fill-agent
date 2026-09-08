@@ -8,6 +8,15 @@ import { createTaskStore } from '../packages/dsh-form-fill-agent/lib/task-store.
 import { fixtureBytes } from '../scripts/generate-fixtures.mjs';
 import { previewBytes } from 'dsh-form-fill-agent';
 import { applyChangeSet } from 'form-fill-core';
+test('mapping roles, duplicate positions and scope survive store restart without defaults',async t=>{
+ const directory=await mkdtemp(join(tmpdir(),'form-fill-mapping-store-'));t.after(async()=>{store.close();await rm(directory,{recursive:true,force:true})});
+ const bytes=fixtureBytes('合成映射',['企业名称','企业名称','法定代表人','法人'],[['合成客户甲有限公司','','','']],{title:false});
+ const configuration={headers:[{sheet:'合成映射',row:1}],mappings:[{sheet:'合成映射',column:1,field:'company_name',role:'input'},{sheet:'合成映射',column:2,field:'company_name',role:'output'},...[3,4].map(column=>({sheet:'合成映射',column,field:'legal_person'}))]};
+ const selectedFields=['company_name','legal_person'],preview=await previewBytes(bytes,{configuration,selectedFields}),id=randomUUID();
+ let store=createTaskStore({directory});store.set(id,{bytes,configuration,selectedFields,preview,owner:'e'.repeat(64),sessionId:'synthetic-mapping',created:Date.now()});store.close();
+ store=createTaskStore({directory});
+ assert.deepEqual(store.get(id).configuration,configuration);assert.deepEqual(store.get(id).selectedFields,selectedFields);assert.deepEqual(store.get(id).preview,preview);assert.equal(store.get(id).sessionId,'synthetic-mapping');
+});
 test('persistent task restores preview and confirmed artifact without provider calls',async t=>{
   const dir=await mkdtemp(join(tmpdir(),'form-fill-store-'));t.after(()=>rm(dir,{recursive:true,force:true}));
   const bytes=fixtureBytes('合成测试',['企业名称','信用代码'],[['合成客户甲有限公司','']]);

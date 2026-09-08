@@ -15,7 +15,7 @@
 <div class="controls"><input type="file" id="file" accept=".xlsx" aria-label="选择 XLSX 文件"><span class="muted">选择文件后自动解析，核对结果后设置填写字段。</span></div>
 <details><summary>体验合成模板</summary><p>下面模板只使用合成数据，不查询真实企业。</p><div class="controls" id="samples"><button class="secondary" data-name="客户台账">客户台账</button><button class="secondary" data-name="供应商准入表">供应商准入表</button><button class="secondary" data-name="合同主体信息表">合同主体信息表</button></div></details></div>
 <section id="preview" hidden>
-<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button><div id="mapping-next" hidden role="status"><p>设置已保存。下一步核验企业主体，确认填写范围后生成指令并发送，查询结果会进入填写预览。</p><button id="mapping-continue" class="primary">下一步：主体核验</button></div></div>
+<div class="card" data-pane="rules"><h2>字段与规则</h2><p id="structure"></p><p id="anchor-alert" role="status"></p><p>默认只填空白。可选择工作表、修正表头行及字段；应用设置会清除旧预览和主体确认，请重新核验。</p><label>搜索字段 <input id="mapping-search" type="search" placeholder="按原表字段名称筛选"></label><p class="muted">未识别字段可手动选择；没有数据来源的字段选择“不填写”。绿色仅表示字段映射已确认，不代表企业已核验或已查询。多个输出位置可分别确认同一字段；定位企业的输入列需明确。规则只保存表头与映射，不含记录。</p><button id="mapping-save">保存字段规则</button><button id="mapping-load">复用字段规则</button><div id="mapping"></div><button id="configure" class="primary">应用字段设置</button><div id="mapping-next" hidden role="status"><p>设置已保存。下一步核验企业主体，确认填写范围后生成指令并发送，查询结果会进入填写预览。</p><button id="mapping-continue" class="primary">下一步：主体核验</button></div></div>
 <div class="card" data-pane="identity"><h2>主体核验与查询</h2><p id="connection"></p><p>候选不自动选择。查询返回歧义后，可选择返回候选或填写已核验的完整登记名称/信用代码；原表主体文字不覆盖，选择仅用于后续查询。</p><div id="entities"></div><div id="direct-scope" role="status"></div><details id="scope-omissions" hidden><summary>查看未纳入字段</summary><p id="scope-omissions-list"></p></details><label id="direct-ack-label" hidden><input id="direct-ack" type="checkbox">确认仅填写已纳入的原表字段</label><textarea id="direct-command" aria-label="填写指令" readonly hidden></textarea><button id="wizard-open" class="primary">生成填写指令</button><p class="muted">查询不会自动发送；回填后可在原生对话框修改并发送。</p></div>
 <div class="card" data-pane="preview"><h2>填写预览</h2><p id="summary"></p><details><summary>逐列填写结果</summary><p class="muted">按单元格统计；整行缺少主体标识的情况另见下方原因分类。</p><div class="scroll"><table><thead><tr><th>原表字段</th><th>映射字段</th><th>预览可填写格数</th><th>未完成项</th></tr></thead><tbody id="field-results"></tbody></table></div></details><p class="muted">每格显示原值、准备填写值和来源。取消勾选后点击“应用选择”，再确认新的预览。</p>
 <div class="toolbar"><label>筛选单元格 <input id="result-search" type="search" placeholder="位置、字段或值"></label><span id="result-count" class="muted"></span></div>
@@ -76,13 +76,15 @@ $('retry-run').onclick=()=>{openWizard(true);wizardStep=3;renderWizard()};
 async function api(path,body){if(current&&body?.id===current.id)body={...body,expectedRevision:current.revision};const response=await fetch(basePath+path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{'Content-Type':'application/json','X-Form-Fill-Owner':owner}});const data=await response.json();if(!response.ok)throw Error(data.message);return data}
 function navigate(target){if(target==='wizard'){openWizard();return}if(target!=='import'&&!current){$('status').textContent='请先导入表格。';return}step=target;$('history').hidden=true;$('current').hidden=false;$('current-tab').setAttribute('aria-pressed','true');$('history-tab').setAttribute('aria-pressed','false');document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==target);document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.step===target)))}
 function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
-function businessSummary(){return current?(retryIntent?'仅重试失败、取消或未执行的部分，保留成功结果。':'')+'填写文件“'+current.filename+'”中的空白字段。工作表：'+current.analysis.tables.map(t=>t.sheet).join('、')+'。填写字段：'+current.catalog.filter(f=>wizardFields.has(f.key)).map(f=>f.label).join('、')+'。保留原值，核验预览后生成新副本。':'请先上传 XLSX 文件。'}
+function businessSummary(){return current?(retryIntent?'仅重试失败、取消或未执行的部分，保留成功结果。':'')+'填写文件“'+current.filename+'”中的空白字段。工作表：'+current.analysis.tables.map(t=>t.sheet).join('、')+'。填写字段：'+current.catalog.filter(f=>wizardFields.has(f.key)).map(f=>f.label).join('、')+'。待补空位置：'+current.analysis.opportunities.filter(p=>wizardFields.has(p.field)).map(p=>p.sheet+'!'+p.cell+'（'+p.label+'）').join('、')+'。保留已有值、公式与未确认位置，核验预览后生成新副本。':'请先上传 XLSX 文件。'}
 function command(){return current?businessSummary()+'\n'+$('requirements').value+'\n执行关联：调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+(retryIntent?'，mode=retry':'')+'。字段范围以工作台确认设置为准。':''}
-function mappingVersion(){return JSON.stringify({tables:current?.analysis.tables.map(t=>({sheet:t.sheet,headerRow:t.headerRow,anchors:t.anchors,mappings:t.mappings.map(m=>[m.column,m.field])})),scope:current?.selectedFields??null})}
+function mappingVersion(){return JSON.stringify({tables:current?.analysis.tables.map(t=>({sheet:t.sheet,headerRow:t.headerRow,anchors:t.anchors,mappings:t.mappings.map(m=>[m.column,m.field,m.role,m.evidence])})),scope:current?.selectedFields??null})}
 function saveWizard(){if(current)sessionStorage.setItem('ff-wizard:'+current.id,JSON.stringify({fields:[...wizardFields],signature:mappingVersion(),requirements:$('requirements').value,step:wizardStep}))}
-function initWizard(){const structure=mappingVersion();if(wizardTask===current?.id&&wizardStructure===structure)return;wizardTask=current?.id;wizardStructure=structure;const available=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[];let saved;try{saved=JSON.parse(sessionStorage.getItem('ff-wizard:'+current?.id))}catch{}const valid=saved?.signature===structure;wizardFields=new Set((valid?saved.fields:current?.selectedFields||available).filter(k=>available.includes(k)));$('requirements').value=saved?.requirements||'';wizardStep=valid?saved.step||0:0;if(saved&&!valid)$('wizard-message').textContent='字段映射或执行范围已变化，已重新加载当前可填写字段，请检查后再发送。'}
+async function requireMappingHost(){if(current?.mappingProtocol!==2)throw Error('页面与服务版本不一致，请保存任务后更新并重新打开 DSH。');await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('当前 Host 不支持此映射草稿协议，请保存任务后更新并重新打开 DSH。'))},1500);function receive(e){if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='ff-capabilities-result')return;clearTimeout(timer);window.removeEventListener('message',receive);e.data.mappingDraft===2?resolve():reject(Error('Host 映射协议不兼容，请更新 DSH 插件。'))}window.addEventListener('message',receive);parent.postMessage({type:'ff-capabilities'},location.origin)})}
+function isInput(t,m){return t.anchorColumns?t.anchorColumns.includes(m.column):t.anchors.includes(m.field)}
+function initWizard(){const structure=mappingVersion();if(wizardTask===current?.id&&wizardStructure===structure)return;wizardTask=current?.id;wizardStructure=structure;const available=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!isInput(t,m)).map(m=>m.field))||[];let saved;try{saved=JSON.parse(sessionStorage.getItem('ff-wizard:'+current?.id))}catch{}const valid=saved?.signature===structure;wizardFields=new Set((valid?saved.fields:current?.selectedFields||available).filter(k=>available.includes(k)));$('requirements').value=saved?.requirements||'';wizardStep=valid?saved.step||0:0;if(saved&&!valid)$('wizard-message').textContent='字段映射或执行范围已变化，已重新加载当前可填写字段，请检查后再发送。'}
 function scopeReview(){
- const omitted=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>!t.anchors.includes(m.field)&&(!m.field||!wizardFields.has(m.field))).map(m=>t.sheet+'：'+m.label))||[];
+ const omitted=current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>!isInput(t,m)&&(!m.field||!wizardFields.has(m.field))).map(m=>t.sheet+'：'+m.label))||[];
  const missing=current?.analysis.incomplete.filter(i=>i.reason==='missing-anchor')||[];
  let problem='';
  const tables=current?.analysis.tables||[],issues=current?.analysis.incomplete||[];
@@ -90,7 +92,7 @@ function scopeReview(){
   const conflicts=issues.filter(i=>i.reason==='ambiguous-mapping');
   if(conflicts.length){
    const details=conflicts.map(i=>{const mappings=current.configuration?.mappings?.filter(m=>m.sheet===i.sheet&&m.field)||[];const repeated=[...new Set(mappings.filter(m=>mappings.some(n=>n.column!==m.column&&n.field===m.field)).map(m=>current.catalog.find(f=>f.key===m.field)?.label||m.field))];return i.sheet+(repeated.length?'：'+repeated.join('、'):'')});
-   problem='字段映射存在重复或冲突（'+details.join('；')+'）。请返回字段设置，同一目标字段保留一列，其他列选择不填写。';
+   problem='字段映射存在重复或冲突（'+details.join('；')+'）。请返回字段设置，请逐一确认重复输出位置；重复企业标识仅保留一个定位列，其余设为仅接收填写。';
   }else problem='未识别到可执行的表头。请在字段设置确认表头行，保留企业名称或有值的信用代码，并至少映射一个需要填写的字段。';
  }else if(!wizardFields.size)problem='尚未选择填写字段。请返回字段设置，为原表中至少一个待填列选择对应字段；企业名称仅用于定位主体。';
  else if(missing.length&&!current.analysis.opportunities.length)problem='待填行缺少可用企业标识。请返回字段设置映射有值的企业名称列，或检查原表主体内容。';
@@ -104,9 +106,9 @@ function renderWizard(){
  $('wizard-rules').textContent=current?current.analysis.tables.map(t=>t.sheet+'：第 '+t.headerRow+' 行表头').join('；'):'请先上传并识别表格。';
  $('wizard-fields').replaceChildren();
  const available=new Set(current?.analysis.tables.flatMap(t=>t.mappings.map(m=>m.field))||[]);
- const fillable=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);
+ const fillable=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!isInput(t,m)).map(m=>m.field))||[]);
  for(const field of (current?.catalog||[]).filter(f=>available.has(f.key))){
-  const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';const fixed=field.anchor||available.has(field.key)&&!fillable.has(field.key);input.checked=fixed||wizardFields.has(field.key);input.disabled=fixed||!available.has(field.key);input.dataset.field=field.key;
+  const label=document.createElement('label');label.hidden=!field.label.includes($('field-search').value.trim());const input=document.createElement('input');input.type='checkbox';const fixed=available.has(field.key)&&!fillable.has(field.key);input.checked=fixed||wizardFields.has(field.key);input.disabled=fixed||!available.has(field.key);input.dataset.field=field.key;
   input.onchange=()=>{if(input.checked)wizardFields.add(field.key);else wizardFields.delete(field.key);saveWizard();renderWizard()};
   label.append(input,document.createTextNode(field.label+(fixed?'（固定）':!available.has(field.key)?'（原表未映射）':'')));$('wizard-fields').append(label);
  }
@@ -124,7 +126,7 @@ function closeWizard(focusComposer=false){saveWizard();$('draft-conflict').close
 async function applyScope(){
  if(!current||!wizardFields.size)throw Error('请至少选择一个已映射的填写字段');
  const review=scopeReview();if(review.blocked)throw Error('没有可用主体标识，请先到字段设置映射企业名称列。');if(review.omitted.length&&!$('scope-ack').checked)throw Error('请确认未纳入的列，或返回字段设置完善映射。');
- const original=current.selectedFields||[...new Set(current.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field)))];
+ const original=current.selectedFields||[...new Set(current.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!isInput(t,m)).map(m=>m.field)))];
  if(retryIntent&&JSON.stringify([...original].sort())!==JSON.stringify([...wizardFields].sort()))throw Error('重试时请保留原字段范围；如需更改，请重新生成完整核验指令。');
  if(JSON.stringify([...original].sort())!==JSON.stringify([...wizardFields].sort()))render(await api('/scope',{id:current.id,selectedFields:[...wizardFields]}));
 }
@@ -132,11 +134,11 @@ async function sendDraft(mode){
  if(busy)return;
  if(parent===window){$('wizard-message').textContent='独立页面请复制指令到 DSH 对话。';return}
  controls(true);$('wizard-message').textContent='';
- try{await applyScope();saveWizard();parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value,summary:businessSummary(),retryOnly:retryIntent,mode,expectedDraft},location.origin)}catch(e){$('wizard-message').textContent=e.message}finally{controls(false)}
+ try{await requireMappingHost();await applyScope();saveWizard();parent.postMessage({type:'ff-draft',taskId:current.id,revision:current.revision,requirements:$('requirements').value,summary:businessSummary(),retryOnly:retryIntent,mode,expectedDraft},location.origin)}catch(e){$('wizard-message').textContent=e.message;$('status').textContent=e.message}finally{controls(false)}
 }
 function directScope(){
  initWizard();retryIntent=false;
- wizardFields=new Set(current?.selectedFields||current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);
+ wizardFields=new Set(current?.selectedFields||current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!isInput(t,m)).map(m=>m.field))||[]);
  const review=scopeReview(),signature=mappingVersion();
  if($('direct-ack').dataset.signature!==signature){$('direct-ack').checked=false;$('direct-ack').dataset.signature=signature}
  $('direct-scope').textContent=review.problem||'将填写 '+wizardFields.size+' 个已确认字段。'+(review.omitted.length?'另有 '+review.omitted.length+' 列未纳入，可展开查看。':'');
@@ -156,7 +158,8 @@ async function directDraft(){
 function highlightMappingConflicts(){
  for(const section of $('mapping').querySelectorAll('fieldset')){
   const fields=[...section.querySelectorAll('select[data-column]')];
-  for(const field of fields){const conflict=!!field.value&&fields.some(other=>other!==field&&other.value===field.value);field.setAttribute('aria-invalid',String(conflict));const row=field.closest('.ff-mapping-row');row.classList.toggle('ff-mapping-conflict',conflict);if(conflict){const message=row.querySelector('.ff-mapping-status');message.textContent='映射冲突：另一列也选择了此字段。请保留其中一列，或为本列选择其他字段。';}}
+  for(const field of fields)field.closest('.ff-mapping-row').updateMappingStatus?.();
+  for(const field of fields){const peers=fields.filter(other=>other.value===field.value);const conflict=!!field.value&&peers.length>1&&(peers.some(other=>other.dataset.manual!=='true')||(field.dataset.primary==='true'&&peers.filter(other=>other.closest('.ff-mapping-row').querySelector('.ff-mapping-role').value!=='output').length>1));field.setAttribute('aria-invalid',String(conflict));const row=field.closest('.ff-mapping-row');row.classList.toggle('ff-mapping-conflict',conflict);if(conflict){const message=row.querySelector('.ff-mapping-status');message.dataset.state='pending';message.textContent='待人工确认：重复位置需逐一确认；企业标识需保留唯一定位列。';}}
  }
 }
 function filterResults(){const query=$('result-search').value.trim().toLowerCase(),rows=[...$('changes').rows];let shown=0;for(const tr of rows){tr.hidden=!!query&&!tr.textContent.toLowerCase().includes(query);if(!tr.hidden)shown++}const selected=rows.filter(tr=>tr.querySelector('input')?.checked).length;$('result-count').textContent=rows.length?'显示 '+shown+' / '+rows.length+' 格 · 已选 '+selected+' 格'+(!shown?' · 无匹配结果':''):'暂无可填写单元格'}
@@ -178,8 +181,14 @@ function renderSettings(data){
     const title=document.createElement('strong');title.textContent=cell.label;label.append(title);
     const select=document.createElement('select');select.dataset.column=cell.column;select.setAttribute('aria-label',sheet.name+' 字段 '+cell.label);
     const override=data.configuration?.mappings?.find(m=>m.sheet===sheet.name&&m.column===cell.column);
-    const automatic=table?.headerRow===Number(header.value)?table.mappings.find(m=>m.column===cell.column)?.field||'':'';
+    const exactNormalize=s=>String(s??'').trim().replace(/\s+/g,'').toLowerCase();
+    const exact=data.catalog.filter(f=>[f.label,f.key,...(f.aliases||[])].some(a=>exactNormalize(a)===exactNormalize(cell.label)));
+    const automatic=exact.length===1&&exactNormalize(cell.label)!=='地址'?exact[0].key:'';
     let chosen=override?override.field||'':automatic,manual=!!override;
+    select.dataset.manual=String(manual);
+    const role=document.createElement('select');role.className='ff-mapping-role';role.setAttribute('aria-label',sheet.name+' 字段用途 '+cell.label);
+    for(const [value,text] of [['input','用于定位企业'],['output','仅接收填写']]){const o=document.createElement('option');o.value=value;o.textContent=text;role.append(o)}
+    role.value=override?.role||'input';
     const normalize=s=>String(s).normalize('NFKC').toLowerCase().replace(/[\s_（）()·-]/g,'');
     const matches=(field,query)=>{const text=normalize([field.label,field.key,...(field.aliases||[])].join(' '));return query.trim().split(/\s+/).every(word=>{const q=normalize(word);if(text.includes(q))return true;if(q.length<2)return false;let i=0;for(const c of text)if(c===q[i])i++;return i===q.length})};
     const search=document.createElement('input');search.type='search';search.placeholder='关键词，例如：电话、信用代码';search.setAttribute('aria-label',sheet.name+' 搜索目标字段 '+cell.label);
@@ -193,7 +202,9 @@ function renderSettings(data){
     const status=document.createElement('p');status.className='ff-mapping-status';status.setAttribute('aria-live','polite');
     const count=document.createElement('small');count.className='muted';
     const suggestions=document.createElement('div');suggestions.className='ff-mapping-suggestions';
-    const updateStatus=()=>{status.textContent=chosen?(manual?'已人工选择':'已自动匹配')+'：'+(data.catalog.find(f=>f.key===chosen)?.label||chosen):manual?'已选择不填写':'未匹配，请搜索或按维度选择字段；也可保留不填写';status.dataset.unmatched=String(!chosen&&!manual)};
+    const updateStatus=()=>{const f=data.catalog.find(f=>f.key===chosen);role.hidden=!(f?.anchor||f?.anchorFallback);select.dataset.manual=String(manual);select.dataset.primary=String(!role.hidden);status.dataset.state=chosen?(manual?'confirmed':'automatic'):manual?'skipped':suggestions.childElementCount?'pending':'unmatched';status.textContent=chosen?(manual?'已确认':'自动通过')+'：'+(f?.label||chosen):manual?'已跳过：保留原值，不填写':suggestions.childElementCount?'待人工确认：请选择推荐字段':'未匹配：保留原值，不填写；可搜索字段';};
+    label.updateMappingStatus=updateStatus;
+    role.onchange=()=>{manual=true;updateStatus();highlightMappingConflicts()};
     const options=()=>{
      const group=data.catalogGroups?.find(g=>g.id===dimension.value);
      const found=(data.catalog||[]).filter(f=>matches(f,search.value)&&(!dimension.value||(dimension.value==='other'?!data.catalogGroups?.some(g=>g.fields.includes(f.key)):group?.fields.includes(f.key))));
@@ -206,7 +217,7 @@ function renderSettings(data){
      select.value=chosen;count.textContent=found.length?'匹配 '+found.length+' 个字段':'没有匹配字段，请更换关键词或维度';updateStatus();
     };
     const choose=()=>{chosen=select.value;manual=true;suggestions.replaceChildren();trigger.textContent=chosen?(data.catalog.find(f=>f.key===chosen)?.label||chosen):'不填写';updateStatus();$('mapping-next').hidden=true};
-    const finish=()=>{choose();picker.open=false;trigger.focus()};
+    const finish=()=>{choose();highlightMappingConflicts();picker.open=false;trigger.focus()};
     select.onchange=choose;
     select.ondblclick=finish;
     select.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();finish()}};
@@ -215,17 +226,18 @@ function renderSettings(data){
      const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address','mailing_address','invoice_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
      const recommended=[...hints.map(key=>data.catalog.find(f=>f.key===key)).filter(Boolean),...(data.catalog||[]).filter(f=>!hints.includes(f.key)&&matches(f,cell.label))].slice(0,4);
      if(recommended.length){const hint=document.createElement('span');hint.textContent='推荐（确认后采用）：';suggestions.append(hint)}
-    for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent='推荐：'+field.label;button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
+    for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent='推荐：'+field.label;button.title=data.catalogGroups?.find(g=>g.fields.includes(field.key))?.label||'字段目录';button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
     }
     const filters=document.createElement('div');filters.className='ff-mapping-filters';filters.append(search,dimension);
     select.size=8;
     const done=document.createElement('button');done.type='button';done.textContent='确认选择';done.onclick=finish;
     panel.append(filters,select,count,done);
-    label.append(status,suggestions,picker);options();fields.append(label);
+    label.append(status,suggestions,picker,role);options();fields.append(label);
    }
   };
-  header.onchange=showFields;section.append(header,fields);showFields();$('mapping').append(section);
+  header.onchange=()=>{showFields();highlightMappingConflicts()};section.append(header,fields);showFields();$('mapping').append(section);
  }
+ highlightMappingConflicts();
  const seen=new Set();
  for(const item of data.changeSet.incomplete.filter(i=>i.reason==='candidate-review-required')){
   const key=JSON.stringify([item.sheet,item.row]);if(seen.has(key))continue;seen.add(key);
@@ -260,11 +272,11 @@ initWizard();filterResults();syncActions();if($('wizard').open)renderWizard();
  const missing=data.analysis.incomplete.filter(i=>i.reason==='missing-anchor');
  $('anchor-alert').textContent=missing.length?'有 '+missing.length+' 行缺少可用主体标识。请把实际包含名称的列映射为“企业名称”，或提供非空信用代码；当前不会查询这些行。':'';
 }
-async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.revision!==current?.revision){render(data);if(!silent){const target=pendingNavigation||(data.confirmed?'download':'preview');pendingNavigation=undefined;if(target==='history')$('history-tab').click();else navigate(target)}}}catch(e){if(!silent)$('status').textContent=e.message}}
+async function restore(silent=false){if(busy||!current&& !location.hash)return;const id=new URLSearchParams(location.hash.slice(1)).get('task');if(!id)return;try{const data=await api('/task/'+encodeURIComponent(id));if(!silent||data.id!==current?.id||data.revision!==current?.revision){render(data);if(!silent){const target=pendingNavigation||(data.confirmed?'download':'preview');pendingNavigation=undefined;if(target==='history')$('history-tab').click();else navigate(target)}}}catch(e){if(!silent)$('status').textContent=e.message}}
 async function preview(buffer,name,demo=false){controls(true);try{const bytes=new Uint8Array(buffer);if(bytes.length>8388608)throw Error('文件超过 8 MiB');let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));$('grid').open=true;render(await api('/preview',{base64:btoa(binary),filename:name,sessionId,analyzeOnly:!demo}));navigate(demo?'preview':'rules');$('status').textContent='预览已准备好，请检查后确认。'}catch(e){$('status').textContent=e.message;$('wizard-message').textContent=e.message}finally{controls(false)}}
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>navigate(b.dataset.step));
 $('file').onchange=async()=>{const input=$('file'),f=input.files[0];if(!f||busy)return;input.disabled=true;controls(true);$('status').textContent='正在自动解析表格…';try{await preview(await f.arrayBuffer(),f.name)}catch(e){$('status').textContent=e.message}finally{input.disabled=false;input.value='';controls(false)}};
-function readMapping(){const configuration={sheets:[],headers:[],mappings:[]};for(const section of $('mapping').querySelectorAll('fieldset')){if(!section.querySelector('.sheet-enabled').checked)continue;const sheet=section.dataset.sheet;configuration.sheets.push(sheet);configuration.headers.push({sheet,row:Number(section.querySelector('.header-row').value)});for(const field of section.querySelectorAll('[data-column]'))configuration.mappings.push({sheet,column:Number(field.dataset.column),field:field.value||null})}return configuration}
+function readMapping(){const configuration={sheets:[],headers:[],mappings:[]};for(const section of $('mapping').querySelectorAll('fieldset')){if(!section.querySelector('.sheet-enabled').checked)continue;const sheet=section.dataset.sheet;configuration.sheets.push(sheet);configuration.headers.push({sheet,row:Number(section.querySelector('.header-row').value)});for(const field of section.querySelectorAll('[data-column]'))if(field.dataset.manual==='true')configuration.mappings.push({sheet,column:Number(field.dataset.column),field:field.value||null,...(field.dataset.primary==='true'?{role:field.closest('.ff-mapping-row').querySelector('.ff-mapping-role').value}:{})})}return configuration}
 function mappingSignature(configuration){return JSON.stringify(configuration.headers.map(h=>({sheet:h.sheet,row:h.row,cells:current.structure.find(s=>s.name===h.sheet)?.rows.find(r=>r.number===h.row)?.cells}))) }
 $('mapping-save').onclick=()=>{try{if(!current||busy)return;const configuration=readMapping();localStorage.setItem('ff-mapping:'+owner,JSON.stringify({schema:1,signature:mappingSignature(configuration),configuration}));$('status').textContent='字段规则已保存在本浏览器。'}catch{$('status').textContent='浏览器无法保存字段规则。'}};
 $('mapping-load').onclick=async()=>{if(!current||busy)return;controls(true);try{const saved=JSON.parse(localStorage.getItem('ff-mapping:'+owner)||'null');if(saved?.schema!==1||saved.signature!==mappingSignature(saved.configuration))throw Error('没有与当前工作表及表头一致的规则，请手动设置。');render(await api('/configure',{id:current.id,configuration:saved.configuration}));$('status').textContent='字段规则已复用，请检查后重新核验。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
@@ -281,7 +293,7 @@ document.querySelectorAll('[data-wizard-step]').forEach(b=>b.onclick=()=>{wizard
 $('wizard-prev').onclick=()=>{wizardStep=Math.max(0,wizardStep-1);saveWizard();renderWizard()};$('wizard-next').onclick=()=>{wizardStep=Math.min(3,wizardStep+1);saveWizard();renderWizard()};
 $('wizard-file').onchange=async()=>{const file=$('wizard-file').files[0];if(file){await preview(await file.arrayBuffer(),file.name);renderWizard()}};
 $('wizard-edit-rules').onclick=()=>{closeWizard();navigate('rules')};
-$('field-search').oninput=renderWizard;$('fields-all').onclick=()=>{wizardFields=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!t.anchors.includes(m.field)).map(m=>m.field))||[]);saveWizard();renderWizard()};$('fields-clear').onclick=()=>{wizardFields.clear();saveWizard();renderWizard()};
+$('field-search').oninput=renderWizard;$('fields-all').onclick=()=>{wizardFields=new Set(current?.analysis.tables.flatMap(t=>t.mappings.filter(m=>m.field&&!isInput(t,m)).map(m=>m.field))||[]);saveWizard();renderWizard()};$('fields-clear').onclick=()=>{wizardFields.clear();saveWizard();renderWizard()};
 $('scope-ack').onchange=renderWizard;
 $('requirements').oninput=()=>{saveWizard();$('qcc-command').textContent=command()};
 $('copy-command').onclick=async()=>{try{await applyScope();saveWizard();await navigator.clipboard.writeText(command());$('status').textContent='已复制，请在 DSH 对话中发送。'}catch(e){$('status').textContent=e.message}};
@@ -294,6 +306,7 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
 api('/health').then(s=>{$('connection').textContent=s.qccAvailable?'已发现企查查工商工具，可在对话中执行。':'尚未发现企查查工商工具；请先连接 MCP。合成模板仍可体验。'}).catch(()=>{});
 $('preview-continue').onclick=async()=>{if(busy||!current)return;controls(true);try{const ids=[...$('changes').querySelectorAll('input:checked')].map(x=>x.value);if(!current.confirmed&&JSON.stringify([...ids].sort())!==JSON.stringify([...(current.selectedIds||[])].sort()))render(await api('/select',{id:current.id,selectedIds:ids}));navigate('download');$('confirm').scrollIntoView({block:'center'});$('confirm').focus();$('status').textContent=current.confirmed?'副本已生成，请点击下载。':'请确认填写结果，点击蓝色按钮生成新副本。'}catch(e){$('status').textContent=e.message}finally{controls(false)}};
 $('mapping-continue').onclick=()=>{if(busy||!current)return;navigate('identity');$('wizard-open').focus()};
-$('mapping').addEventListener('change',()=>{$('mapping-next').hidden=true});
+$('mapping').addEventListener('change',()=>{$('mapping-next').hidden=true;highlightMappingConflicts()});
+window.addEventListener('hashchange',()=>{if(new URLSearchParams(location.hash.slice(1)).get('task')!==current?.id)restore()});
 navigate('import');restore();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
 </script></html>

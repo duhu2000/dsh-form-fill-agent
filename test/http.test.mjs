@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { createFormFillHandler } from '../packages/dsh-form-fill-agent/lib/http.js';
 import { parseWorkbook } from 'form-fill-core';
+import { fixtureBytes } from '../scripts/generate-fixtures.mjs';
 const bytes = await readFile(new URL('../fixtures/xlsx/客户台账.xlsx', import.meta.url));
 test('real Host can resolve the client manifest through package exports',async()=>{
   const require=createRequire(import.meta.url);
@@ -24,6 +25,21 @@ function harness(options = {}) {
   }
   return { ...service, request };
 }
+test('duplicate output positions have independent selection, restoration and owner boundaries',async t=>{
+ const h=harness();t.after(h.dispose);const headers={'x-form-fill-owner':'c'.repeat(64)};
+ const synthetic=fixtureBytes('重复位置',['企业名称','法定代表人','法人'],[['合成客户甲有限公司','','']],{title:false});
+ let p=(await h.request('/preview',{base64:synthetic.toString('base64')},headers)).json();
+ p=(await h.request('/configure',{id:p.id,expectedRevision:p.revision,configuration:{headers:[{sheet:'重复位置',row:1}],mappings:[2,3].map(column=>({sheet:'重复位置',column,field:'legal_person'}))}},headers)).json();
+ assert.equal(p.changeSet.changes.length,2);const ids=p.changeSet.changes.map(c=>c.id);assert.equal(new Set(ids).size,2);
+ p=(await h.request('/select',{id:p.id,expectedRevision:p.revision,selectedIds:[ids[1]]},headers)).json();
+ assert.equal(p.changeSet.changes[0].cell,'C2');
+ p=(await h.request('/task/'+p.id,undefined,headers)).json();assert.equal(p.changeSet.changes.length,1);
+ assert.equal((await h.request('/task/'+p.id,undefined,{'x-form-fill-owner':'d'.repeat(64)})).status,404);
+ p=(await h.request('/select',{id:p.id,expectedRevision:p.revision,selectedIds:ids},headers)).json();assert.equal(p.changeSet.changes.length,2);
+ p=(await h.request('/select',{id:p.id,expectedRevision:p.revision,selectedIds:[ids[0]]},headers)).json();
+ const confirmed=await h.request('/confirm',{id:p.id,expectedRevision:p.revision,confirmChangeSetId:p.changeSet.changeSetId},headers);
+ assert.equal(confirmed.status,200);assert.equal(confirmed.json().filled,1);
+});
 for (const basePath of ['', '/form-fill']) test('HTTP full lifecycle ' + (basePath || 'standalone'), async t => {
   const h=harness({basePath}); t.after(h.dispose);
   assert.equal((await h.request(basePath+'/')).status,200);

@@ -9,6 +9,7 @@ const versions = { coreVersion: CORE_VERSION, rulesetVersion: '1', documentSchem
 export function mapFields(headers, catalog) {
   return headers.map(({ cell, value, column }) => {
     const candidates = catalog.filter(field => [field.label, field.key, ...(field.aliases ?? [])].some(alias => normalize(alias) === normalize(value)));
+    if (normalize(value) === '地址') return {cell,column,label:value,field:null,confidence:0,evidence:'ambiguous-alias'};
     return { cell, column, label: value, field: candidates.length === 1 ? candidates[0].key : null, confidence: candidates.length === 1 ? 1 : 0, evidence: candidates.length === 1 ? 'exact-alias' : candidates.length ? 'ambiguous-alias' : 'unknown-field' };
   });
 }
@@ -38,7 +39,8 @@ export function analyzeDocument(bytes, catalog, options = {}) {
       for (const override of options.mappings?.filter(x => x.sheet === sheet.name) ?? []) {
         const mapping = mappings.find(m => m.column === override.column);
         if (!mapping) { if (explicitHeader) fail('CONFIG_INVALID', '映射位置必须是已有表头'); continue; }
-        Object.assign(mapping, { field: override.field, confidence: override.field ? 1 : 0, evidence: 'user-mapping' });
+        if (override.role !== undefined && !['input','output'].includes(override.role)) fail('CONFIG_INVALID', '字段用途无效');
+        Object.assign(mapping, { field: override.field, confidence: override.field ? 1 : 0, evidence: 'user-mapping', ...(override.role ? {role: override.role} : {}) });
       }
       const mapped = mappings.filter(m => m.field);
       if (mapped.length >= 2 && mapped.some(m => catalog.find(f => f.key === m.field)?.anchor||catalog.find(f => f.key === m.field)?.anchorFallback)) candidates.push({ row: row.number, mappings, score: mapped.length });
@@ -48,12 +50,26 @@ export function analyzeDocument(bytes, catalog, options = {}) {
     if (!header) { incomplete.push({ sheet: sheet.name, reason: 'header-not-found', message: '未识别到可靠表头及主体锚点' }); continue; }
     if (candidates.length > 1) { incomplete.push({ sheet: sheet.name, reason: 'multiple-tables', message: '疑似多个表头，需先拆分区域' }); continue; }
     const fields = header.mappings.filter(m => m.field).map(m => m.field);
-    if (new Set(fields).size !== fields.length || header.mappings.some(m => m.evidence === 'ambiguous-alias')) {
+    const unresolvedDuplicates = fields.some(field => {
+      const positions = header.mappings.filter(m => m.field === field);
+      return positions.length > 1 && (positions.some(m => m.evidence !== 'user-mapping') ||
+        (catalog.find(f => f.key === field)?.anchor || catalog.find(f => f.key === field)?.anchorFallback) && positions.filter(m => m.role !== 'output').length > 1);
+    });
+    if (unresolvedDuplicates || header.mappings.some(m => m.evidence === 'ambiguous-alias')) {
       incomplete.push({ sheet: sheet.name, reason: 'ambiguous-mapping', message: '重复或冲突字段需人工选择' }); continue;
     }
-    let anchors = header.mappings.filter(m => catalog.find(f => f.key === m.field)?.anchor);
-    if(!anchors.length)anchors=header.mappings.filter(m=>catalog.find(f=>f.key===m.field)?.anchorFallback);
-    tables.push({ sheet: sheet.name, headerRow: header.row, mappings: header.mappings, anchors: anchors.map(a => a.field) });
+    let anchors = header.mappings.filter(m => m.role !== 'output' && catalog.find(f => f.key === m.field)?.anchor);
+    if(!anchors.length)anchors=header.mappings.filter(m=>m.role !== 'output' && catalog.find(f=>f.key===m.field)?.anchorFallback);
+    if (!anchors.length) { incomplete.push({sheet:sheet.name,reason:'missing-anchor',message:'请选择用于定位企业的输入列'}); continue; }
+    tables.push({ sheet: sheet.name, headerRow: header.row, mappings: header.mappings, anchors: anchors.map(a => a.field), ...(header.mappings.some(m=>m.role) ? {anchorColumns:anchors.map(a=>a.column)} : {}) });
+    // Same display names with conflicting identifiers must not share a query.
+    const fallback = header.mappings.filter(m => m.role !== 'output' && catalog.find(f=>f.key===m.field)?.anchorFallback && !anchors.includes(m));
+    const identityGroups = new Map();
+    for (const r of sheet.rows.filter(r=>r.number>header.row&&!r.hidden)) {
+      const key=JSON.stringify(anchors.map(a=>sheet.cells[address(r.number,a.column)]?.value.trim()??''));
+      if(!identityGroups.has(key))identityGroups.set(key,fallback.map(()=>new Set()));
+      fallback.forEach((f,i)=>{const c=sheet.cells[address(r.number,f.column)];if(c&&!c.hidden&&!c.formula&&c.type!=='e'&&c.value.trim())identityGroups.get(key)[i].add(c.value.trim())});
+    }
     for (const row of sheet.rows.filter(r => r.number > header.row)) {
       const recordCells = cellsByRow.get(row.number)||[];
       if (!recordCells.some(c => c.value.trim() || c.formula)) continue;
@@ -63,6 +79,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
         const c = sheet.cells[address(row.number, mapping.column)];
         if (c && !c.hidden && !c.formula && c.type !== 'e' && c.value.trim()) anchor[mapping.field] = c.value.trim();
       }
+      if (identityGroups.get(JSON.stringify(anchors.map(a=>anchor[a.field] ?? '')))?.some(values=>values.size>1)) { incomplete.push({sheet:sheet.name,row:row.number,reason:'missing-anchor',message:'同名企业对应不同标识，请明确定位列后核验'}); continue; }
       const selection = options.anchors?.find(x => x.sheet === sheet.name && x.row === row.number);
       if (selection) {
         if (anchors.length !== 1) fail('CONFIG_INVALID', '主体确认需要唯一主体列');
@@ -80,7 +97,7 @@ export function analyzeDocument(bytes, catalog, options = {}) {
         }
         if (cell?.hidden || sheet.hiddenColumns.some(([a, b]) => mapping.column >= a && mapping.column <= b) || sheet.merges.some(r => inRange(row.number, mapping.column, r) || inRange(header.row, mapping.column, r))) { incomplete.push({ ...location, reason: 'hidden-or-merged' }); continue; }
         if (!mapping.field) { incomplete.push({ ...location, reason: mapping.evidence === 'user-mapping' ? 'user-excluded' : 'unknown-field' }); continue; }
-        if (anchors.some(a=>a.field===mapping.field)) { incomplete.push({ ...location, reason: 'missing-anchor-field' }); continue; }
+        if (anchors.some(a=>a.column===mapping.column)) { incomplete.push({ ...location, reason: 'missing-anchor-field' }); continue; }
         const opportunity = { kind: 'FillOpportunity', ...location, anchor, oldValue: cell?.value ?? '', confidence: mapping.confidence, evidence: mapping.evidence };
         const rules = (sheet.validations ?? []).filter(rule => rule.ranges.some(r => inRange(row.number, mapping.column, r)));
         if (rules.length) opportunity.allowedValues = rules.reduce((values, rule) => values.filter(value => rule.values.includes(value)), rules[0].values);

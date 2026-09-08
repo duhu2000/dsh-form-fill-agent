@@ -12,7 +12,7 @@ export async function previewBytes(bytes, { provider = createMockProvider(), max
   if (provider.mode !== 'mock' && (provider.mode !== 'qcc' || confirmPaidCalls !== true)) throw new FillError('REAL_PROVIDER_DISABLED', '真实来源需要调用方明确授权');
   const { analysis } = analyzeDocument(bytes, FIELD_CATALOG, configuration);
   if (selectedFields !== undefined) {
-    if (!Array.isArray(selectedFields) || new Set(selectedFields).size !== selectedFields.length || selectedFields.some(key=>!FIELD_CATALOG.some(f=>f.key===key&&!f.anchor))) throw new FillError('FIELD_SCOPE','填写字段范围无效');
+    if (!Array.isArray(selectedFields) || new Set(selectedFields).size !== selectedFields.length || selectedFields.some(key=>!FIELD_CATALOG.some(f=>f.key===key&&(!f.anchor||analysis.tables.some(t=>t.mappings.some(m=>m.field===key&&m.role==='output')))))) throw new FillError('FIELD_SCOPE','填写字段范围无效');
     analysis.incomplete.push(...analysis.opportunities.filter(o=>!selectedFields.includes(o.field)).map(o=>({...o,reason:'user-excluded'})));
     analysis.opportunities=analysis.opportunities.filter(o=>selectedFields.includes(o.field));
   }
