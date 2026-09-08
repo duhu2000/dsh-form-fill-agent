@@ -1,5 +1,26 @@
 # AI填表智能体
 
+## 安装与三分钟上手
+
+AI填表智能体：支持自动填表、表格填充、表格补全、Excel填表与 Excel回填；使用企查查 MCP 填写 XLSX 空白字段，预览确认后导出新副本。
+
+```sh
+dsh plugin --profile web add dsh-form-fill-agent@0.2.15
+```
+
+请先满足下文的 DSH、连接器及侧边栏依赖要求；安装后完整停止并重启对应 Profile。
+
+打开“AI填表”并展开合成演示，选择客户台账模板，检查工作表、企业主体和空白字段。需要真实补全时确认数据来源及范围并手动发送指令；核对单元格预览后下载新 XLSX 副本。
+
+**流程样例（示意，非真实调用结果）：** 合成客户台账的空白字段 → 字段映射和主体核验 → 单元格级事实/来源预览 → 人工确认 → 新 XLSX 与变更清单。
+
+**能力边界：** 仅支持当前文件安全规则允许的 XLSX；不支持 Word、宏、图片和复杂布局。默认只填空白，不用模型猜值；查询使用用户已授权 MCP 账号额度。
+
+**升级与回滚：** 升级前停止 Profile 并备份任务目录，记录当前精确版本；使用上面的固定版本命令升级，再完整重启。回滚时将版本号替换为升级前记录的版本，并使用升级前任务目录副本；不以旧版直接读取已迁移任务目录。
+
+相关智能体：[数据清洗补全](https://github.com/duhu2000/dsh-data-cleaning-agent) · [AI填表](https://github.com/duhu2000/dsh-form-fill-agent) · [访前尽调](https://github.com/duhu2000/dsh-pre-duediligence) · [招投标](https://github.com/duhu2000/dsh-tender-workbench)
+
+
 [![npm](https://img.shields.io/npm/v/dsh-form-fill-agent)](https://www.npmjs.com/package/dsh-form-fill-agent)
 [![GitHub release](https://img.shields.io/github/v/release/duhu2000/dsh-form-fill-agent)](https://github.com/duhu2000/dsh-form-fill-agent/releases)
 

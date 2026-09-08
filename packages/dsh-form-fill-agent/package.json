@@ -1,10 +1,18 @@
 {
   "name": "dsh-form-fill-agent",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "private": false,
-  "description": "AI填表智能体：XLSX blank-cell preview, QCC enrichment and persistent tasks for DSH.",
-  "repository": { "type": "git", "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git", "directory": "packages/dsh-form-fill-agent" },
-  "publishConfig": { "access": "public", "tag": "latest", "registry": "https://registry.npmjs.org/" },
+  "description": "AI form filling and spreadsheet autofill for XLSX in DeepSeek Harness, using authorized Qichacha MCP facts with cell previews, user confirmation and export to a new copy.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duhu2000/dsh-form-fill-agent.git",
+    "directory": "packages/dsh-form-fill-agent"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -28,9 +36,32 @@
     "qcc-form-fill-provider": "0.2.1"
   },
   "dsh": {
-    "client": { "inject": ["@deepseek-ai/dsh-client-ui-layout", "@deepseek-ai/dsh-client-ui-conversation"], "platform": "web" },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "platform": "web"
+    },
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "keywords": [
+    "AI填表",
+    "AI 填表",
+    "自动填表",
+    "表格填充",
+    "表格补全",
+    "Excel填表",
+    "Excel回填",
+    "form filling",
+    "spreadsheet autofill",
+    "企查查MCP",
+    "企查查 MCP",
+    "form-filling",
+    "spreadsheet-autofill",
+    "xlsx",
+    "enterprise-data"
+  ]
 }
