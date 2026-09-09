@@ -1,3 +1,4 @@
+export { SNAPSHOT_GROUPS, SNAPSHOT_GROUP_ORDER, projectFirstSnapshot } from './snapshot-fields.js';
 const field = (id, label, sourceKey, aliases) => Object.freeze({id,label,sourceKey,aliases:Object.freeze(aliases)});
 export const ACTUAL_CONTROLLER_GROUP = Object.freeze({
  id:'actual_controller',label:'实际控制人',sourceTool:'get_actual_controller',releaseBatch:'controller',
