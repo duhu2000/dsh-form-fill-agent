@@ -14,7 +14,7 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);
  await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));
  await page.locator('#wizard').waitFor({state:'visible'});
- const bytes=fixtureBytes('合成表',['企业名称','地址','法定代表人'],Array.from({length:60},(_,i)=>['合成企业'+i+'有限公司','','']),{title:false});
+ const bytes=fixtureBytes('合成表',['企业名称','地址','法定代表人','企业状态','CreditCode','核准日期 YYYY-MM-DD'],Array.from({length:60},(_,i)=>['合成企业'+i+'有限公司','','','','','']),{title:false});
  await page.locator('#wizard-file').setInputFiles({name:'合成向导.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
  await page.locator('#wizard-source').filter({hasText:'合成向导.xlsx'}).waitFor();
  await page.locator('#wizard-next').click();
@@ -25,13 +25,21 @@ try{
  assert.match(await address.textContent(),/待人工确认/);
  await address.getByRole('button',{name:/推荐.*注册地址/}).click();
  assert.match(await address.textContent(),/已确认/);
+ for(const [source,target] of [['企业状态','经营状态'],['CreditCode','统一社会信用代码'],['核准日期 YYYY-MM-DD','核准日期']]){
+  const row=page.locator('#wizard-mapping .ff-mapping-row').filter({has:page.getByLabel('合成表 字段 '+source,{exact:true})});
+  assert.match(await row.textContent(),/待人工确认/);
+  assert.equal(await row.locator('select[data-column]').inputValue(),'','recommendation must not silently select a field');
+  await row.getByRole('button',{name:'推荐：'+target,exact:true}).click();
+  assert.match(await row.textContent(),/已确认/);
+  if(source==='CreditCode')await row.locator('.ff-mapping-role').selectOption('output');
+ }
  await page.locator('#wizard-next').click();
  await page.waitForFunction(()=>document.querySelector('[data-wizard-step="2"]').getAttribute('aria-current')==='true');
  assert.equal(await page.locator('#wizard').isVisible(),true);
- assert.match(await page.locator('#field-count').textContent(),/2/);
+ assert.match(await page.locator('#field-count').textContent(),/5/);
  await page.locator('#wizard-next').click();
  assert.ok((await page.locator('#business-summary').textContent()).length<400);
- assert.match(await page.locator('#business-summary').textContent(),/120 个待补空位置/);
+ assert.match(await page.locator('#business-summary').textContent(),/300 个待补空位置/);
  for(const colorScheme of ['light','dark'])for(const width of [390,900]){
   await page.emulateMedia({colorScheme});await page.setViewportSize({width,height:844});
   await page.locator('[data-wizard-step="1"]').click();
@@ -45,5 +53,6 @@ try{
  assert.equal(await page.getByLabel('合成表 字段 地址',{exact:true}).inputValue(),'registered_address');
  await page.reload();await page.locator('[data-step="rules"]').click();
  assert.equal(await page.getByLabel('合成表 字段 地址',{exact:true}).inputValue(),'registered_address');
+ for(const [source,key] of [['企业状态','business_status'],['CreditCode','credit_no'],['核准日期 YYYY-MM-DD','approval_date']])assert.equal(await page.getByLabel('合成表 字段 '+source,{exact:true}).inputValue(),key,'confirmed recommendation survives reload in workbench');
  assert.deepEqual(errors,[]);console.log('PASS inline wizard mapping, automatic scope, bounded summary, restoration, light/dark narrow layouts');
 }finally{await browser?.close();server.close();await service.close?.()}

@@ -7,6 +7,7 @@ import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
 import { gridPage } from './grid.js';
 import { diagnostics } from './diagnostics.js';
+import { mappingRecommendations } from './mapping-recommendations.js';
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FIXTURES = ['客户台账', '供应商准入表', '合同主体信息表'];
 export function createFormFillHandler({ basePath = '', getPort, now = Date.now, ttlMs = 15 * 60 * 1000, maxTasks = 10, taskDirectory, getQccStatus = () => false } = {}) {
@@ -29,7 +30,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
     catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
     structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
       name: s.name,
-      rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value })) })),
+      rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value, recommendations: mappingRecommendations(c.value,FIELD_CATALOG) })) })),
     })),
   });
   const sweep = () => { for (const [id, task] of tasks) if (now() - task.created >= ttlMs) {controllers.get(id)?.abort();tasks.delete(id);} };

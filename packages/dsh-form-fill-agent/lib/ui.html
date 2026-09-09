@@ -229,8 +229,12 @@ function renderSettings(data){
     select.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();finish()}};
     search.oninput=options;dimension.onchange=options;
     if(!chosen&&!manual){
-     const hints={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'地址':['registered_address','mailing_address','invoice_address'],'网址':['contact_official_website']}[cell.label.trim()]||[];
-     const recommended=[...hints.map(key=>data.catalog.find(f=>f.key===key)).filter(Boolean),...(data.catalog||[]).filter(f=>!hints.includes(f.key)&&matches(f,cell.label))].slice(0,4);
+     // Strip only a trailing date-format annotation for recommendations. Keep
+     // the original header and require confirmation; semantic qualifiers remain.
+     const candidateLabel=String(cell.label).normalize('NFKC').replace(/\s*\(?\s*YYYY[-/]MM[-/]DD\s*\)?\s*$/i,'').trim();
+     const hintMap={'原文件导入名称':['company_name'],'单位':['company_name'],'名称':['company_name'],'法定代表人':['legal_person'],'登记状态':['business_status'],'企业状态':['business_status'],'creditcode':['credit_no'],'unifiedsocialcreditcode':['credit_no'],'地址':['registered_address','mailing_address','invoice_address'],'网址':['contact_official_website']};
+     const hints=hintMap[normalize(candidateLabel)]||[];
+     const recommended=Array.isArray(cell.recommendations)?cell.recommendations.map(key=>data.catalog.find(f=>f.key===key)).filter(Boolean):candidateLabel?[...hints.map(key=>data.catalog.find(f=>f.key===key)).filter(Boolean),...(data.catalog||[]).filter(f=>!hints.includes(f.key)&&matches(f,candidateLabel))].slice(0,4):[];
      if(recommended.length){const hint=document.createElement('span');hint.textContent='推荐（确认后采用）：';suggestions.append(hint)}
     for(const field of recommended){const button=document.createElement('button');button.type='button';button.textContent='推荐：'+field.label;button.title=data.catalogGroups?.find(g=>g.fields.includes(field.key))?.label||'字段目录';button.onclick=()=>{chosen=field.key;manual=true;suggestions.replaceChildren();options();$('mapping-next').hidden=true;picker.open=false;trigger.focus()};suggestions.append(button)}
     }
