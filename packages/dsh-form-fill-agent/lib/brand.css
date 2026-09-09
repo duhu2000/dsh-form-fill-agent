@@ -56,3 +56,7 @@
 .ff-ui .ff-mapping-status[data-state=skipped]{color:var(--muted);background:var(--surface)}
 .ff-ui .ff-mapping-role{margin-top:8px;max-width:100%}
 .ff-ui .ff-mapping-row.ff-mapping-conflict{border-color:var(--review);background:var(--review-bg)}
+.ff-ui #wizard-mapping>.card{margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.ff-ui #wizard-mapping>.card>h2,.ff-ui #wizard-mapping #mapping-next{display:none}
+.ff-ui #wizard-mapping fieldset{min-width:0}
+.ff-ui #wizard-mapping .ff-mapping-row{min-width:0}
