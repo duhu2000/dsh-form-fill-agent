@@ -60,3 +60,16 @@
 .ff-ui #wizard-mapping>.card>h2,.ff-ui #wizard-mapping #mapping-next{display:none}
 .ff-ui #wizard-mapping fieldset{min-width:0}
 .ff-ui #wizard-mapping .ff-mapping-row{min-width:0}
+/* Progress measures processed work, independently from result quality. */
+#progress-panel { padding: 12px 16px; }
+#task-progress { width: 100%; height: 12px; accent-color: #087bd8; }
+#task-progress[data-ended="true"] { accent-color: #138263; }
+#task-progress::-webkit-progress-bar { background: #e3e9ef; border-radius: 6px; }
+#task-progress::-webkit-progress-value { background: #087bd8; border-radius: 6px; }
+#task-progress[data-ended="true"]::-webkit-progress-value { background: #138263; }
+#progress-label { color: var(--action); font-weight: 600; }
+#progress-label[data-ended="true"] { color: var(--success); }
+.ff-review-count { color: var(--review); font-weight: 600; }
+.ff-failure-count { color: var(--error); font-weight: 600; }
+#wizard-grid { min-width: 0; margin-bottom: 16px; }
+#task-meta, #task-details { overflow-wrap: anywhere; }
