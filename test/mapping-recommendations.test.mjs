@@ -1,7 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {FIELD_CATALOG} from '../packages/qcc-form-fill-provider/lib/index.js';
-import {mappingRecommendations as recommend} from '../packages/dsh-form-fill-agent/lib/mapping-recommendations.js';
+import {mappingRecommendations as recommend,mappingSearchAliases} from '../packages/dsh-form-fill-agent/lib/mapping-recommendations.js';
+test('search includes recommendation aliases without changing mapping semantics',()=>{
+ assert.ok(mappingSearchAliases('credit_no').includes('CreditCode'));
+ assert.ok(mappingSearchAliases('industry_category').includes('行业'));
+ assert.ok(mappingSearchAliases('qcc_industry').includes('行业'));
+ assert.deepEqual(mappingSearchAliases('unsupported'),[]);
+});
 test('every supported catalog label and key is available as a recommendation',()=>{
  for(const field of FIELD_CATALOG)for(const label of [field.label,field.key])assert.ok(recommend(label,FIELD_CATALOG).includes(field.key),label);
 });

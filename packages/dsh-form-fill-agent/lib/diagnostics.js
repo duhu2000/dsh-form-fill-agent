@@ -44,5 +44,5 @@ export function renderEnrichmentResult(value) {
  const reasons=value.diagnostics?.reasons||[];
  return 'AI填表：可填写 '+value.filled+' 格，未完成 '+value.incomplete+' 项。'
   +(reasons.length?'原因分类：'+reasons.map(r=>r.label+' '+r.count+r.unit).join('；')+'。':'')
-  +'可填写仅代表预览，尚未写入副本；必须在工作台确认后下载。未完成包含范围排除、映射或查询问题，不可统一解释为企查查查不到。预览：'+value.previewPath;
+  +'可填写仅代表预览，尚未写入副本；必须在工作台确认后下载。未完成包含范围排除、映射或查询问题，不可统一解释为企查查查不到，也不能仅凭可填写为 0 推断授权异常；请依据具体错误记录。预览：'+value.previewPath;
 }

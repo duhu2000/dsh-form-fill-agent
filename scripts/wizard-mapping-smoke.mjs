@@ -54,5 +54,17 @@ try{
  await page.reload();await page.locator('[data-step="rules"]').click();
  assert.equal(await page.getByLabel('合成表 字段 地址',{exact:true}).inputValue(),'registered_address');
  for(const [source,key] of [['企业状态','business_status'],['CreditCode','credit_no'],['核准日期 YYYY-MM-DD','approval_date']])assert.equal(await page.getByLabel('合成表 字段 '+source,{exact:true}).inputValue(),key,'confirmed recommendation survives reload in workbench');
+ const searchRow=page.locator('.ff-mapping-row').filter({has:page.getByLabel('合成表 字段 地址',{exact:true})});
+ await searchRow.locator('summary').click();
+ await page.getByLabel('合成表 搜索目标字段 地址',{exact:true}).fill('CreditCode');
+ assert.equal(await searchRow.locator('option[value="credit_no"]').count(),1,'recommendation alias is searchable');
+ assert.equal(await page.getByLabel('合成表 字段 地址',{exact:true}).inputValue(),'registered_address','filter preserves selection outside search');
+ await page.getByLabel('合成表 搜索目标字段 地址',{exact:true}).fill('不存在的维度关键词');
+ assert.match(await searchRow.textContent(),/没有匹配字段/);
+ assert.equal(await page.getByLabel('合成表 字段 地址',{exact:true}).inputValue(),'registered_address');
+ // Synthetic UI state verifies empty review affordances without performing queries.
+ await page.evaluate(()=>{render({...current,changeSet:{...current.changeSet,incomplete:[]}});downloads();navigate('preview')});
+ assert.equal(await page.locator('#incomplete').isVisible(),false);
+ assert.equal(await page.locator('#downloads a').filter({hasText:'下载未完成项'}).count(),0);
  assert.deepEqual(errors,[]);console.log('PASS inline wizard mapping, automatic scope, bounded summary, restoration, light/dark narrow layouts');
 }finally{await browser?.close();server.close();await service.close?.()}

@@ -23,6 +23,9 @@ const ambiguous = {
  所属行业:['industry_category','qcc_industry'],行业:['industry_category','qcc_industry'],法人:['legal_person'],
 };
 const normalize=value=>String(value??'').normalize('NFKC').toLowerCase().replace(/[\s_\-·]/g,'');
+export function mappingSearchAliases(key){
+ return [...(aliases[key]||[]),...Object.entries(ambiguous).filter(([,keys])=>keys.includes(key)).map(([label])=>label)];
+}
 export function mappingRecommendations(header,catalog){
  const label=normalize(String(header??'').normalize('NFKC').replace(/\s*\(?\s*YYYY[-/]MM[-/]DD\s*\)?\s*$/i,''));
  if(!label)return [];

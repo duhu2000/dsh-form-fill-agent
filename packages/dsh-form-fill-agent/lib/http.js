@@ -7,7 +7,7 @@ import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
 import { gridPage } from './grid.js';
 import { diagnostics } from './diagnostics.js';
-import { mappingRecommendations } from './mapping-recommendations.js';
+import { mappingRecommendations, mappingSearchAliases } from './mapping-recommendations.js';
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FIXTURES = ['客户台账', '供应商准入表', '合同主体信息表'];
 export function createFormFillHandler({ basePath = '', getPort, now = Date.now, ttlMs = 15 * 60 * 1000, maxTasks = 10, taskDirectory, getQccStatus = () => false } = {}) {
@@ -26,7 +26,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
     progress: task.progress,
     candidates: allCandidates(task).changes,
     selectedIds: task.preview.changeSet.changes.map(c=>c.id),
-    catalog: FIELD_CATALOG,
+    catalog: FIELD_CATALOG.map(field=>({...field,searchAliases:mappingSearchAliases(field.key)})),
     catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
     structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
       name: s.name,

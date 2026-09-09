@@ -68,14 +68,14 @@ function syncActions(){
  const running=current?.state==='enriching';$('cancel-run').hidden=!running;$('cancel-run').disabled=busy||!running;
  $('retry-run').hidden=!current||current.confirmed||!current.changeSet.incomplete.some(i=>['provider-error','cancelled','not-started'].includes(i.reason));
  $('retry-run').disabled=busy||!current||current.confirmed||running||!current.changeSet.incomplete.some(i=>['provider-error','cancelled','not-started'].includes(i.reason));
- $('execution-progress').textContent=running?(current.progress?.total?'正在查询 '+(current.progress?.completed||0)+' / '+current.progress.total:'正在准备查询…'):current?.state==='cancelled'?'已取消，成功结果保留。':current?.state==='interrupted'?'上次查询中断，已保存进度，可重试剩余部分。':'';
+ $('execution-progress').textContent=running?(current.progress?.total?'已处理查询计划项 '+(current.progress?.completed||0)+' / '+current.progress.total+'（含失败，不代表填写成功）':'正在准备查询…'):current?.state==='cancelled'?'已取消，成功结果保留。':current?.state==='interrupted'?'上次查询中断，已保存进度，可重试剩余部分。':'';
  for(const id of ['confirm','selection','configure'])$(id).disabled=busy||!current||current.confirmed||running;
 }
 $('cancel-run').onclick=async()=>{try{await api('/cancel',{id:current.id});$('status').textContent='已请求取消。已发出的请求可能已在远端执行，本地不再继续后续查询。';await restore()}catch(e){$('status').textContent=e.message}};
 $('retry-run').onclick=()=>{openWizard(true);wizardStep=3;renderWizard()};
 async function api(path,body){if(current&&body?.id===current.id)body={...body,expectedRevision:current.revision};const response=await fetch(basePath+path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{'Content-Type':'application/json','X-Form-Fill-Owner':owner}});const data=await response.json();if(!response.ok)throw Error(data.message);return data}
 function navigate(target){if(target==='wizard'){openWizard();return}if(target!=='import'&&!current){$('status').textContent='请先导入表格。';return}step=target;$('history').hidden=true;$('current').hidden=false;$('current-tab').setAttribute('aria-pressed','true');$('history-tab').setAttribute('aria-pressed','false');document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==target);document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.step===target)))}
-function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
+function downloads(){ $('downloads').replaceChildren();for(const [kind,label,suffix] of [['xlsx','下载已填副本','-已填副本.xlsx'],['changes','下载变更清单','-变更.json'],['incomplete','下载未完成项','-未完成.json']]){if(kind==='incomplete'&&!current.changeSet.incomplete.length)continue;const a=document.createElement('a');Object.assign(a,{className:'download',href:basePath+'/download/'+current.id+'/'+kind,download:filename+suffix,textContent:label});$('downloads').append(a)}}
 function businessSummary(){return current?(retryIntent?'仅重试失败、取消或未执行的部分，保留成功结果。':'')+'填写文件“'+current.filename+'”中的空白字段。共 '+current.analysis.tables.length+' 个工作表，'+wizardFields.size+' 个填写字段，'+current.analysis.opportunities.filter(p=>wizardFields.has(p.field)).length+' 个待补空位置。字段范围以本次保存的映射为准。保留已有值、公式与未确认位置，核验预览后生成新副本。':'请先上传 XLSX 文件。'}
 function command(){return current?businessSummary()+'\n'+$('requirements').value+'\n执行关联：调用 form_fill_enrich：taskId='+current.id+'，expectedRevision='+current.revision+(retryIntent?'，mode=retry':'')+'。字段范围以工作台确认设置为准。':''}
 function mappingVersion(){return JSON.stringify({tables:current?.analysis.tables.map(t=>({sheet:t.sheet,headerRow:t.headerRow,anchors:t.anchors,mappings:t.mappings.map(m=>[m.column,m.field,m.role,m.evidence])})),scope:current?.selectedFields??null})}
@@ -196,7 +196,7 @@ function renderSettings(data){
     for(const [value,text] of [['input','用于定位企业'],['output','仅接收填写']]){const o=document.createElement('option');o.value=value;o.textContent=text;role.append(o)}
     role.value=override?.role||'input';
     const normalize=s=>String(s).normalize('NFKC').toLowerCase().replace(/[\s_（）()·-]/g,'');
-    const matches=(field,query)=>{const text=normalize([field.label,field.key,...(field.aliases||[])].join(' '));return query.trim().split(/\s+/).every(word=>{const q=normalize(word);if(text.includes(q))return true;if(q.length<2)return false;let i=0;for(const c of text)if(c===q[i])i++;return i===q.length})};
+    const matches=(field,query)=>{const text=normalize([field.label,field.key,...(field.aliases||[]),...(field.searchAliases||[])].join(' '));return query.trim().split(/\s+/).every(word=>{const q=normalize(word);if(text.includes(q))return true;if(q.length<2)return false;let i=0;for(const c of text)if(c===q[i])i++;return i===q.length})};
     const search=document.createElement('input');search.type='search';search.placeholder='关键词，例如：电话、信用代码';search.setAttribute('aria-label',sheet.name+' 搜索目标字段 '+cell.label);
     const dimension=document.createElement('select');dimension.setAttribute('aria-label',sheet.name+' 字段维度 '+cell.label);
     const groups=[{id:'',label:'全部维度'},...(data.catalogGroups||[]),{id:'other',label:'其他字段'}];
@@ -266,7 +266,7 @@ function render(data){
 current=data;directScope();$('direct-command').hidden=true;filename=(data.filename||'已填表格.xlsx').replace(/\.xlsx$/i,'');location.hash='task='+data.id;
 if(gridTask!==data.id){gridTask=data.id;gridPageNumber=1;gridColumn=1;$('grid-sheet').replaceChildren();$('grid-query').value=''}$('grid').hidden=false;loadGrid();
 if(parent!==window)parent.postMessage({type:'ff-task',taskId:data.id},location.origin);
-$('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').replaceChildren();
+$('incomplete').closest('.card').style.display=data.changeSet.incomplete.length?'':'none';$('changes').replaceChildren();$('incomplete').replaceChildren();$('downloads').replaceChildren();
 $('task-meta').dataset.state=data.state;
 $('task-meta').textContent=(data.filename||'表格')+' · '+({'enriching':'查询中','completed':'已生成副本'+(data.changeSet.incomplete.length?'，仍有 '+data.changeSet.incomplete.length+' 项未完成':''),'interrupted':'查询中断，请重新核验','partial':'部分完成','preview_ready':'可核验'}[data.state]||data.state)+' · 有效期至 '+new Date(data.expiresAt).toLocaleString();
 $('summary').textContent='可填写 '+data.changeSet.changes.length+' 格 · '+(data.plan.paidCalls?'企查查来源':'本地分析 / 合成示例 · 费用 0')+' · 未完成 '+data.changeSet.incomplete.length+' 项';
