@@ -131,7 +131,7 @@ try{
  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
  if(await frame.locator('#direct-ack-label').isVisible()){await frame.locator('#direct-ack').check();await frame.getByRole('button',{name:'生成填写指令',exact:true}).click()}
  await frame.locator('#wizard').waitFor({state:'hidden'});
- await frame.getByText('已回填，请在对话框修改或发送。',{exact:true}).waitFor();
+ await frame.getByText('指令已回填，发送后将在此显示查询进度。',{exact:true}).waitFor();
  assert.equal((await page.evaluate(()=>probe.draft)).match(/form_fill_enrich/g).length,1);
  assert.ok((await page.evaluate(()=>probe.draft)).startsWith('保留我的手写要求\n\n'));
  await page.getByRole('textbox',{name:'原生输入框'}).fill('可以替换的内容');

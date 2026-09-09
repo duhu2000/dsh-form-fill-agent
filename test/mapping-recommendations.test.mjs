@@ -18,6 +18,9 @@ test('ambiguous definitions retain separate choices; unsupported semantics remai
  assert.deepEqual(recommend('行业',FIELD_CATALOG),['industry_category','qcc_industry']);
  assert.deepEqual(recommend('企业地址',FIELD_CATALOG),['registered_address','mailing_address']);
  assert.deepEqual(recommend('地址',FIELD_CATALOG),['registered_address','mailing_address','invoice_address']);
- for(const label of ['从业人数','人员规模（仅正式员工）','主营业务收入','受益所有人','YYYY-MM-DD'])assert.deepEqual(recommend(label,FIELD_CATALOG),[],label);
+ assert.deepEqual(recommend('主营业务收入',FIELD_CATALOG),['financial_total_revenue']);
+ assert.deepEqual(recommend('受益人',FIELD_CATALOG),['beneficial_owner_first_name']);
+ assert.deepEqual(recommend('注册资本（重复列 2）',FIELD_CATALOG),['reg_capital']);
+ for(const label of ['从业人数','人员规模（仅正式员工）','YYYY-MM-DD'])assert.deepEqual(recommend(label,FIELD_CATALOG),[],label);
  assert.deepEqual(recommend('address',[]),[]);
 });

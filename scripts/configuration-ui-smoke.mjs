@@ -185,9 +185,9 @@ try{
  assert.equal(await page.locator('#wizard-fields input:checked:not(:disabled)').count(),6,'mapping edits must discard stale two-field scope');
  await page.locator('#wizard-fields input[data-field=contact_preferred_phone]').uncheck();
  await page.getByRole('button',{name:'4 确认描述',exact:true}).click();
- assert.equal(await page.locator('#copy-command').isEnabled(),false);assert.ok((await page.locator('#scope-review').innerText()).includes('联系电话'));
+ assert.equal(await page.locator('#copy-command').isEnabled(),true);assert.ok((await page.locator('#scope-review').innerText()).includes('联系电话'));
  await page.screenshot({path:'/tmp/form-fill-coverage-review.png'});
- await page.locator('#scope-ack').check();assert.equal(await page.locator('#copy-command').isEnabled(),true);
+ assert.equal(await page.locator('#scope-ack-label').isVisible(),false);
  await page.getByRole('button',{name:'3 填写字段',exact:true}).click();await page.locator('#wizard-fields input[data-field=contact_preferred_phone]').check();
  await page.getByRole('button',{name:'关闭提示词向导',exact:true}).click();await page.reload();
  await page.getByRole('button',{name:'主体核验',exact:true}).click();await page.evaluate(()=>window.postMessage({type:'ff-navigate',step:'wizard'},location.origin));await page.locator('#wizard').waitFor({state:'visible'});await page.getByRole('button',{name:'3 填写字段',exact:true}).click();
@@ -212,5 +212,5 @@ try{
  const output=await page.evaluate(async()=>[...new Uint8Array(await (await fetch(document.querySelector('#downloads a').href)).arrayBuffer())]);
  const {parseWorkbook}=await import('form-fill-core');const sheet=parseWorkbook(Buffer.from(output)).sheets[0];
  for(const column of ['B','C','D','E','F','G'])assert.ok(sheet.cells[column+'2'].value);
- console.log('Configuration UI: seven-column scope repair and six-cell export, missing-anchor guard, omission acknowledgment, recommendations/search, persistence, cancellation/retry and responsive layouts PASS');
+ console.log('Configuration UI: scope repair/export, missing-anchor guard, omission summary without checkbox gate, recommendations/search, persistence, cancellation/retry and responsive layouts PASS');
 }finally{await browser?.close();service.dispose();await new Promise(ok=>server.close(ok))}

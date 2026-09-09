@@ -1,5 +1,7 @@
-export const PROVIDER_VERSION = '0.2.1';
+export const PROVIDER_VERSION = '0.2.2';
 import {ADDITIONAL_FIELDS} from './extended.js';
+import {SNAPSHOT_GROUPS} from './snapshot-fields.js';
+export {SNAPSHOT_GROUPS} from './snapshot-fields.js';
 import {QCC_FIELD_CATALOG} from './catalog.js';
 export {createCatalogProvider,CATALOG_TOOL_DOMAINS,runtimeToolNames} from './extended.js';
 export {QCC_FIELD_CATALOG} from './catalog.js';
@@ -19,6 +21,7 @@ export const FIELD_CATALOG = Object.freeze([
   ...EXTRA_FIELDS,
   ...QCC_FIELD_CATALOG.slice(1).flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[]}))),
   ...ADDITIONAL_FIELDS,
+  ...SNAPSHOT_GROUPS.flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[],type:'string',selectionNote:g.selectionNote}))),
   ...ACTUAL_CONTROLLER_GROUP.fields.map(f=>({key:f.id,label:f.label,aliases:f.aliases,type:'string'})),
 ]);
 const synthetic = Object.freeze({

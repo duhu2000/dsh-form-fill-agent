@@ -17,6 +17,8 @@ const aliases = {
  actual_controller_voting_ratio:['实际控制人表决权比例'],
 };
 const ambiguous = {
+ 受益人:['beneficial_owner_first_name'],受益所有人:['beneficial_owner_first_name'],UBO:['beneficial_owner_first_name'],
+ 主营业务收入:['financial_total_revenue'],
  地址:['registered_address','mailing_address','invoice_address'],
  address:['registered_address','mailing_address'],企业地址:['registered_address','mailing_address'],公司地址:['registered_address','mailing_address'],
  开业时间:['established_date'],开业日期:['established_date'],
@@ -27,7 +29,7 @@ export function mappingSearchAliases(key){
  return [...(aliases[key]||[]),...Object.entries(ambiguous).filter(([,keys])=>keys.includes(key)).map(([label])=>label)];
 }
 export function mappingRecommendations(header,catalog){
- const label=normalize(String(header??'').normalize('NFKC').replace(/\s*\(?\s*YYYY[-/]MM[-/]DD\s*\)?\s*$/i,''));
+ const label=normalize(String(header??'').normalize('NFKC').replace(/\s*\(重复列\s*\d+\)\s*$/,'').replace(/\s*\(?\s*YYYY[-/]MM[-/]DD\s*\)?\s*$/i,''));
  if(!label)return [];
  const available=new Set(catalog.map(f=>f.key));
  const hinted=Object.entries(ambiguous).find(([name])=>normalize(name)===label)?.[1];

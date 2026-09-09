@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { applyChangeSet, parseWorkbook } from 'form-fill-core';
-import { FIELD_CATALOG, QCC_FIELD_CATALOG, ACTUAL_CONTROLLER_GROUP, isCompleteAnchor } from 'qcc-form-fill-provider';
+import { FIELD_CATALOG, QCC_FIELD_CATALOG, ACTUAL_CONTROLLER_GROUP, SNAPSHOT_GROUPS, isCompleteAnchor } from 'qcc-form-fill-provider';
 import { previewBytes } from './workflow.js';
 import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
@@ -27,7 +27,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
     candidates: allCandidates(task).changes,
     selectedIds: task.preview.changeSet.changes.map(c=>c.id),
     catalog: FIELD_CATALOG.map(field=>({...field,searchAliases:mappingSearchAliases(field.key)})),
-    catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
+    catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP,...SNAPSHOT_GROUPS].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
     structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
       name: s.name,
       rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value, recommendations: mappingRecommendations(c.value,FIELD_CATALOG) })) })),

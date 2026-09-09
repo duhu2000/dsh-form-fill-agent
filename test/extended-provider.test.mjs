@@ -10,7 +10,7 @@ const golden=JSON.parse(await readFile(new URL('../fixtures/extended-provider.go
 test('all 128 legacy catalog entries preserve labels, sources and release semantics',()=>{assert.deepEqual(QCC_FIELD_CATALOG,golden.catalog);assert.equal(QCC_FIELD_CATALOG.flatMap(g=>g.fields).length,128)});
 for(const row of golden.cases)test('pre-extraction parity '+row.tool+' / '+row.variant,()=>assert.deepEqual(projections[row.mapper](row.input),row.expected));
 test('all catalog batches fill only selected fields after exact identity and missing tools degrade',async()=>{
- assert.equal(FIELD_CATALOG.length,133);
+ assert.equal(FIELD_CATALOG.length,137);
  for(const group of golden.catalog.slice(1)){
   const row=golden.cases.find(c=>c.tool===group.sourceTool&&c.variant==='full'),calls=[];
   const input={...row.input,...(row.input.企业名称?{企业名称:'合成扩展有限公司'}:{})},expected=projections[row.mapper](input);
