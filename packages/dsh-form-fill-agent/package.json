@@ -1,6 +1,6 @@
 {
   "name": "dsh-form-fill-agent",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "private": false,
   "description": "AI form filling and spreadsheet autofill for XLSX in DeepSeek Harness, using authorized Qichacha MCP facts with cell previews, user confirmation and export to a new copy.",
   "repository": {
@@ -34,6 +34,14 @@
   "dependencies": {
     "form-fill-core": "0.2.10",
     "qcc-form-fill-provider": "0.2.2"
+  },
+  "peerDependencies": {
+    "dsh-better-sidebar": ">=0.17.1 <0.19.0"
+  },
+  "peerDependenciesMeta": {
+    "dsh-better-sidebar": {
+      "optional": true
+    }
   },
   "dsh": {
     "client": {
