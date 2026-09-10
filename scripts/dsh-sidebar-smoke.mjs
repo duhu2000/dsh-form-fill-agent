@@ -48,7 +48,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
    const method=alpha?'workspace/create':'workspace.create',payload=alpha?{args:{request:{path}}}:{path};
    const response=await fetch('/api/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'client-request',rpcId:crypto.randomUUID(),method,payload})});
    return (await response.json()).result;
-  },{path:cwd,alpha:version.includes('alpha')});
+  },{path:cwd,alpha:!version.startsWith('0.1.1-')});
   assert.equal(prepared?.ok,true,'prepare synthetic workspace through real Host API: '+JSON.stringify(prepared?.error));
   await page.reload();
   let cleaningUrl;
@@ -100,6 +100,6 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   assert.equal(await frame.locator('body').evaluate(()=>location.hash),taskHash);
   await page.screenshot({path:'/tmp/ff-real-sidebar-'+version+'.png'});
   console.log(JSON.stringify({hostVersion:version,sidebar:process.env.SIDEBAR_VERSION||'0.17.1',realHost:'PASS',singleton:'PASS',collapseAndTabClose:'PASS',taskRestore:'PASS',productionProfileUsed:false,realProviderUsed:false}));
- }catch(error){console.error('Phase:',phase);throw error}
+ }catch(error){console.error('Phase:',phase,'Host exit:',child.exitCode);console.error(output.split('\n').filter(line=>/error|failed|Error|TypeError|incompatible|EADDR/i.test(line)).map(line=>line.replace(/https?:\/\/\S+/g,'[url]')).join('\n'));throw error}
  finally{await browser?.close();child.kill('SIGTERM')}
 }

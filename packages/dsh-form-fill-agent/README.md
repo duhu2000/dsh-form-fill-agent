@@ -6,12 +6,16 @@
 
 AI填表智能体：支持自动填表、表格填充、表格补全、Excel填表与 Excel回填；使用企查查 MCP 填写 XLSX 空白字段，预览确认后导出新副本。
 
+先运行 `dsh --version` 确认宿主版本。当前推荐组合为 **DSH 0.1.2-rc.1 + Better Sidebar 0.18.1**：
+
 ```sh
-dsh plugin --profile web add dsh-better-sidebar@0.17.1
-dsh plugin --profile web add dsh-form-fill-agent@0.2.22
+dsh plugin --profile web add dsh-better-sidebar@0.18.1
+dsh plugin --profile web add dsh-form-fill-agent@0.2.23
 ```
 
-请先满足下文的 DSH、连接器及侧边栏依赖要求；安装后完整停止并重启对应 Profile。
+若仍使用 **DSH 0.1.1-rc.2**，请将上述侧栏安装命令改为 `dsh plugin --profile web add dsh-better-sidebar@0.17.1`。该旧宿主加载 0.18.1 会因缺少 `SessionLogOffset` 导出而失败。
+
+不建议侧栏使用无上限的 `@latest`：本插件当前支持 `>=0.17.1 <0.19.0`，未来 latest 可能超出范围或要求更新的 DSH。依赖与主包必须安装在同一 profile；自定义 profile 请替换命令中的 `web`。安装后完整停止并重启对应 profile。
 
 打开“AI填表”并展开合成演示，选择客户台账模板，检查工作表、企业主体和空白字段。需要真实补全时确认数据来源及范围并手动发送指令；核对单元格预览后下载新 XLSX 副本。
 
@@ -34,6 +38,8 @@ AI填表是 DeepSeek Harness（DSH）的企业表格填写插件：识别已有 
 ## 安装
 
 需要 Node.js 22 或以上，以及 DSH。已验证的 DSH 基线为 0.1.1-rc.2 和 0.1.2-alpha.2。
+
+请先按文首的宿主版本选择并安装 Better Sidebar，再安装主包：
 
 ```sh
 dsh plugin --profile web add dsh-form-fill-agent@latest
@@ -67,7 +73,7 @@ dsh plugin --profile web add dsh-form-fill-agent@latest
 
 ## 使用边界与数据保存
 
-补充要求为模型可读文本；字段或工作表范围请通过向导/工作台修改，不能仅改文字后假定执行范围已同步。任务 schema 5 可读取 schema 1–5；回退旧版本请使用升级前目录副本或独立任务目录。主包为 0.2.22，共享内核为 0.2.10，Provider 为 0.2.2，共享字段契约为 0.1.0。
+补充要求为模型可读文本；字段或工作表范围请通过向导/工作台修改，不能仅改文字后假定执行范围已同步。任务 schema 5 可读取 schema 1–5；回退旧版本请使用升级前目录副本或独立任务目录。主包为 0.2.23，共享内核为 0.2.10，Provider 为 0.2.2，共享字段契约为 0.1.0。
 
 支持企业完整登记名称或 18 位信用代码；简称、主体不一致或多候选不会自动猜选。仅有信用代码的表格也可作为查询锚点。连接候选检索工具时可检索简称，仍需人工确认；缺少工具时降级人工输入。字段映射采用确定性规则及人工确认，不让模型编造事实。支持普通内部公式、固定区域下拉、基础条件格式和普通表格对象；复杂 Excel 结构和 Word 暂不支持，保真边界见下方安全说明。
 
@@ -75,7 +81,7 @@ dsh plugin --profile web add dsh-form-fill-agent@latest
 
 显式设置 DSH_HOME 时，任务保存至其 form-fill-tasks 目录，默认 24 小时过期；未设置时使用内存。任务保存输入表格和归一化预览，不持久化原始 MCP 响应，可主动删除任务。模型及 MCP 凭据由宿主管理。
 
-0.2.22 保存任务 schema 5，兼容读取旧 schema 1–4；回退旧版本须使用升级前任务目录副本或新目录，防止丢失已确认的字段/主体设置。
+0.2.23 保存任务 schema 5，兼容读取旧 schema 1–4；回退旧版本须使用升级前任务目录副本或新目录，防止丢失已确认的字段/主体设置。
 
 ## 文档与反馈
 

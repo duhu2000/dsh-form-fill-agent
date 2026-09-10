@@ -6,12 +6,16 @@
 
 AI填表智能体：支持自动填表、表格填充、表格补全、Excel填表与 Excel回填；使用企查查 MCP 填写 XLSX 空白字段，预览确认后导出新副本。
 
+先运行 `dsh --version` 确认宿主版本。当前推荐组合为 **DSH 0.1.2-rc.1 + Better Sidebar 0.18.1**：
+
 ```sh
-dsh plugin --profile web add dsh-better-sidebar@0.17.1
-dsh plugin --profile web add dsh-form-fill-agent@0.2.22
+dsh plugin --profile web add dsh-better-sidebar@0.18.1
+dsh plugin --profile web add dsh-form-fill-agent@0.2.23
 ```
 
-请先满足下文的 DSH、连接器及侧边栏依赖要求；安装后完整停止并重启对应 Profile。
+若仍使用 **DSH 0.1.1-rc.2**，请将上述侧栏安装命令改为 `dsh plugin --profile web add dsh-better-sidebar@0.17.1`。该旧宿主加载 0.18.1 会因缺少 `SessionLogOffset` 导出而失败。
+
+不建议侧栏使用无上限的 `@latest`：本插件当前支持 `>=0.17.1 <0.19.0`，未来 latest 可能超出范围或要求更新的 DSH。依赖与主包必须安装在同一 profile；自定义 profile 请替换命令中的 `web`。安装后完整停止并重启对应 profile。
 
 打开“AI填表”并展开合成演示，选择客户台账模板，检查工作表、企业主体和空白字段。需要真实补全时确认数据来源及范围并手动发送指令；核对单元格预览后下载新 XLSX 副本。
 
@@ -26,7 +30,7 @@ dsh plugin --profile web add dsh-form-fill-agent@0.2.22
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前正式编号版本为 **0.2.22**，包含完整网格、恢复选择、取消/重试、137 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.22 将字段映射确认直接整合到提示词向导，自动同步填写范围，并精简任务描述。发布记录见 [0.2.22](docs/RELEASE-0.2.22.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
+当前正式编号版本为 **0.2.23**，包含完整网格、恢复选择、取消/重试、137 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.23 将字段映射确认直接整合到提示词向导，自动同步填写范围，并精简任务描述。发布记录见 [0.2.23](docs/RELEASE-0.2.23.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -45,9 +49,11 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.22 精确依赖内核 0.2.10 及 Provider 0.2.2，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.23 精确依赖内核 0.2.10 及 Provider 0.2.2，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
+请先按文首的宿主版本选择并安装 Better Sidebar，再安装主包：
+
 ```sh
 dsh plugin --profile web add dsh-form-fill-agent@latest
 ```
