@@ -1,6 +1,6 @@
 {
   "name": "dsh-form-fill-monorepo",
-  "version": "0.2.23",
+  "version": "0.2.24",
   "private": true,
   "type": "module",
   "workspaces": [

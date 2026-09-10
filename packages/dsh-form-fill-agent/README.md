@@ -1,5 +1,7 @@
 # AI填表智能体
 
+> 当前分支为 0.2.24 发布候选，尚未发布；npm 正式版仍是 0.2.23。以下新增预检命令需使用候选 tarball。
+
 > 统一侧栏适配需要 Better Sidebar `>=0.17.1 <0.19.0`。五个流程入口打开同一 Session Tab；侧栏展开、收起和关闭由宿主管理。缺少依赖时会显示安装升级提示。
 
 ## 安装与三分钟上手
@@ -10,12 +12,28 @@ AI填表智能体：支持自动填表、表格填充、表格补全、Excel填�
 
 ```sh
 dsh plugin --profile web add dsh-better-sidebar@0.18.1
-dsh plugin --profile web add dsh-form-fill-agent@0.2.23
+dsh plugin --profile web add dsh-form-fill-agent@0.2.24
 ```
 
-若仍使用 **DSH 0.1.1-rc.2**，请将上述侧栏安装命令改为 `dsh plugin --profile web add dsh-better-sidebar@0.17.1`。该旧宿主加载 0.18.1 会因缺少 `SessionLogOffset` 导出而失败。
+若仍使用 **DSH 0.1.1-rc.2**，请将上述侧栏安装命令改为 `dsh plugin --profile web add dsh-better-sidebar@0.17.1`。该旧宿主加载 0.18.1 会因缺少 `SessionLogOffset` 导出而失败；新宿主搭配旧侧栏 0.17.1 也会缺少 `settingsNamespace`，必须成套选择。
 
 不建议侧栏使用无上限的 `@latest`：本插件当前支持 `>=0.17.1 <0.19.0`，未来 latest 可能超出范围或要求更新的 DSH。依赖与主包必须安装在同一 profile；自定义 profile 请替换命令中的 `web`。安装后完整停止并重启对应 profile。
+
+### 升级前检查与回滚
+
+产品必需项是 Node.js、完整 DSH 及插件自身内核/Provider；工作台侧栏需要上述兼容的 Better Sidebar。**dsh-context 不是必装依赖**。如果已有 context：0.36.0 与新 DSH 的设置接口不兼容，须在升级计划中处理；当前共存验证使用 0.48.0，其他版本提示未验证。
+
+本分支新增只读预检工具，在候选包安装目录运行：
+
+```sh
+node /path/to/dsh-form-fill-agent/lib/preflight.js --dsh-bin /path/to/dsh --profile-dir /path/to/profiles/web --sidebar-version 0.18.1
+```
+
+`--sidebar-version` 是计划安装版本；省略则检查该 profile 已安装版本。若计划同时更新已有 context，可加 `--context-version 0.48.0`。预检读取版本元数据，不加载插件树、不读凭据、不安装或重启；已知不兼容退出码为 2，未知组合明确显示未验证。通过只代表版本组合，不代表 MCP 权限、费用或业务结果。
+
+升级前记录 `dsh --version` 和该 profile 的精确依赖版本，停止该 profile 并备份其配置及 form-fill-tasks。由宿主管理者升级完整 DSH，不能仅替换某个 SDK 包；如用 npm 管理全局 DSH，新组合的明确命令为 `npm install -g @deepseek-ai/dsh@0.1.2-rc.1`。随后按上文选择侧栏版本；仅当原本安装 context 时才处理它，例如 `dsh plugin --profile web add dsh-context@0.48.0`。
+
+先在独立 profile 验证启动、原生会话、合成 XLSX 导入/预览/确认/导出，再重启目标 profile。失败时恢复升级前完整宿主、侧栏及已安装插件版本组合和备份的任务目录，不移动发布标签、不让旧版直接读取已迁移任务目录。本预检不会替你修改全局环境。
 
 打开“AI填表”并展开合成演示，选择客户台账模板，检查工作表、企业主体和空白字段。需要真实补全时确认数据来源及范围并手动发送指令；核对单元格预览后下载新 XLSX 副本。
 
@@ -37,7 +55,7 @@ AI填表是 DeepSeek Harness（DSH）的企业表格填写插件：识别已有 
 
 ## 安装
 
-需要 Node.js 22 或以上，以及 DSH。已验证的 DSH 基线为 0.1.1-rc.2 和 0.1.2-alpha.2。
+需要 Node.js 22 或以上和完整 DSH。当前验证组合为 DSH 0.1.2-rc.1 + Better Sidebar 0.18.1，旧组合为 DSH 0.1.1-rc.2 + Better Sidebar 0.17.1。历史 alpha 测试不作为当前兼容承诺。
 
 请先按文首的宿主版本选择并安装 Better Sidebar，再安装主包：
 

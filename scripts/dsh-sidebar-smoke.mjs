@@ -1,31 +1,40 @@
 import assert from 'node:assert/strict';
 import {execFileSync,spawn} from 'node:child_process';
-import {mkdtemp,mkdir,writeFile,readFile} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {createServer} from 'node:net';
 import {pathToFileURL} from 'node:url';
+import {assessCompatibility} from '../packages/dsh-form-fill-agent/lib/preflight.js';
+import {parseWorkbook} from 'form-fill-core';
 const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
 const root=process.cwd();
 for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boolean)){
  assert.ok(entry);const bin=resolve(entry),home=await mkdtemp(join(tmpdir(),'form-fill-native-')),cwd=join(home,'synthetic-workspace'),profile=join(home,'profiles/web');
  await mkdir(cwd);await mkdir(profile,{recursive:true});
+ const env={PATH:process.env.PATH,HOME:home,TMPDIR:tmpdir(),DSH_HOME:home,NO_COLOR:'1'};
+ const version=execFileSync(process.execPath,[bin,'--version'],{env,cwd,encoding:'utf8'}).trim();
+ const preflight=assessCompatibility({nodeVersion:process.version,hostVersion:version,sidebarVersion:process.env.SIDEBAR_VERSION||'0.17.1',contextVersion:process.env.CONTEXT_VERSION});
+ assert.notEqual(preflight.status,'blocked',JSON.stringify(preflight));
  const dependencies={'dsh-better-sidebar':process.env.SIDEBAR_VERSION||'0.17.1'};
+ if(process.env.CONTEXT_VERSION)dependencies['dsh-context']=process.env.CONTEXT_VERSION;
  for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
   const {version}=JSON.parse(await readFile(join(root,'packages',name,'package.json')));
   dependencies[name]='file:'+join(root,'artifacts',name+'-'+version+'.tgz');
  }
- await writeFile(join(profile,'package.json'),JSON.stringify({name:'synthetic-native-test',version:'0.0.0',private:true,type:'module',dependencies,dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','dsh-better-sidebar','dsh-form-fill-agent']}}}));
+ await writeFile(join(profile,'package.json'),JSON.stringify({name:'synthetic-native-test',version:'0.0.0',private:true,type:'module',dependencies,dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app',...(process.env.CONTEXT_VERSION?['dsh-context']:[]),'dsh-better-sidebar','dsh-form-fill-agent']}}}));
  if(process.env.LEGACY_TARBALL){const file=join(profile,'package.json'),manifest=JSON.parse(await readFile(file));manifest.dependencies['dsh-data-cleaning-agent']='file:'+resolve(process.env.LEGACY_TARBALL);manifest.dsh.profile.bundles.push('dsh-data-cleaning-agent');await writeFile(file,JSON.stringify(manifest));}
- execFileSync('npm',['install','--ignore-scripts','--legacy-peer-deps','--no-audit','--no-fund'],{cwd:profile,stdio:'pipe'});
+ try{execFileSync('npm',['install','--ignore-scripts','--legacy-peer-deps','--no-audit','--no-fund'],{cwd:profile,stdio:'pipe'})}catch(error){await rm(join(profile,'node_modules'),{recursive:true,force:true});throw error}
  if(process.env.LEGACY_TARBALL){
   // Test-only SDK probe in the temporary installed copy; production tarball stays unchanged.
   const file=join(profile,'node_modules/dsh-form-fill-agent/lib/client.js'),source=await readFile(file,'utf8');
   assert.ok(source.includes('function apply(ctx) {'));
   await writeFile(file,source.replace('function apply(ctx) {','function apply(ctx) { window.__coinstallProbe={current:()=>ctx.sessions.list.getSnapshot().current,open:id=>ctx.sessions.open(id),draft:id=>ctx.conversation.input.shell(id).state.getSnapshot().draft,setDraft:(id,value)=>ctx.conversation.input.shell(id).setDraft(value)};'));
  }
- const env={PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:tmpdir(),DSH_HOME:home,NO_COLOR:'1'};
- const version=execFileSync(process.execPath,[bin,'--version'],{env,cwd,encoding:'utf8'}).trim();
+ const installedClient=await readFile(join(profile,'node_modules/dsh-form-fill-agent/lib/client.js'),'utf8');
+ assert.doesNotMatch(installedClient,/dsh-client-runtime\/client|conversationEvents/);
+ const checked=JSON.parse(execFileSync(process.execPath,[join(profile,'node_modules/dsh-form-fill-agent/lib/preflight.js'),'--dsh-bin',bin,'--profile-dir',profile],{env,cwd,encoding:'utf8'}));
+ assert.notEqual(checked.status,'blocked');
  const reservation=createServer();await new Promise(ok=>reservation.listen(0,'127.0.0.1',ok));const port=reservation.address().port;await new Promise(ok=>reservation.close(ok));assert.notEqual(port,43120);
  const origin='http://127.0.0.1:'+port,child=spawn(process.execPath,[bin,'--profile','web','--port',String(port),'--no-open'],{env,cwd,stdio:['ignore','pipe','pipe']});
  let output='',browser,phase='startup';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);
@@ -38,10 +47,16 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   await page.addLocatorHandler(page.getByRole('button',{name:'继续',exact:true}),async locator=>locator.click());
   await page.addLocatorHandler(page.getByRole('button',{name:'稍后配置',exact:true}),async locator=>locator.click());
   page.on('console',msg=>{if(msg.type()==='error')console.log('Browser error:',msg.text().replace(/https?:\/\/\S+/g,'[url]').slice(0,500))});
-  page.on('pageerror',error=>console.log('Page error:',error.message.replace(/https?:\/\/\S+/g,'[url]').slice(0,500)));
+  const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message.replace(/https?:\/\/\S+/g,'[url]').slice(0,500)));
   const urls=output.match(/http:\/\/(?:127\.0\.0\.1|localhost):\d+[^\s\x1b]*/g)||[];
   const local=urls.find(u=>new URL(u).port===String(port)&&u.includes('?'))||origin;
-  await page.goto(local);
+  let rootReady=false;
+  for(let attempt=0;attempt<40;attempt++){
+   if(child.exitCode!==null)break;
+   try{const response=await page.goto(local);if(response?.ok()){rootReady=true;break}}catch{}
+   await new Promise(ok=>setTimeout(ok,250));
+  }
+  assert.ok(rootReady,'host web application route ready');
   // No authentication URL, storage state or raw host output is written to disk.
   await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
   const prepared=await page.evaluate(async ({path,alpha})=>{
@@ -98,8 +113,38 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   await menu.getByRole('button',{name:'填写预览',exact:true}).click();
   await frame.locator('#summary').waitFor();
   assert.equal(await frame.locator('body').evaluate(()=>location.hash),taskHash);
+  phase='business-fixtures';
+  for(const [name,count] of [['客户台账',6],['供应商准入表',4],['合同主体信息表',6]]){
+   await menu.getByRole('button',{name:'导入表格',exact:true}).click();
+   await frame.locator('details:has(#samples)').evaluate(el=>el.open=true);
+   await frame.getByRole('button',{name,exact:true}).click();
+   await frame.getByText('预览已准备好，请检查后确认。',{exact:true}).waitFor();
+   assert.equal(await frame.locator('#changes tr').count(),count);
+   await frame.getByRole('button',{name:'确认下载',exact:true}).click();
+   await frame.getByRole('button',{name:'确认这些填写，生成新副本'}).click();
+   const link=frame.getByRole('link',{name:'下载已填副本'});await link.waitFor();
+   const response=await page.request.get(new URL(await link.getAttribute('href'),origin+'/form-fill/').href);
+   assert.equal(response.status(),200);assert.ok(parseWorkbook(await response.body()).sheets.length);
+  }
+  phase='file-upload-mapping';
+  await menu.getByRole('button',{name:'导入表格',exact:true}).click();
+  await frame.locator('#file').setInputFiles(join(root,'fixtures/xlsx/客户台账.xlsx'));
+  await frame.locator('#mapping').waitFor();await frame.locator('#configure').click();
+  await frame.getByRole('heading',{name:'主体核验与查询',exact:true}).waitFor();
+  phase='native-draft-handoff';
+  await frame.getByRole('button',{name:'生成填写指令',exact:true}).click();
+  await frame.getByText('指令已回填，发送后将在此显示查询进度。',{exact:true}).waitFor();
+  assert.match(await page.locator('[data-composer-card]').innerText(),/form_fill_enrich/);
+  // Normal session is created by native New Session, not the product launcher.
+  phase='normal-session';
+  await page.getByRole('button',{name:/^(新会话|新建会话|New Session)$/i}).first().click();
+  await page.waitForFunction(()=>!document.querySelector('.ff-hero'));
+  assert.equal(await page.getByRole('navigation',{name:'AI填表快捷菜单'}).count(),0);
+  const composer=page.locator('[data-composer-card] textarea, [data-composer-card] [contenteditable="true"]').first();await composer.fill('合成普通会话草稿，不发送');
+  assert.equal(await composer.evaluate(el=>el.value??el.textContent),'合成普通会话草稿，不发送');
+  assert.deepEqual(pageErrors,[]);
   await page.screenshot({path:'/tmp/ff-real-sidebar-'+version+'.png'});
-  console.log(JSON.stringify({hostVersion:version,sidebar:process.env.SIDEBAR_VERSION||'0.17.1',realHost:'PASS',singleton:'PASS',collapseAndTabClose:'PASS',taskRestore:'PASS',productionProfileUsed:false,realProviderUsed:false}));
+  console.log(JSON.stringify({node:process.version,hostVersion:version,sidebar:process.env.SIDEBAR_VERSION||'0.17.1',context:process.env.CONTEXT_VERSION||null,preflight:checked.status,realHost:'PASS',singleton:'PASS',collapseAndTabClose:'PASS',taskRestore:'PASS',fixturePreviewConfirmExport:'3/3',uploadMapping:'PASS',normalSessionDraft:'PASS',pageErrors:0,productionProfileUsed:false,realProviderUsed:false}));
  }catch(error){console.error('Phase:',phase,'Host exit:',child.exitCode);console.error(output.split('\n').filter(line=>/error|failed|Error|TypeError|incompatible|EADDR/i.test(line)).map(line=>line.replace(/https?:\/\/\S+/g,'[url]')).join('\n'));throw error}
- finally{await browser?.close();child.kill('SIGTERM')}
+ finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await Promise.race([new Promise(ok=>child.once('exit',ok)),new Promise(ok=>setTimeout(ok,3000))]);if(child.exitCode===null){child.kill('SIGKILL');await new Promise(ok=>child.once('exit',ok))}}if(!process.env.KEEP_TEST_INSTALL)await rm(join(profile,'node_modules'),{recursive:true,force:true})}
 }
