@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Read-only installation planning. Never imports plugins, reads credentials or mutates a profile.
-import {readFile, realpath, mkdtemp, rm} from 'node:fs/promises';
+import {readFile, realpath, mkdtemp, rm, stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -24,6 +24,7 @@ export function assessCompatibility({nodeVersion,hostVersion,sidebarVersion,cont
 }
 
 export async function inspectInstallation({dshBin,profileDir,sidebarVersion,contextVersion}) {
+ if(!(await stat(profileDir)).isDirectory())throw Error('指定 profile 路径不是目录，无法核对已安装插件。');
  const installed=async name=>{try{return JSON.parse(await readFile(join(profileDir,'node_modules',name,'package.json'),'utf8')).version}catch(e){if(e.code==='ENOENT')return undefined;throw e}};
  const installedSidebar=await installed('dsh-better-sidebar'),installedContext=await installed('dsh-context');
  // Run version command with an empty environment profile to avoid activating the actual plugin tree.

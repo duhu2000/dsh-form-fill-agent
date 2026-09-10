@@ -23,6 +23,7 @@ test('inspect installed metadata and proposed upgrade without touching profile',
  try{
   for(const [name,version] of [['dsh-better-sidebar','0.17.1'],['dsh-context','0.36.0']]){const target=join(dir,'node_modules',name);await mkdir(target,{recursive:true});await writeFile(join(target,'package.json'),JSON.stringify({version}))}
   const bin=join(dir,'host.js');await writeFile(bin,"console.log('0.1.2-rc.1')");
+  await assert.rejects(inspectInstallation({dshBin:bin,profileDir:join(dir,'missing'),sidebarVersion:'0.18.1'}),/ENOENT/);
   const before=await readFile(join(dir,'node_modules/dsh-context/package.json'),'utf8');
   const blocked=await inspectInstallation({dshBin:bin,profileDir:dir,sidebarVersion:'0.18.1'});assert.equal(blocked.status,'blocked');assert.equal(blocked.installed.context,'0.36.0');
   const upgraded=await inspectInstallation({dshBin:bin,profileDir:dir,sidebarVersion:'0.18.1',contextVersion:'0.48.0'});assert.equal(upgraded.status,'verified-combination');
