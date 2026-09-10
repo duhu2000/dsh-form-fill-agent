@@ -1,6 +1,6 @@
 # AI填表智能体
 
-> 当前分支为 0.2.24 发布候选，尚未发布；npm 正式版仍是 0.2.23。以下新增预检命令需使用候选 tarball。
+> 0.2.24 新增只读安装兼容预检。请根据实际 DSH 宿主选择匹配的侧栏版本。
 
 > 统一侧栏适配依赖 Better Sidebar `>=0.17.1 <0.19.0`。范围、测试层级及待验收组合见 [侧栏适配说明](docs/SIDEBAR-SESSION-ADOPTION.md)。
 
@@ -23,7 +23,7 @@ dsh plugin --profile web add dsh-form-fill-agent@0.2.24
 
 产品必需项是 Node.js、完整 DSH 及插件自身内核/Provider；工作台侧栏需要上述兼容的 Better Sidebar。**dsh-context 不是必装依赖**。如果已有 context：0.36.0 与新 DSH 的设置接口不兼容，须在升级计划中处理；当前共存验证使用 0.48.0，其他版本提示未验证。
 
-本分支新增只读预检工具，在候选包安装目录运行：
+0.2.24 新增只读预检工具，在包安装目录运行：
 
 ```sh
 node /path/to/dsh-form-fill-agent/lib/preflight.js --dsh-bin /path/to/dsh --profile-dir /path/to/profiles/web --sidebar-version 0.18.1
