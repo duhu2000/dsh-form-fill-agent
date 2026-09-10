@@ -1,6 +1,6 @@
-# 可选侧栏验收（0.2.25 候选）
+# 可选侧栏验收（0.2.25）
 
-本轮基于 V0.2.24，遵循共享规范 v1.5.1。只处理可选侧栏，不迁移原生容器，不依赖 alpha 右栏/上传服务，不发布候选。
+本轮基于 V0.2.24，遵循共享规范 v1.5.1。只处理可选侧栏，不迁移原生容器，不依赖 alpha 右栏/上传服务，经用户授权推进正式发布。
 
 ## 实现边界
 
@@ -31,6 +31,6 @@
 - 最终新宿主工具管道及重开恢复：`/tmp/ff-optional-final-tool.log`；最终兼容侧栏：`/tmp/ff-optional-final-sidebar.log`。真实 Agent、真实注册工具管道、合成 user/message 与 QCC 返回，一次查询生成一格预览。
 - 最终产物错误配对：`/tmp/ff-optional-final-negative.log`，新旧宿主双向错误配对在 basic/workbench 均阻断；这是发布产物预检策略验收，不再次启动已知损坏的宿主组合。
 - L1 124 项测试和四包打包通过：`/tmp/ff-optional-final-check.log`。
-- 最终主包：`artifacts/dsh-form-fill-agent-0.2.25.tgz`；SHA256 `d78ba9a8ae0789af9b7bb96053faeb75c8dcda8672176f97b197092542a02971`。
+- 业务验收候选主包（正式发布仅更新 README 与发布说明）：`artifacts/dsh-form-fill-agent-0.2.25.tgz`；SHA256 `d78ba9a8ae0789af9b7bb96053faeb75c8dcda8672176f97b197092542a02971`。
 
 剩余：真实模型与计费 MCP（L4）、四产品一起装载、所有浮窗/底部/深浅窄屏组合未在本轮覆盖。没有修改生产 ~/.dsh、全局宿主或旧Tag。
