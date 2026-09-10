@@ -30,7 +30,7 @@ test('single session tab, deferred reveal, host collapse, bottom/float ownership
 });
 test('missing/old/incomplete companion is actionable, never registers a fallback',()=>{
  for(const mutation of [s=>undefined,s=>({...s,version:'0.17.0'}),s=>({...s,version:'0.19.0'}),s=>({...s,features:['targetedOpen']}),s=>({...s,subscribeState:undefined})]){
-  const f=fixture();assert.throws(()=>createSidebarAdapter(mutation(f.service),()=>null),/安装或升级/);assert.equal(f.descriptor,undefined);
+  const f=fixture();assert.throws(()=>createSidebarAdapter(mutation(f.service),()=>null),/按安装说明选择版本/);assert.equal(f.descriptor,undefined);
  }
  assert.doesNotMatch(source,/展开工作台|关闭工作台|ff-panel|ResizeObserver|shell\.overlay|padding-right/);
 });

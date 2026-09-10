@@ -14,7 +14,7 @@ test('known combinations distinguish optional context and unknown versions',()=>
  assert.equal(assessCompatibility({...current,hostVersion:'0.1.1-rc.2',sidebarVersion:'0.17.1',contextVersion:'0.48.0'}).status,'unverified');
 });
 test('known startup failures are blocked before installation',()=>{
- for(const [overrides,code] of [[{nodeVersion:'20.0.0'},'NODE_TOO_OLD'],[{hostVersion:'0.1.1-rc.2'},'HOST_SIDEBAR'],[{sidebarVersion:'0.17.1'},'SIDEBAR_LEGACY'],[{contextVersion:'0.36.0'},'CONTEXT_LEGACY'],[{sidebarVersion:'0.19.0'},'SIDEBAR_RANGE'],[{sidebarVersion:undefined},'SIDEBAR_MISSING']]){
+ for(const [overrides,code] of [[{nodeVersion:'20.0.0'},'NODE_TOO_OLD'],[{hostVersion:'0.1.1-rc.2'},'HOST_SIDEBAR'],[{sidebarVersion:'0.17.1'},'SIDEBAR_LEGACY'],[{contextVersion:'0.36.0'},'CONTEXT_LEGACY'],[{sidebarVersion:'0.19.0'},'SIDEBAR_RANGE'],[{sidebarVersion:undefined,mode:'workbench'},'SIDEBAR_MISSING']]){
   const result=assessCompatibility({...current,...overrides});assert.equal(result.status,'blocked');assert.ok(result.issues.some(i=>i.code===code));
  }
 });
@@ -29,4 +29,11 @@ test('inspect installed metadata and proposed upgrade without touching profile',
   const upgraded=await inspectInstallation({dshBin:bin,profileDir:dir,sidebarVersion:'0.18.1',contextVersion:'0.48.0'});assert.equal(upgraded.status,'verified-combination');
   assert.equal(await readFile(join(dir,'node_modules/dsh-context/package.json'),'utf8'),before);
  }finally{await rm(dir,{recursive:true,force:true})}
+});
+
+test('basic mode permits no sidebar but never ignores installed startup conflicts',()=>{
+ const result=assessCompatibility({...current,sidebarVersion:undefined});assert.equal(result.status,'verified-combination');assert.equal(result.mode,'basic');assert.equal(result.issues[0].severity,'info');
+ assert.equal(assessCompatibility({...current,mode:'basic',sidebarVersion:'0.17.1'}).status,'blocked');
+ assert.equal(assessCompatibility({...current,sidebarVersion:undefined,contextVersion:'0.36.0'}).status,'blocked');
+ assert.throws(()=>assessCompatibility({...current,mode:'unknown'}),/mode/);
 });
