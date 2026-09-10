@@ -2,7 +2,7 @@ window.__ModuleLoader__.load({
  id: 'dsh-form-fill-agent',
  factory(require) {
   const SIDEBAR_TAB='dsh-form-fill-agent:workbench';
-  const SIDEBAR_HELP='工作台需要 Better Sidebar >=0.17.1 <0.19.0。请在当前 DSH profile 安装或升级 dsh-better-sidebar，重启后重试；原生对话仍可使用。';
+  const SIDEBAR_HELP='内嵌工作台暂不可用。原生对话与独立填表页面仍可使用，输入和已保存任务不会清除。启用内嵌工作台需与宿主匹配的 Better Sidebar（>=0.17.1 <0.19.0），请按安装说明选择版本。';
   // The only adapter allowed to reveal host panels. No geometry or business writes.
   function createSidebarAdapter(service,component,icon){
    const version=/^0\.(17|18)\.(\d+)$/.exec(service?.version||'');
@@ -128,7 +128,7 @@ window.__ModuleLoader__.load({
     if(!owned(sessionId))return null;
     const content=h('div',{className:'ff-ui','data-ff-theme':theme()},h('nav',{className:'ff-shortcuts','aria-label':'AI填表快捷菜单'},...[
      ['导入表格','import','upload'],['字段设置','rules','check'],['主体核验','identity','search'],['填写预览','preview','table'],['任务历史','history','history']
-    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),h('span',{className:'ff-shortcut-label'},label)))),error?h('p',{className:'ff-sidebar-help',role:'alert'},error):null);
+    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),h('span',{className:'ff-shortcut-label'},label)))),error?h('div',{className:'ff-sidebar-help',role:'alert'},h('p',null,error),h('a',{href:'/form-fill/?session='+encodeURIComponent(sessionId)+(sessionTasks.has(sessionId)?'#task='+sessionTasks.get(sessionId):''),target:'_blank',rel:'noopener noreferrer'},'打开独立填表页面'),h('p',null,'独立页面生成的指令请复制到对话框后发送。')):null);
     return h('div',{ref,'data-form-fill-session':sessionId},h(Hero,{sessionId}),mount?portal(content,mount):content);
    }
    function WorkbenchTab({scope,store,tab,visible}){

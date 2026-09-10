@@ -330,5 +330,6 @@ window.addEventListener('pagehide',saveMappingDraft);
 for(const event of ['change','click'])$('mapping').addEventListener(event,saveMappingDraft);
 $('mapping').addEventListener('change',()=>{wizardMappingApplied=false;$('mapping-next').hidden=true;highlightMappingConflicts()});
 window.addEventListener('hashchange',()=>{if(new URLSearchParams(location.hash.slice(1)).get('task')!==current?.id)restore()});
-navigate('import');restore();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
+async function restoreSessionTask(){if(location.hash||!sessionId){restore();return}try{const list=await api('/tasks');if(current||location.hash)return;const task=list.filter(item=>item.sessionId===sessionId).sort((a,b)=>(b.updatedAt||b.created)-(a.updatedAt||a.created))[0];if(task){location.hash='task='+task.id;await restore()}}catch(e){$('status').textContent='恢复任务失败，可在任务历史中重试：'+e.message}}
+navigate('import');restoreSessionTask();setInterval(()=>{if(!document.hidden&&current&&!busy&&!$('wizard').open)restore(true)},2000);
 </script></html>
