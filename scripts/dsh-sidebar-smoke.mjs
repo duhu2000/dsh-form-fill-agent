@@ -175,8 +175,8 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
    const link=frame.getByRole('link',{name:'下载已填副本 XLSX'});await link.waitFor();
    const response=await page.request.get(new URL(await link.getAttribute('href'),origin+'/form-fill/').href);
    assert.equal(response.status(),200);assert.ok(parseWorkbook(await response.body()).sheets.length);
-   await frame.getByRole('button',{name:'预览任务结果报告',exact:true}).click();await frame.locator('#report-body tr').first().waitFor();
-   const report=frame.getByRole('link',{name:'下载任务结果报告 XLSX',exact:true});const rr=await page.request.get(new URL(await report.getAttribute('href'),origin+'/form-fill/').href);assert.equal(rr.status(),200);assert.ok(parseWorkbook(await rr.body()).sheets.length);
+   assert.equal(await frame.getByRole('button',{name:'预览任务结果报告',exact:true}).count(),0);assert.equal(await frame.locator('#downloads a').count(),1);
+   const report=frame.getByRole('link',{name:'下载任务结果报告',exact:true});const rr=await page.request.get(new URL(await report.getAttribute('href'),origin+'/form-fill/').href);assert.equal(rr.status(),200);assert.ok(parseWorkbook(await rr.body()).sheets.length);
    assert.equal(await frame.getByRole('link',{name:'下载未完成项',exact:true}).count(),0);
   }
   phase='file-upload-mapping';
