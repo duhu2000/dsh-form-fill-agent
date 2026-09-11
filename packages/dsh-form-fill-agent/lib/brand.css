@@ -71,3 +71,6 @@
 .ff-ui .ff-tab-head h2{font-size:16px;margin:0}
 .ff-ui.ff-tab-content iframe{width:100%;border:0;flex:1;min-height:0}
 .ff-ui .ff-sidebar-help{color:var(--error);padding:8px 12px;overflow-wrap:anywhere}
+
+/* Spreadsheet previews: compact rows, stationary location column. */
+.ff-ui .scroll td{max-width:420px;overflow:hidden;text-overflow:ellipsis;padding:8px 12px}.ff-ui .scroll th:first-child,.ff-ui .scroll td:first-child{position:sticky;left:0;background:var(--head);z-index:2}.ff-ui .scroll th:first-child{z-index:3}.ff-ui #downloads{display:block}.ff-ui #downloads>.toolbar{justify-content:flex-start;margin:12px 0}
