@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../packages/dsh-form-fill-agent/lib/client.js',import.meta.url),'utf8');
-let module;vm.runInNewContext(source,{window:{__ModuleLoader__:{load:d=>module=d}}});
+let module;vm.runInNewContext(source,{crypto:{randomUUID:()=> 'synthetic-id'},window:{__ModuleLoader__:{load:d=>module=d}}});
 const {createSidebarAdapter}=module.factory(()=>({}));
 const id='dsh-form-fill-agent:workbench';
 function fixture(){
@@ -33,4 +33,23 @@ test('missing/old/incomplete companion is actionable, never registers a fallback
   const f=fixture();assert.throws(()=>createSidebarAdapter(mutation(f.service),()=>null),/按安装说明选择版本/);assert.equal(f.descriptor,undefined);
  }
  assert.doesNotMatch(source,/展开工作台|关闭工作台|ff-panel|ResizeObserver|shell\.overlay|padding-right/);
+});
+
+test('launcher creates a namespaced session in its owning Workspace and suppresses concurrent starts',async()=>{
+ let active='normal-a',created=[],opened=[],resolve;const components=new Map();
+ const workspaces=[{workspaceId:'workspace-a',sessionIds:['normal-a']},{workspaceId:'workspace-b',sessionIds:['normal-b']}];
+ const React={createElement:(type,props,...children)=>({type,props,children})};
+ const plugin=module.factory(name=>name==='react'?React:{});
+ const ctx={slots:{inject:(_n,fn)=>fn(),register:(d,c)=>components.set(d.name,c)},workspaces:{list:{getSnapshot:()=>({items:workspaces,recentWorkspaceId:'workspace-b'})}},sessions:{list:{getSnapshot:()=>({current:active})},create:args=>{created.push(args);return new Promise(ok=>resolve=()=>{workspaces.find(w=>w.workspaceId===args.workspaceId).sessionIds.push(args.sessionId);ok(args.sessionId)})},open:async id=>{opened.push(id);active=id}}};
+ // The launcher is exercised without mounting browser-only React components.
+ plugin.apply(ctx);const click=components.get('sidebar.footer.action')().props.onClick;
+ const first=click({preventDefault(){}}),second=click({preventDefault(){}});
+ assert.equal(created.length,1);assert.equal(created[0].workspaceId,'workspace-a');assert.match(created[0].sessionId,/^session-dsh-form-fill-agent-/);
+ resolve();await Promise.all([first,second]);assert.deepEqual(opened,[created[0].sessionId]);assert.ok(workspaces[0].sessionIds.includes(opened[0]));assert.equal(workspaces[1].sessionIds.includes(opened[0]),false);
+});
+
+test('Tab X detaches and reopening restores exactly one business tab without removing other tabs',()=>{
+ const f=fixture(),a=createSidebarAdapter(f.service,()=>null,null),scope={sessionId:'A',cwd:'/workspace/a'};
+ a.open(scope);const detach=a.attach(scope,f.store,{id});f.service.closeTab(id,scope);detach();assert.deepEqual(f.states.get('A').splits.tabs,[{id:'files'}]);
+ a.open(scope);a.attach(scope,f.store,{id});a.open(scope);assert.equal(f.states.get('A').splits.tabs.filter(t=>t.id===id).length,1);assert.equal(f.states.get('A').panelOpen,true);a.dispose();
 });
