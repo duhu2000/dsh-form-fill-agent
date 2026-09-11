@@ -5,6 +5,7 @@ import { FIELD_CATALOG, QCC_FIELD_CATALOG, ACTUAL_CONTROLLER_GROUP, SNAPSHOT_GRO
 import { previewBytes } from './workflow.js';
 import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
+import {reportWorkbook, reportRows} from './report.js';
 import { gridPage } from './grid.js';
 import { diagnostics } from './diagnostics.js';
 import { taskPresentation, isResultExplanation } from './task-presentation.js';
@@ -79,6 +80,8 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       if (request.method === 'GET' && path.startsWith('/download/')) {
         const parts = path.split('/'), [, , id, kind] = parts, task = tasks.get(id);
         if (parts.length !== 4 || !visible(task, owner) || !task?.result) return send(404, { message: '请先确认写回，或预览已过期' });
+        if(kind==='report')return send(200,reportWorkbook(task),XLSX_TYPE);
+        if(kind==='report-preview')return send(200,{rows:reportRows(task)});
         if (kind === 'xlsx') return send(200, task.result.bytes, XLSX_TYPE);
         if (kind === 'changes') return send(200, { kind: 'WritebackReport', changeSet: task.preview.changeSet, appliedChanges: task.result.changes, outputChecksum: task.result.checksum });
         if (kind === 'incomplete') return send(200, task.result.incomplete);

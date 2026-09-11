@@ -120,7 +120,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
     assert.equal(await standalone.locator('#changes tr').count(),count);
     await standalone.getByRole('button',{name:'确认下载',exact:true}).click();
     await standalone.getByRole('button',{name:'确认这些填写，生成新副本'}).click();
-    const link=standalone.getByRole('link',{name:'下载已填副本'});await link.waitFor();
+    const link=standalone.getByRole('link',{name:'下载已填副本 XLSX'});await link.waitFor();
     const response=await standalone.request.get(new URL(await link.getAttribute('href'),origin+'/form-fill/').href);assert.equal(response.status(),200);assert.ok(parseWorkbook(await response.body()).sheets.length);
    }
    await standalone.getByRole('button',{name:'导入表格',exact:true}).click();
@@ -172,9 +172,12 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
    assert.equal(await frame.locator('#changes tr').count(),count);
    await frame.getByRole('button',{name:'确认下载',exact:true}).click();
    await frame.getByRole('button',{name:'确认这些填写，生成新副本'}).click();
-   const link=frame.getByRole('link',{name:'下载已填副本'});await link.waitFor();
+   const link=frame.getByRole('link',{name:'下载已填副本 XLSX'});await link.waitFor();
    const response=await page.request.get(new URL(await link.getAttribute('href'),origin+'/form-fill/').href);
    assert.equal(response.status(),200);assert.ok(parseWorkbook(await response.body()).sheets.length);
+   await frame.getByRole('button',{name:'预览任务结果报告',exact:true}).click();await frame.locator('#report-body tr').first().waitFor();
+   const report=frame.getByRole('link',{name:'下载任务结果报告 XLSX',exact:true});const rr=await page.request.get(new URL(await report.getAttribute('href'),origin+'/form-fill/').href);assert.equal(rr.status(),200);assert.ok(parseWorkbook(await rr.body()).sheets.length);
+   assert.equal(await frame.getByRole('link',{name:'下载未完成项',exact:true}).count(),0);
   }
   phase='file-upload-mapping';
   await menu.getByRole('button',{name:'导入表格',exact:true}).click();
