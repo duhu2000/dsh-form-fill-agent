@@ -74,3 +74,5 @@
 
 /* Spreadsheet previews: compact rows, stationary location column. */
 .ff-ui .scroll td{max-width:420px;overflow:hidden;text-overflow:ellipsis;padding:8px 12px}.ff-ui .scroll th:first-child,.ff-ui .scroll td:first-child{position:sticky;left:0;background:var(--head);z-index:2}.ff-ui .scroll th:first-child{z-index:3}.ff-ui #downloads{display:block}.ff-ui #downloads>.toolbar{justify-content:flex-start;margin:12px 0}
+
+.ff-ui .ff-download-summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;min-width:0}.ff-ui .ff-download-summary p{margin:8px 0}.ff-ui .ff-report-link{color:var(--muted);font-size:13px;text-decoration:underline;padding:8px 0;overflow-wrap:anywhere}.ff-ui .ff-report-link:hover{color:var(--action)}
