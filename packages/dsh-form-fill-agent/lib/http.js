@@ -1,12 +1,15 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { applyChangeSet, parseWorkbook } from 'form-fill-core';
-import { FIELD_CATALOG, QCC_FIELD_CATALOG, ACTUAL_CONTROLLER_GROUP, isCompleteAnchor } from 'qcc-form-fill-provider';
+import { FIELD_CATALOG, QCC_FIELD_CATALOG, ACTUAL_CONTROLLER_GROUP, SNAPSHOT_GROUPS, isCompleteAnchor } from 'qcc-form-fill-provider';
 import { previewBytes } from './workflow.js';
 import { createTaskStore } from './task-store.js';
 import { allCandidates, selectCandidates } from './task-model.js';
+import {reportWorkbook, reportRows} from './report.js';
 import { gridPage } from './grid.js';
 import { diagnostics } from './diagnostics.js';
+import { taskPresentation, isResultExplanation } from './task-presentation.js';
+import { mappingRecommendations, mappingSearchAliases } from './mapping-recommendations.js';
 const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FIXTURES = ['客户台账', '供应商准入表', '合同主体信息表'];
 export function createFormFillHandler({ basePath = '', getPort, now = Date.now, ttlMs = 15 * 60 * 1000, maxTasks = 10, taskDirectory, getQccStatus = () => false } = {}) {
@@ -16,20 +19,22 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   const controllers=new Map();
   const validOwner = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
   const visible = (task, owner) => task && (!task.owner || task.owner === owner);
-  const metadata = (id, task) => ({ id, filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
+  const metadata = (id, task) => ({ id, presentation:taskPresentation(task), filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
   const settings = task => ({
     mappingProtocol: 2,
     diagnostics: diagnostics(task.preview),
+    resultExplanations: task.preview.changeSet.incomplete.filter(isResultExplanation),
+    exceptions: task.preview.changeSet.incomplete.filter(i=>!isResultExplanation(i)),
     configuration: task.configuration ?? {},
     selectedFields: task.selectedFields,
     progress: task.progress,
     candidates: allCandidates(task).changes,
     selectedIds: task.preview.changeSet.changes.map(c=>c.id),
-    catalog: FIELD_CATALOG,
-    catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
+    catalog: FIELD_CATALOG.map(field=>({...field,searchAliases:mappingSearchAliases(field.key)})),
+    catalogGroups: [...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP,...SNAPSHOT_GROUPS].map(g=>({id:g.id,label:g.label,fields:g.fields.flatMap(item=>FIELD_CATALOG.filter(f=>f.key===item.id||f.aliases?.includes(item.id)).map(f=>f.key))})),
     structure: parseWorkbook(task.bytes).sheets.filter(s => !s.hidden).map(s => ({
       name: s.name,
-      rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value })) })),
+      rows: s.rows.filter(r => !r.hidden).slice(0,30).map(r => ({ number: r.number, cells: Object.values(s.cells).filter(c => c.row === r.number && !c.hidden && c.value.trim()).map(c => ({ column: c.column, label: c.value, recommendations: mappingRecommendations(c.value,FIELD_CATALOG) })) })),
     })),
   });
   const sweep = () => { for (const [id, task] of tasks) if (now() - task.created >= ttlMs) {controllers.get(id)?.abort();tasks.delete(id);} };
@@ -75,6 +80,8 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       if (request.method === 'GET' && path.startsWith('/download/')) {
         const parts = path.split('/'), [, , id, kind] = parts, task = tasks.get(id);
         if (parts.length !== 4 || !visible(task, owner) || !task?.result) return send(404, { message: '请先确认写回，或预览已过期' });
+        if(kind==='report')return send(200,reportWorkbook(task),XLSX_TYPE);
+        if(kind==='report-preview')return send(200,{rows:reportRows(task)});
         if (kind === 'xlsx') return send(200, task.result.bytes, XLSX_TYPE);
         if (kind === 'changes') return send(200, { kind: 'WritebackReport', changeSet: task.preview.changeSet, appliedChanges: task.result.changes, outputChecksum: task.result.checksum });
         if (kind === 'incomplete') return send(200, task.result.incomplete);
@@ -133,7 +140,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         }
         const preview = await previewBytes(task.bytes, { configuration, selectedFields, ...(task.analyzeOnly !== false ? { provider: { mode: 'mock', version: '0.1.0-alpha.5', capabilities: [], lookup: async () => ({ status: 'not-found' }) } } : {}) });
         if (disposed || tasks.get(body.id) !== task || running.has(body.id)) return send(409, { message: '任务已更新，请刷新后重试' });
-        const updated = { ...task, configuration, selectedFields, preview, baseChangeSet:undefined, revision: (task.revision ?? 1)+1, updatedAt: now(), state: 'preview_ready' };
+        const updated = { ...task, configuration, selectedFields, preview, progress:undefined, baseChangeSet:undefined, revision: (task.revision ?? 1)+1, updatedAt: now(), state: 'preview_ready' };
         tasks.set(body.id,updated);
         return send(200, { ...preview, ...metadata(body.id,updated), ...settings(updated) });
       }

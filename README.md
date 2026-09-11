@@ -1,14 +1,50 @@
 # AI填表智能体
 
+> 0.2.27：突出已填副本预览与下载，任务报告改为次要链接；侧栏仍为可选依赖。
+
+> 内嵌工作台可选依赖 Better Sidebar `>=0.17.1 <0.19.0`。范围、测试层级及待验收组合见 [侧栏适配说明](docs/SIDEBAR-SESSION-ADOPTION.md)。
+
 ## 安装与三分钟上手
 
 AI填表智能体：支持自动填表、表格填充、表格补全、Excel填表与 Excel回填；使用企查查 MCP 填写 XLSX 空白字段，预览确认后导出新副本。
 
+### 基础安装（不需要侧栏）
+
 ```sh
-dsh plugin --profile web add dsh-form-fill-agent@0.2.16
+dsh plugin --profile web add dsh-form-fill-agent@0.2.27
 ```
 
-请先满足下文的 DSH、连接器及侧边栏依赖要求；安装后完整停止并重启对应 Profile。
+只需 Node.js >=22、完整 DSH 与主包自动安装的内核/Provider。Better Sidebar 和 dsh-context 都是可选项，不会由基础安装强装。
+
+无侧栏可使用原生会话和独立 `/form-fill/` 页面：上传 XLSX、确认映射、查看预览、确认并导出副本。点击会话中的工作台按钮会显示提示及“打开独立填表页面”链接，保留原生草稿和已保存任务。独立页面无法自动回填原生草稿，需复制指令到对话框发送。企查查查询仍需用户授权的 MCP 和模型；无侧栏不会授予额外权限。
+
+### 可选：启用内嵌工作台
+
+先运行 `dsh --version`，按实际宿主在同一 profile 加装：
+
+```sh
+# DSH 0.1.2-rc.1
+dsh plugin --profile web add dsh-better-sidebar@0.18.1
+# 仅旧 DSH 0.1.1-rc.2 使用 0.17.1
+```
+
+旧宿主配 0.18.1 会缺少 `SessionLogOffset`，新宿主配 0.17.1 会缺少 `settingsNamespace`。侧栏是可选的，但已经安装的错误组合仍会阻断宿主，必须处理。不建议使用无上限的 `@latest`；可接受范围 `>=0.17.1 <0.19.0` 不等于每个版本均已验证。自定义 profile 请替换 `web`，安装后重启对应 profile。
+
+### 升级前检查与回滚
+
+产品必需项是 Node.js、完整 DSH 及插件自身内核/Provider；工作台侧栏需要上述兼容的 Better Sidebar。**dsh-context 不是必装依赖**。如果已有 context：0.36.0 与新 DSH 的设置接口不兼容，须在升级计划中处理；当前共存验证使用 0.48.0，其他版本提示未验证。
+
+0.2.24 新增只读预检工具，在包安装目录运行：
+
+```sh
+node /path/to/dsh-form-fill-agent/lib/preflight.js --dsh-bin /path/to/dsh --profile-dir /path/to/profiles/web --mode basic
+```
+
+默认 `--mode basic` 允许缺少侧栏；启用内嵌工作台用 `--mode workbench --sidebar-version 0.18.1`。工作台模式会检查版本，运行时还会检查服务能力。已有不兼容侧栏在两种模式下都阻断。`--sidebar-version` 是计划安装版本；省略则检查该 profile 已安装版本。若计划同时更新已有 context，可加 `--context-version 0.48.0`。预检读取版本元数据，不加载插件树、不读凭据、不安装或重启；已知不兼容退出码为 2，未知组合明确显示未验证。通过只代表版本组合，不代表 MCP 权限、费用或业务结果。
+
+升级前记录 `dsh --version` 和该 profile 的精确依赖版本，停止该 profile 并备份其配置及 form-fill-tasks。由宿主管理者升级完整 DSH，不能仅替换某个 SDK 包；如用 npm 管理全局 DSH，新组合的明确命令为 `npm install -g @deepseek-ai/dsh@0.1.2-rc.1`。随后按上文选择侧栏版本；仅当原本安装 context 时才处理它，例如 `dsh plugin --profile web add dsh-context@0.48.0`。
+
+先在独立 profile 验证启动、原生会话、合成 XLSX 导入/预览/确认/导出，再重启目标 profile。失败时恢复升级前完整宿主、侧栏及已安装插件版本组合和备份的任务目录，不移动发布标签、不让旧版直接读取已迁移任务目录。本预检不会替你修改全局环境。
 
 打开“AI填表”并展开合成演示，选择客户台账模板，检查工作表、企业主体和空白字段。需要真实补全时确认数据来源及范围并手动发送指令；核对单元格预览后下载新 XLSX 副本。
 
@@ -23,7 +59,7 @@ dsh plugin --profile web add dsh-form-fill-agent@0.2.16
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前正式编号版本为 **0.2.16**，包含完整网格、恢复选择、取消/重试、133 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.16 仅更新搜索与安装文档，功能沿用 0.2.16。发布记录见 [0.2.16](docs/RELEASE-0.2.16.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
+当前版本为 **0.2.27**，包含完整网格、恢复选择、取消/重试、137 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.23 将字段映射确认直接整合到提示词向导，自动同步填写范围，并精简任务描述。发布记录见 [0.2.23](docs/RELEASE-0.2.23.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -42,9 +78,11 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.16 精确依赖内核 0.2.10 及 Provider 0.2.1，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.27 精确依赖内核 0.2.10 及 Provider 0.2.2，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
+请先按文首的宿主版本选择并安装 Better Sidebar，再安装主包：
+
 ```sh
 dsh plugin --profile web add dsh-form-fill-agent@latest
 ```
@@ -74,3 +112,7 @@ DSH 在显式 DSH_HOME 下保存任务至 form-fill-tasks，默认 24 小时过�
 - 旧插件主线未改动，共享 CSV 接入只在独立兼容工作树验证。
 
 普通内部公式、固定区域下拉、基础条件格式和普通表格对象已受限支持；宏、图片、动态区域及扩展结构继续拒绝；Word 和复杂布局尚未实现；既有 128 字段目录已迁移，并适配 1 个新增关联风险维度。见 [文件支持和安全边界](docs/security.md)。
+
+任务结果报告与客户副本分开下载，采用中文状态和已记录的来源。新查询保留实际 MCP server/工具；旧记录缺少 server 时明确提示，不补造。原 JSON 制品接口继续兼容，页面默认提供 XLSX。
+
+任务报告在确认后的摘要旁以次要文字链接下载；主结果区只展示已填副本的预览和下载，避免混淆。

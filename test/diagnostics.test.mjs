@@ -10,4 +10,5 @@ test('diagnostics separate missing-anchor rows from field exclusion and provider
  assert.ok(!JSON.stringify(value).includes('不可外泄值'));
  const rendered=renderEnrichmentResult({filled:0,incomplete:4,diagnostics:value,previewPath:'/preview'});
  assert.match(rendered,/调用失败/);assert.match(rendered,/未纳入/);assert.match(rendered,/尚未写入/);
+ assert.match(rendered,/不能仅凭可填写为 0 推断授权异常/);
 });

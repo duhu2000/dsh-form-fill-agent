@@ -1,13 +1,40 @@
 window.__ModuleLoader__.load({
  id: 'dsh-form-fill-agent',
  factory(require) {
+  const SIDEBAR_TAB='dsh-form-fill-agent:workbench';
+  const SIDEBAR_HELP='内嵌工作台暂不可用。原生对话与独立填表页面仍可使用，输入和已保存任务不会清除。启用内嵌工作台需与宿主匹配的 Better Sidebar（>=0.17.1 <0.19.0），请按安装说明选择版本。';
+  // The only adapter allowed to reveal host panels. No geometry or business writes.
+  function createSidebarAdapter(service,component,icon){
+   const version=/^0\.(17|18)\.(\d+)$/.exec(service?.version||'');
+   if(!version||version[1]==='17'&&Number(version[2])<1||!Array.isArray(service.features)||!['targetedOpen','stateSubscription'].every(f=>service.features.includes(f))||!['registerTab','isTabEnabled','openTab','closeTab','getSnapshot','subscribeState'].every(k=>typeof service[k]==='function'))throw Error(SIDEBAR_HELP);
+   const targets=new Map(),pending=new Set(),opened=new Map();let disposed=false;
+   const contains=(node,id)=>node?.kind==='leaf'?node.tabs.some(t=>t.id===id):node?.children?.some(c=>contains(c,id));
+   const flush=()=>{
+    if(disposed)return;const id=service.getSnapshot().sessionId,target=targets.get(id);
+    if(!target||!pending.has(id))return;
+    pending.delete(id);
+    target.store.reduce(state=>{
+     if(state.floats?.some(f=>f.tab.id===target.tabId))return state;
+     if(contains(state.bottomSplits,target.tabId))return state.bottomOpen?state:{...state,bottomOpen:true};
+     if(contains(state.splits,target.tabId))return state.panelOpen?state:{...state,panelOpen:true};
+     return state;
+    });
+   };
+   const unregister=service.registerTab({id:SIDEBAR_TAB,title:'AI填表',icon,order:20,single:true,hidden:true,component});
+   const unsubscribe=service.subscribeState(flush);
+   return {
+    open(scope){if(disposed)throw Error(SIDEBAR_HELP);if(!service.isTabEnabled(SIDEBAR_TAB))throw Error('AI填表 Tab 已禁用，请在 Better Sidebar 设置中启用。');opened.set(scope.sessionId,scope);pending.add(scope.sessionId);service.openTab({type:SIDEBAR_TAB},scope);flush();},
+    attach(scope,store,tab){if(disposed)return()=>{};if(typeof store?.reduce!=='function')throw Error(SIDEBAR_HELP);const target={store,tabId:tab.id};targets.set(scope.sessionId,target);flush();return()=>{if(targets.get(scope.sessionId)===target)targets.delete(scope.sessionId)};},
+    dispose(){if(disposed)return;disposed=true;unsubscribe();pending.clear();targets.clear();for(const scope of opened.values())service.closeTab(SIDEBAR_TAB,scope);opened.clear();unregister();}
+   };
+  }
   function apply(ctx) {
    let React, portal;
    try { React=require('react');portal=require('react-dom').createPortal; } catch {}
    if(typeof React?.createElement!=='function'||!ctx.slots?.inject||!ctx.slots?.register)return;
    const h=React.createElement,prefix='session-dsh-form-fill-agent-';
    const owned=id=>typeof id==='string'&&id.startsWith(prefix);
-   const disposers=[],sessionTasks=new Map(),lastDrafts=new Map();let panel=null,pendingStart;
+   const disposers=[],sessionTasks=new Map(),lastDrafts=new Map(),views=new Map(),viewListeners=new Set();let sidebar,pendingStart,activePlugin=true,sidebarError=SIDEBAR_HELP;
    const paths={table:'M3 4h18v16H3zM3 9h18M9 9v11',upload:'M12 16V3M7 8l5-5 5 5M4 14v7h16v-7',check:'M3 5h2v2H3zM9 6h12M3 11h2v2H3zM9 12h12M3 17h2v2H3zM9 18h12',search:'M17 17l5 5M19 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',history:'M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v6l4 2',spark:'M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z'};
    const icon=(name='table')=>h('svg',{className:'ff-icon',viewBox:'0 0 24 24','aria-hidden':true},h('path',{d:paths[name]}));
    const mark=()=>h('span',{className:'ff-mark'},icon());
@@ -16,8 +43,13 @@ window.__ModuleLoader__.load({
    const current=()=>ctx.sessions?.list?.getSnapshot?.().current;
    function register(name,component){ctx.slots.inject(name,()=>ctx.slots.register({name,id:'form-fill-agent',order:120},component))}
    function openPanel(id,step='import'){
-    if(!owned(id))return;
-    panel?.({id,step});
+    if(!activePlugin||!owned(id))return;
+    try{
+     if(!sidebar)throw Error(sidebarError);
+     const workspace=ctx.workspaces?.list?.getSnapshot?.().items?.find(w=>w.sessionIds?.includes(id));
+     views.set(id,{id,step});sidebar.open({sessionId:id,...(workspace?.path?{cwd:workspace.path}:{})});
+     for(const listener of viewListeners)listener();
+    }catch(error){sidebarError=error.message;for(const listener of viewListeners)listener(sidebarError)}
    }
    async function start(){
     if(pendingStart)return pendingStart;
@@ -82,7 +114,8 @@ window.__ModuleLoader__.load({
     return mount?portal(h(React.Fragment,null,h('div',{className:'ff-brand ff-hero-brand'},mark(),h('h1',null,'AI填表智能体')),h('p',null,'上传已有表格，核对字段映射，确认后生成新副本。')),mount):null;
    }
    function Menu({sessionId}){
-    const ref=React.useRef(null),[mount,setMount]=React.useState(null);
+    const ref=React.useRef(null),[mount,setMount]=React.useState(null),[error,setError]=React.useState('');
+    React.useEffect(()=>{const report=message=>setError(message||'');viewListeners.add(report);return()=>viewListeners.delete(report)},[]);
     React.useEffect(()=>{
      if(!owned(sessionId)||!ref.current)return;
      const marker=ref.current,seat=marker.closest('[data-composer-seat]'),card=seat?.querySelector('[data-composer-card]');
@@ -95,50 +128,31 @@ window.__ModuleLoader__.load({
     if(!owned(sessionId))return null;
     const content=h('div',{className:'ff-ui','data-ff-theme':theme()},h('nav',{className:'ff-shortcuts','aria-label':'AI填表快捷菜单'},...[
      ['导入表格','import','upload'],['字段设置','rules','check'],['主体核验','identity','search'],['填写预览','preview','table'],['任务历史','history','history']
-    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),h('span',{className:'ff-shortcut-label'},label)))));
+    ].map(([label,step,symbol])=>h('button',{key:step,type:'button',onClick:()=>openPanel(sessionId,step)},icon(symbol),h('span',{className:'ff-shortcut-label'},label)))),error?h('div',{className:'ff-sidebar-help',role:'alert'},h('p',null,error),h('a',{href:'/form-fill/?session='+encodeURIComponent(sessionId)+(sessionTasks.has(sessionId)?'#task='+sessionTasks.get(sessionId):''),target:'_blank',rel:'noopener noreferrer'},'打开独立填表页面'),h('p',null,'独立页面生成的指令请复制到对话框后发送。')):null);
     return h('div',{ref,'data-form-fill-session':sessionId},h(Hero,{sessionId}),mount?portal(content,mount):content);
    }
-   function Panel(){
-    const [view,setView]=React.useState(null),frame=React.useRef(null),[active,setActive]=React.useState(current()),[available,setAvailable]=React.useState(innerWidth),[expanded,setExpanded]=React.useState(false),[modal,setModal]=React.useState(false);
-    const [preferred,setPreferred]=React.useState(null),[dragging,setDragging]=React.useState(false),drag=React.useRef(null);
-    const wide=available>=740&&innerWidth>760,maxWidth=Math.max(320,available-420);
-    const clamp=value=>Math.round(Math.max(320,Math.min(maxWidth,value)));
-    const panelWidth=clamp(expanded?maxWidth:preferred??Math.min(640,available*.48));
-    const finishDrag=(cancel=false)=>{
-     const prior=drag.current;if(!prior)return;drag.current=null;setDragging(false);
-     if(cancel){setPreferred(prior.preferred);setExpanded(prior.expanded)}
-     if(prior.node.hasPointerCapture(prior.id))prior.node.releasePointerCapture(prior.id);
-    };
-    const resizeKeys=event=>{
-     if(event.key==='Escape'&&drag.current){event.preventDefault();event.stopPropagation();finishDrag(true);return}
-     if(drag.current)return;
-     const amount=event.shiftKey?48:16,value={ArrowLeft:panelWidth+amount,ArrowRight:panelWidth-amount,Home:320,End:maxWidth}[event.key];
-     if(value===undefined)return;event.preventDefault();setExpanded(false);setPreferred(clamp(value));
-    };
+   function WorkbenchTab({scope,store,tab,visible}){
+    const id=scope.sessionId,frame=React.useRef(null),ready=React.useRef(false);
+    const [view,setView]=React.useState(()=>views.get(id)||{id,step:'import'});
+    const [src]=React.useState(()=>'/form-fill/?session='+encodeURIComponent(id)+(sessionTasks.has(id)?'#task='+sessionTasks.get(id):''));
     React.useEffect(()=>{
-     const sync=()=>{const value=theme();document.querySelectorAll('.ff-ui').forEach(n=>n.dataset.ffTheme=value);frame.current?.contentWindow?.postMessage({type:'ff-theme',theme:value},location.origin)};
+     const update=()=>{const next=views.get(id);if(next)setView(next)};viewListeners.add(update);
+     const detach=sidebar?.attach(scope,store,tab);return()=>{viewListeners.delete(update);detach?.()};
+    },[id,store,tab.id]);
+    React.useEffect(()=>{
+     const sync=()=>{frame.current?.contentWindow?.postMessage({type:'ff-theme',theme:theme()},location.origin)};
      const observer=new MutationObserver(sync);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-ds-dark-theme']});const media=matchMedia('(prefers-color-scheme:dark)');media.addEventListener('change',sync);sync();
      return()=>{observer.disconnect();media.removeEventListener('change',sync)};
     },[]);
-    React.useEffect(()=>{
-     const measure=()=>{const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]');setAvailable(Math.max(0,innerWidth-Math.max(0,container?.getBoundingClientRect().left||0)))};
-     const resize=()=>{finishDrag(true);measure()},blur=()=>finishDrag(true);
-     const escape=event=>{if(event.key==='Escape'&&drag.current){event.preventDefault();event.stopImmediatePropagation();finishDrag(true)}};
-     const observer=new ResizeObserver(measure);observer.observe(document.body);
-     const container=document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]');if(container)observer.observe(container);
-     measure();window.addEventListener('resize',resize);window.addEventListener('blur',blur);window.addEventListener('keydown',escape,true);
-     return()=>{finishDrag(true);observer.disconnect();window.removeEventListener('resize',resize);window.removeEventListener('blur',blur);window.removeEventListener('keydown',escape,true)};
-    },[view?.id,active,modal]);
-    React.useEffect(()=>{panel=setView;const timer=setInterval(()=>setActive(current()),200);return()=>{panel=null;clearInterval(timer)}},[]);
-    React.useEffect(()=>{if(view&&current()!==view.id)setView(null);setModal(false)},[active,view?.id]);
-    React.useEffect(()=>{frame.current?.contentWindow?.postMessage({type:'ff-navigate',step:view?.step},location.origin)},[view]);
+    React.useEffect(()=>{if(ready.current)frame.current?.contentWindow?.postMessage({type:'ff-navigate',step:view.step},location.origin)},[view]);
     React.useEffect(()=>{
      const receive=async event=>{
-      if(event.origin!==location.origin||event.source!==frame.current?.contentWindow||current()!==view?.id)return;
+      if(event.origin!==location.origin||event.source!==frame.current?.contentWindow)return;
       if(event.data?.type==='ff-capabilities'){frame.current.contentWindow.postMessage({type:'ff-capabilities-result',mappingDraft:2},location.origin);return}
-      if(event.data?.type==='ff-wizard-state'){setModal(event.data.open===true);if(!event.data.open&&event.data.focusComposer)setTimeout(()=>document.querySelector('[data-composer-card] textarea, [data-composer-card] [contenteditable=true]')?.focus(),0);return}
+      if(event.data?.type==='ff-view'&&ready.current&&['import','rules','identity','preview','download','history'].includes(event.data.step)){views.set(view.id,{id:view.id,step:event.data.step});return}
+      if(event.data?.type==='ff-wizard-state'){if(!event.data.open&&event.data.focusComposer)setTimeout(()=>{if(current()===view.id)document.querySelector('[data-composer-card] textarea, [data-composer-card] [contenteditable=true]')?.focus()},0);return}
       if(event.data?.type==='ff-task'&&/^[a-f0-9-]{36}$/.test(event.data.taskId)){sessionTasks.set(view.id,event.data.taskId);return}
-      if(event.data?.type!=='ff-draft')return;
+      if(event.data?.type!=='ff-draft'||current()!==view.id)return;
       const {taskId,revision,requirements}=event.data;
       if(!/^[a-f0-9-]{36}$/.test(taskId)||!Number.isSafeInteger(revision))return;
       let ok=false;
@@ -163,38 +177,20 @@ window.__ModuleLoader__.load({
      };
      window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
     },[view?.id]);
-    React.useEffect(()=>{
-     if(!view||active!==view.id||!wide||modal)return;
-     const touched=new Map();
-     const adjust=()=>{
-      if(current()!==view.id)return;
-      const marker=[...document.querySelectorAll('[data-form-fill-session]')].find(n=>n.dataset.formFillSession===view.id);
-      const container=marker?document.querySelector('[data-composer-card]')?.closest('[data-phase]')||document.querySelector('[data-slot="conversation"]'):null;
-      for(const node of touched.keys())if(node!==container){node.removeAttribute('data-form-fill-reserve');node.style.removeProperty('--ff-panel-inset')}
-      if(!container)return;
-      if(!touched.has(container))touched.set(container,container.style.getPropertyValue('--ff-panel-inset'));
-      container.setAttribute('data-form-fill-reserve','true');
-      container.style.setProperty('--ff-panel-inset',panelWidth+'px');
-     };
-     adjust();const observer=new MutationObserver(adjust);observer.observe(document.body,{childList:true,subtree:true});
-     return()=>{observer.disconnect();for(const [node,previous]of touched){node.removeAttribute('data-form-fill-reserve');if(previous)node.style.setProperty('--ff-panel-inset',previous);else node.style.removeProperty('--ff-panel-inset')}};
-    },[view?.id,panelWidth,active,wide,modal]);
-    if(!view||active!==view.id)return null;
-    return portal(h('section',{className:'ff-ui ff-panel'+(dragging?' ff-resizing':''),'data-ff-theme':theme(),'aria-label':'AI填表工作台',style:{width:modal?'100%':wide?panelWidth+'px':'100%',...(modal?{background:'transparent',border:0}:{})}},
-     wide&&!modal?h('div',{className:'ff-panel-resize',role:'separator',tabIndex:0,'aria-label':'调整工作台宽度','aria-orientation':'vertical','aria-valuemin':320,'aria-valuemax':maxWidth,'aria-valuenow':panelWidth,'aria-valuetext':panelWidth+' 像素',title:'拖动调宽；左右键微调，Home/End 最小/最大；双击恢复默认',onKeyDown:resizeKeys,
-      onDoubleClick:()=>{finishDrag(true);setPreferred(null);setExpanded(false)},
-      onPointerDown:event=>{if(event.button!==0||drag.current)return;event.preventDefault();event.currentTarget.focus();drag.current={id:event.pointerId,node:event.currentTarget,x:event.clientX,width:panelWidth,preferred,expanded};event.currentTarget.setPointerCapture(event.pointerId);setDragging(true)},
-      onPointerMove:event=>{const prior=drag.current;if(prior?.id!==event.pointerId)return;setPreferred(clamp(prior.width+prior.x-event.clientX));setExpanded(false)},
-      onPointerUp:()=>finishDrag(),onPointerCancel:()=>finishDrag(true),onLostPointerCapture:()=>finishDrag(true)
-     }):null,
-     h('div',{className:'ff-panel-head',hidden:modal},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表工作台')),h('div',{className:'ff-panel-actions'},h('button',{onClick:()=>setExpanded(v=>!v)},expanded?'收起展开':'展开工作台'),h('button',{onClick:()=>setView(null)},'关闭工作台'))),
-     h('iframe',{ref:frame,title:'AI填表任务',src:'/form-fill/?session='+encodeURIComponent(view.id)+(sessionTasks.has(view.id)?'#task='+sessionTasks.get(view.id):''),onLoad:()=>{frame.current.contentWindow.postMessage({type:'ff-theme',theme:theme()},location.origin);frame.current.contentWindow.postMessage({type:'ff-navigate',step:view.step},location.origin)}})),document.body);
+
+    if(!owned(id))return h('p',null,'请从 AI填表入口打开对应业务会话。');
+    return h('section',{className:'ff-ui ff-tab-content','data-ff-theme':theme(),'aria-label':'AI填表工作台'},
+     h('div',{className:'ff-tab-head'},h('div',{className:'ff-brand'},mark(),h('h2',null,'AI填表工作台'))),
+     h('iframe',{ref:frame,title:'AI填表任务',src,onLoad:()=>{ready.current=true;frame.current.contentWindow.postMessage({type:'ff-theme',theme:theme()},location.origin);frame.current.contentWindow.postMessage({type:'ff-navigate',step:(views.get(id)||view).step},location.origin)}}));
    }
+   const connect=scope=>{
+    try{const adapter=createSidebarAdapter(scope.betterSidebar,props=>h(WorkbenchTab,{...props,key:props.scope.sessionId}),icon());sidebar=adapter;sidebarError='';const disconnect=()=>{if(sidebar===adapter)sidebar=undefined;adapter.dispose()};scope.effect?.(()=>disconnect);disposers.push(disconnect)}catch(error){sidebarError=error.message}
+   };
+   if(ctx.inject)ctx.inject(['betterSidebar'],connect);else if(ctx.betterSidebar)connect(ctx);
    register('conversation.input.dock',Menu);
    register('conversation.input.overlay',props=>owned(props.sessionId)?h('div',{className:'ff-ui','data-ff-theme':theme()},h('button',{className:'ff-prompt',type:'button',onClick:()=>openPanel(props.sessionId,'wizard')},icon('spark'),'提示词生成')):null);
-   register('shell.overlay',Panel);
-   ctx.effect?.(()=>()=>{for(const dispose of disposers)dispose()});
+   ctx.effect?.(()=>()=>{activePlugin=false;for(const dispose of disposers)dispose();viewListeners.clear();views.clear();sessionTasks.clear();lastDrafts.clear()});
   }
-  return {name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
+  return {createSidebarAdapter,name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
  }
 });

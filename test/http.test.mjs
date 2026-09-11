@@ -49,6 +49,7 @@ for (const basePath of ['', '/form-fill']) test('HTTP full lifecycle ' + (basePa
   const p=preview.json(), path=basePath+'/download/'+p.id;
   assert.equal(p.changeSet.changes.length,6);
   assert.equal((await h.request(path+'/xlsx')).status,404);
+  assert.equal((await h.request(path+'/report')).status,404);
   assert.equal((await h.request(basePath+'/confirm',{id:p.id,confirmChangeSetId:'wrong'})).status,409);
   const confirmation={id:p.id,confirmChangeSetId:p.changeSet.changeSetId};
   const result=await h.request(basePath+'/confirm',confirmation);
@@ -57,10 +58,13 @@ for (const basePath of ['', '/form-fill']) test('HTTP full lifecycle ' + (basePa
   const output=await h.request(path+'/xlsx');
   assert.equal(output.status,200); assert.ok(parseWorkbook(output.data).sheets.length);
   assert.notDeepEqual(output.data,bytes);
+  assert.equal((await h.request(path+'/report')).status,200);
+  assert.equal((await h.request(path+'/report-preview')).json().rows.length,12);
   assert.equal((await h.request(path+'/changes')).json().appliedChanges.length,6);
   assert.equal((await h.request(path+'/incomplete')).json().length,6);
   assert.equal((await h.request(basePath+'/discard',{id:p.id})).status,200);
   assert.equal((await h.request(path+'/xlsx')).status,404);
+  assert.equal((await h.request(path+'/report')).status,404);
 });
 test('HTTP rejects invalid input, origin, host and forbidden port',async t=>{
   const h=harness();t.after(h.dispose);
