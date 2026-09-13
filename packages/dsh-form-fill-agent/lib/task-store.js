@@ -38,7 +38,7 @@ export function createTaskStore({ directory, maxTasks = 10, now = Date.now, ttlM
           if(saved.baseChangeSet){assertChangeSet(saved.baseChangeSet);if(saved.baseChangeSet.planId!==saved.preview.plan.planId)throw Error('Candidate plan mismatch');}
           if (saved.preview.plan.documentHash !== doc.documentHash || saved.preview.changeSet.planId !== saved.preview.plan.planId) throw Error('Persisted document mismatch');
         }
-        const task = { bytes, preview: saved.preview, baseChangeSet:saved.baseChangeSet, progress:saved.progress, configuration: saved.configuration, selectedFields:saved.selectedFields, analyzeOnly: saved.analyzeOnly, created: saved.created, revision: saved.revision ?? 1, owner: saved.owner, filename: saved.filename ?? '未命名表格.xlsx', updatedAt: saved.updatedAt ?? saved.created, state: saved.state === 'enriching' ? 'interrupted' : saved.state ?? (saved.confirmed ? 'completed' : 'preview_ready'), sessionId: saved.sessionId };
+        const task = { bytes, preview: saved.preview, baseChangeSet:saved.baseChangeSet, progress:saved.progress, configuration: saved.configuration, selectedFields:saved.selectedFields, analyzeOnly: saved.analyzeOnly, created: saved.created, revision: saved.revision ?? 1, owner: saved.owner, filename: saved.filename ?? '未命名表格.xlsx', updatedAt: saved.updatedAt ?? saved.created, state: saved.state === 'enriching' ? 'interrupted' : saved.state ?? (saved.confirmed ? 'completed' : 'preview_ready'), originWorkspaceId:saved.originWorkspaceId,originSessionId:saved.originSessionId||saved.sessionId,sessionId: saved.sessionId };
         if (saved.confirmed && task.preview) task.result = applyChangeSet(bytes,task.preview.plan,task.preview.changeSet,{confirmChangeSetId:task.preview.changeSet.changeSetId});
         tasks.set(id,task);
       }
@@ -50,9 +50,11 @@ export function createTaskStore({ directory, maxTasks = 10, now = Date.now, ttlM
     get: id => tasks.get(id),
     set(id, task) {
       if (!idPattern.test(id)) throw Error('Invalid task ID');
+      const prior=tasks.get(id);if(prior&&prior.originWorkspaceId!==task.originWorkspaceId)throw Error('任务来源工作区不可重绑定');if(prior?.result&&!task.result)throw Error('已确认终态不可回退');
+      if(prior&&(prior.originSessionId||prior.sessionId)!==(task.originSessionId||task.sessionId))throw Error('任务来源会话不可重绑定');
       if (!tasks.has(id) && tasks.size >= maxTasks) throw Error('Task capacity exceeded');
       if (root) {
-        const json = JSON.stringify({ schema:5,id,base64:task.bytes.toString('base64'),preview:task.preview,baseChangeSet:task.baseChangeSet,progress:task.progress,configuration:task.configuration,selectedFields:task.selectedFields,analyzeOnly:task.analyzeOnly,created:task.created,revision:task.revision ?? 1,confirmed:!!task.result,owner:task.owner,filename:task.filename,updatedAt:task.updatedAt,state:task.state,sessionId:task.sessionId });
+        const json = JSON.stringify({ schema:5,id,base64:task.bytes.toString('base64'),preview:task.preview,baseChangeSet:task.baseChangeSet,progress:task.progress,configuration:task.configuration,selectedFields:task.selectedFields,analyzeOnly:task.analyzeOnly,created:task.created,revision:task.revision ?? 1,confirmed:!!task.result,owner:task.owner,filename:task.filename,updatedAt:task.updatedAt,state:task.state,originWorkspaceId:task.originWorkspaceId,originSessionId:task.originSessionId||task.sessionId,sessionId:task.sessionId });
         if (Buffer.byteLength(json) > 48*1024*1024) throw Error('Task too large');
         const temp = join(root,'.'+randomUUID()+'.tmp');
         try { writeFileSync(temp,json,{mode:0o600,flag:'wx'});renameSync(temp,join(root,id+'.json')); }

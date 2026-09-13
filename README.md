@@ -1,6 +1,6 @@
 # AI填表智能体
 
-> 0.2.27：突出已填副本预览与下载，任务报告改为次要链接；侧栏仍为可选依赖。
+> 0.2.28：会话隔离的只读历史、维度搜索与真实查询进度；侧栏仍为可选依赖。
 
 > 内嵌工作台可选依赖 Better Sidebar `>=0.17.1 <0.19.0`。范围、测试层级及待验收组合见 [侧栏适配说明](docs/SIDEBAR-SESSION-ADOPTION.md)。
 
@@ -11,7 +11,7 @@ AI填表智能体：支持自动填表、表格填充、表格补全、Excel填�
 ### 基础安装（不需要侧栏）
 
 ```sh
-dsh plugin --profile web add dsh-form-fill-agent@0.2.27
+dsh plugin --profile web add dsh-form-fill-agent@0.2.28
 ```
 
 只需 Node.js >=22、完整 DSH 与主包自动安装的内核/Provider。Better Sidebar 和 dsh-context 都是可选项，不会由基础安装强装。
@@ -59,7 +59,7 @@ node /path/to/dsh-form-fill-agent/lib/preflight.js --dsh-bin /path/to/dsh --prof
 
 AI填表将已有 XLSX 中可补全的空白单元格列成预览，使用企查查工商数据补全，并在确认后生成新副本。机器标识：dsh-form-fill-agent；共享内核：form-fill-core。
 
-当前版本为 **0.2.27**，包含完整网格、恢复选择、取消/重试、137 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.23 将字段映射确认直接整合到提示词向导，自动同步填写范围，并精简任务描述。发布记录见 [0.2.23](docs/RELEASE-0.2.23.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
+当前版本为 **0.2.28**，包含完整网格、恢复选择、取消/重试、137 字段目录、受限 Excel 保真及企查查蓝工作台。新增与清洗补全共享的实际控制人四字段，默认只填空白，来源可追溯，支持任务历史和中断恢复；不使用 LLM 猜值。0.2.23 将字段映射确认直接整合到提示词向导，自动同步填写范围，并精简任务描述。发布记录见 [0.2.23](docs/RELEASE-0.2.23.md)，正式用户签收与市场上架状态见 [当前进度](docs/PROGRESS.md)。
 
 alpha.4 修复 npm README 缺失。alpha.5 的 59 项测试、六组 CI、双宿主真实模型/QCC 闭环，以及发布后 README/完整性/安装回归全部通过，进展和边界见 [U3 验收](docs/U3-CONTROLS-ACCEPTANCE.md)。产品仍处于 alpha 阶段，请使用 latest 或精确版本；next 是此前的旧预览渠道。
 
@@ -78,7 +78,7 @@ npm run demo:web
 
 ## DSH 使用流程
 
-插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.27 精确依赖内核 0.2.10 及 Provider 0.2.2，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
+插件清单在 packages/dsh-form-fill-agent/package.json，主仓是 private npm monorepo。主包 0.2.28 精确依赖内核 0.2.10 及 Provider 0.2.2，Provider 依赖共享字段契约 0.1.0；推荐使用 latest 渠道。
 
 在已选定的 DSH profile 中安装预览版：
 请先按文首的宿主版本选择并安装 Better Sidebar，再安装主包：

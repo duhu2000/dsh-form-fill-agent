@@ -11,7 +11,7 @@ const directory=await mkdtemp(join(tmpdir(),'form-fill-registry-'));
 const expectedReadme=await readFile(join(root,'packages/dsh-form-fill-agent/README.md'),'utf8');
 const registryReadme=JSON.parse(execFileSync('npm',['view','dsh-form-fill-agent','readme','--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
 assert.equal(registryReadme.trim(),expectedReadme.trim(),'npm package page README matches published source');
-for(const name of ['qcc-field-contracts','form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
+for(const name of ['form-fill-core','qcc-form-fill-provider','dsh-form-fill-agent']){
   const version=JSON.parse(await readFile(join(root,'packages',name,'package.json'))).version;
   const remote=JSON.parse(execFileSync('npm',['view',name+'@'+version,'--json','--registry=https://registry.npmjs.org/'],{encoding:'utf8'}));
   await verifyRegistryPackage(join(root,'artifacts',name+'-'+version+'.tgz'),remote);

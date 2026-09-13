@@ -44,7 +44,7 @@ test('legacy schema migration preserves data and interrupted owned tasks recover
   const dir=await mkdtemp(join(tmpdir(),'form-fill-migration-'));t.after(()=>rm(dir,{recursive:true,force:true}));
   const bytes=fixtureBytes('合成测试',['企业名称','信用代码'],[['合成客户甲有限公司','']]),id=randomUUID();
   let store=createTaskStore({directory:dir});
-  store.set(id,{bytes,preview:await previewBytes(bytes),created:Date.now()});store.close();
+  store.set(id,{bytes,preview:await previewBytes(bytes),created:Date.now(),sessionId:'synthetic-session'});store.close();
   const path=join(dir,id+'.json'),legacy=JSON.parse(await readFile(path,'utf8'));
   legacy.schema=1;delete legacy.revision;await writeFile(path,JSON.stringify(legacy));
   store=createTaskStore({directory:dir});

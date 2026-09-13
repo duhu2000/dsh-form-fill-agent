@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+import {createDemoServer} from '../apps/demo/server.mjs';
+import {fixtureBytes} from './generate-fixtures.mjs';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE));
+const server=createDemoServer();await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN});
+try {
+ const context=await browser.newContext(),a=await context.newPage(),b=await context.newPage();
+ const url='http://127.0.0.1:'+server.address().port;
+ await a.goto(url+'/?session=synthetic-A&workspace=synthetic-workspace');
+ await a.locator('#file').setInputFiles({name:'合成历史.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:fixtureBytes('合成',['企业名称','地址'],[['合成企业','','']],{title:false})});
+ await a.locator('#grid-body tr').first().waitFor();const hash=new URL(a.url()).hash;
+ await a.getByRole('button',{name:'字段设置',exact:true}).click();
+ const row=a.locator('.ff-mapping-row').filter({has:a.getByText('地址',{exact:true})}).first();
+ await row.locator('summary').click();
+ const search=row.locator('input[type=search]'),select=row.locator('select[data-column]');
+ await select.selectOption('registered_address');const chosen=await select.inputValue();
+ const before=await select.locator('option').count();
+ await search.evaluate(e=>{e.value='企业工商信息';e.dispatchEvent(new InputEvent('input',{bubbles:true,isComposing:true}))});
+ assert.equal(await select.locator('option').count(),before);
+ await search.dispatchEvent('compositionend');
+ assert.ok(await select.locator('option').count()>10);assert.equal(await select.inputValue(),chosen);
+ await search.fill('完全不存在的搜索词');assert.equal(await select.inputValue(),chosen);
+ await b.goto(url+'/?session=synthetic-B&workspace=synthetic-workspace');
+ await b.locator('#history-tab').click();await b.locator('.history-item').waitFor();
+ assert.match(await b.locator('#history-list').textContent(),/合成历史/);assert.equal(new URL(b.url()).hash,'');
+ assert.equal(await b.locator('#history-list a').count(),0);
+ await b.locator('#current-tab').click();assert.equal(new URL(b.url()).hash,'');
+ await a.reload();await a.locator('#task-meta').filter({hasText:'合成历史'}).waitFor();await a.locator('#grid').evaluate(e=>e.open=true);await a.locator('#grid-body tr').first().waitFor();assert.equal(new URL(a.url()).hash,hash);
+ console.log('PASS IME/group search retains mapping; A/B read-only history and source restoration');
+} finally {await browser.close();await new Promise(ok=>server.close(ok))}

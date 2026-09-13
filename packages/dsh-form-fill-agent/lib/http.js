@@ -1,3 +1,4 @@
+import { providerOutcome } from './provider-outcome.js';
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { applyChangeSet, parseWorkbook } from 'form-fill-core';
@@ -19,7 +20,8 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   const controllers=new Map();
   const validOwner = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
   const visible = (task, owner) => task && (!task.owner || task.owner === owner);
-  const metadata = (id, task) => ({ id, presentation:taskPresentation(task), filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, confirmed: !!task.result });
+  const inSession=(task,session)=>task && (task.originSessionId||task.sessionId||'')===(session||'');
+  const metadata = (id, task) => ({ id, presentation:taskPresentation(task,now()), filename: task.filename ?? '未命名表格.xlsx', revision: task.revision ?? 1, state: task.state ?? (task.result ? 'completed' : 'preview_ready'), created: task.created, updatedAt: task.updatedAt ?? task.created, expiresAt: task.created + ttlMs, sessionId: task.sessionId, originSessionId:task.originSessionId||task.sessionId||null, originWorkspaceId:task.originWorkspaceId||null, confirmed: !!task.result });
   const settings = task => ({
     mappingProtocol: 2,
     diagnostics: diagnostics(task.preview),
@@ -56,20 +58,23 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       const url = new URL(request.url, origin);
       if (url.pathname !== basePath && !url.pathname.startsWith(basePath + '/')) return send(404, { message: '路径不存在' });
       const path = url.pathname.slice(basePath.length) || '/';
+      const session=request.headers['x-form-fill-session']||url.searchParams.get('session')||'';
+      const accessible=task=>visible(task,owner)&&inSession(task,session);
       if (request.method === 'GET' && path === '/') return send(200, await readFile(new URL('./ui.html', import.meta.url)), 'text/html; charset=utf-8');
       if (request.method === 'GET' && path === '/brand.css') return send(200, await readFile(new URL('./brand.css', import.meta.url)), 'text/css; charset=utf-8');
       if (request.method === 'GET' && path === '/health') return send(200, { plugin: 'form-fill-agent', product: 'AI填表', version: '0.1.0-alpha.7', provider: 'mock-only', qccAvailable: !!getQccStatus(), companionRequired: false, taskStorage: taskDirectory ? 'disk' : 'memory' });
-      if (request.method === 'GET' && path === '/tasks') {
+      if (request.method === 'GET' && ['/tasks','/history'].includes(path)) {
         if (!validOwner(owner)) return send(403, { message: '需要本地任务访问凭据' });
-        return send(200, [...tasks].filter(([, t]) => t.owner === owner).map(([id,t]) => metadata(id,t)).sort((a,b) => b.updatedAt-a.updatedAt));
+        const list=[...tasks].filter(([,t])=>t.owner===owner&&(path==='/history'||inSession(t,session))).map(([id,t])=>{const m=metadata(id,t);return path==='/history'?{id:m.id,filename:m.filename,title:m.presentation.title,status:m.presentation.status,created:m.created,updatedAt:m.updatedAt,expiresAt:m.expiresAt,originSessionId:m.originSessionId,originWorkspaceId:m.originWorkspaceId,confirmed:m.confirmed,readOnly:true}:m}).sort((a,b)=>b.updatedAt-a.updatedAt);
+        return send(200,list);
       }
       if (request.method === 'GET' && path.startsWith('/task/')) {
         const id = path.slice(6), task = tasks.get(id);
-        if (!visible(task, owner)) return send(404, { message: '任务不存在或已过期' });
+        if (!accessible(task)) return send(404, { message: '任务不存在或已过期' });
         return send(200, { ...task.preview, ...metadata(id,task), ...settings(task) });
       }
       if(request.method==='GET'&&path.startsWith('/grid/')){
-        const task=tasks.get(path.slice(6));if(!visible(task,owner))return send(404,{message:'任务不存在或已过期'});
+        const task=tasks.get(path.slice(6));if(!accessible(task))return send(404,{message:'任务不存在或已过期'});
         return send(200,gridPage(task,url.searchParams));
       }
       if (request.method === 'GET' && path.startsWith('/fixture/')) {
@@ -79,7 +84,7 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
       }
       if (request.method === 'GET' && path.startsWith('/download/')) {
         const parts = path.split('/'), [, , id, kind] = parts, task = tasks.get(id);
-        if (parts.length !== 4 || !visible(task, owner) || !task?.result) return send(404, { message: '请先确认写回，或预览已过期' });
+        if (parts.length !== 4 || !accessible(task) || !task?.result) return send(404, { message: '请先确认写回，或预览已过期' });
         if(kind==='report')return send(200,reportWorkbook(task),XLSX_TYPE);
         if(kind==='report-preview')return send(200,{rows:reportRows(task)});
         if (kind === 'xlsx') return send(200, task.result.bytes, XLSX_TYPE);
@@ -109,12 +114,13 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
         if (disposed) return send(503, { message: '插件已卸载' });
         const filename = typeof body.filename === 'string' ? body.filename.replace(/[\\/\x00-\x1f]/g,'').slice(0,180) : '未命名表格.xlsx';
         if (owner && !validOwner(owner)) return send(400, { message: '任务访问凭据无效' });
-        const task = { bytes, preview, analyzeOnly: !!body.analyzeOnly, created: now(), updatedAt: now(), revision: 1, state: 'preview_ready', owner, filename, sessionId: typeof body.sessionId === 'string' ? body.sessionId.slice(0,160) : undefined };
+        if((body.sessionId||'')!==session)return send(403,{message:'来源会话与当前请求不一致'});
+        const task = { originSessionId:session||undefined,originWorkspaceId:typeof body.originWorkspaceId==='string'?body.originWorkspaceId.slice(0,160):undefined, bytes, preview, analyzeOnly: !!body.analyzeOnly, created: now(), updatedAt: now(), revision: 1, state: 'preview_ready', owner, filename, sessionId: typeof body.sessionId === 'string' ? body.sessionId.slice(0,160) : undefined };
         tasks.set(id, task);
         return send(200, { ...preview, ...metadata(id,task), ...settings(task) });
       }
       const task = tasks.get(body.id);
-      if (!visible(task, owner)) return send(404, { message: '预览已过期，请重新上传' });
+      if (!accessible(task)) return send(404, { message: '预览已过期，请重新上传' });
       if ((task.owner || body.expectedRevision !== undefined) && body.expectedRevision !== (task.revision ?? 1)) return send(409, { code: 'REVISION_CONFLICT', message: '任务已更新，请刷新后重试' });
       if(path==='/cancel'){
         const controller=controllers.get(body.id);if(!controller)return send(409,{message:'任务当前未运行'});
@@ -163,29 +169,34 @@ export function createFormFillHandler({ basePath = '', getPort, now = Date.now, 
   };
   return {
     handler,
-    async enrich(id, provider, expectedRevision, {retryOnly=false}={}) {
+    async enrich(id, provider, expectedRevision, {retryOnly=false,sessionId}={}) {
       sweep();
       const task = tasks.get(id);
       if (disposed || !task || task.result || running.has(id)) throw Error('任务不存在、已确认或正在执行');
+      if((task.originSessionId||task.sessionId)&&!inSession(task,sessionId))throw Error('来源会话不匹配，不能跨会话执行');
       if ((task.owner || expectedRevision !== undefined) && expectedRevision !== (task.revision ?? 1)) throw Error('REVISION_CONFLICT：任务已更新');
       running.add(id);
       const controller=new AbortController();controllers.set(id,controller);
-      let active = { ...task, state: 'enriching', progress:{completed:0,total:0}, updatedAt: now(), revision: (task.revision ?? 1) + 1 };
+      let active = { ...task, state: 'enriching', progress:{completed:0,total:0,startedAt:now(),currentAction:'准备填写计划',outcomes:{},elapsedMs:0}, updatedAt: now(), revision: (task.revision ?? 1) + 1 };
       const excluded=new Set(allCandidates(task).changes.filter(c=>!task.preview.changeSet.changes.some(s=>s.id===c.id)).map(c=>c.id));
       const update=(preview,state,progress)=>{
         if(disposed||tasks.get(id)!==active)throw Error('任务已过期或被替换');
         const baseChangeSet=preview.changeSet;
         const selected=selectCandidates(baseChangeSet,baseChangeSet.changes.filter(c=>!excluded.has(c.id)).map(c=>c.id));
-        active={...active,baseChangeSet,preview:{...preview,changeSet:selected},state,progress,updatedAt:now(),revision:active.revision+1};tasks.set(id,active);
+        active={...active,baseChangeSet,preview:{...preview,changeSet:selected},state,progress:{...active.progress,...progress,elapsedMs:Math.max(0,now()-active.progress.startedAt),...(state==='enriching'?{}:{currentAction:'处理结束',endedAt:now()})},updatedAt:now(),revision:active.revision+1};tasks.set(id,active);
       };
       try {
         tasks.set(id, active);
-        const preview = await previewBytes(task.bytes, { provider, confirmPaidCalls: true, configuration: task.configuration, selectedFields: task.selectedFields,signal:controller.signal,retryOnly,previousChangeSet:retryOnly?allCandidates(task):undefined,onProgress:async({analysis,plan,changeSet,completed,total})=>update({analysis,plan,changeSet},'enriching',{completed,total}) });
+        const observed={...provider,lookup:async(request,options)=>{
+          active={...active,progress:{...active.progress,currentAction:'查询企业数据',recentItem:String(request.anchor?.company_name||request.anchor?.credit_no||'').slice(0,180)},updatedAt:now(),revision:active.revision+1};tasks.set(id,active);
+          let result;try{result=await provider.lookup(request,options)}catch(error){result={status:'error'};throw error}finally{if(!disposed&&tasks.get(id)===active&&active.state==='enriching'){const outcome=providerOutcome(result);active={...active,progress:{...active.progress,outcomes:{...active.progress.outcomes,[outcome]:(active.progress.outcomes[outcome]||0)+1}}};tasks.set(id,active)}}return result;
+        }};
+        const preview = await previewBytes(task.bytes, { provider:observed, confirmPaidCalls: true, configuration: task.configuration, selectedFields: task.selectedFields,signal:controller.signal,retryOnly,previousChangeSet:retryOnly?allCandidates(task):undefined,onProgress:async({analysis,plan,changeSet,completed,total})=>update({analysis,plan,changeSet},'enriching',{completed,total}) });
         if (disposed || tasks.get(id) !== active) throw Error('任务已过期或被替换');
         update(preview,controller.signal.aborted?'cancelled':preview.changeSet.incomplete.some(i => i.reason === 'provider-error') ? 'partial' : 'preview_ready',active.progress);
         return { taskId: id, filled: active.preview.changeSet.changes.length, incomplete: active.preview.changeSet.incomplete.length, diagnostics:diagnostics(active.preview), previewPath: basePath + '/#task=' + id };
       } catch (error) {
-        if (!disposed && tasks.get(id) === active) tasks.set(id, { ...active, state: 'failed', updatedAt: now(), revision: active.revision + 1 });
+        if (!disposed && tasks.get(id) === active) tasks.set(id, { ...active, state: 'failed', progress:{...active.progress,currentAction:'执行失败',endedAt:now(),elapsedMs:Math.max(0,now()-active.progress.startedAt)},updatedAt: now(), revision: active.revision + 1 });
         throw error;
       } finally { running.delete(id);controllers.delete(id); }
     },
