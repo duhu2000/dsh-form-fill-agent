@@ -120,3 +120,29 @@ test('actual upload analysis does not use synthetic facts',async t=>{
  const p=await h.request('/preview',{base64:bytes.toString('base64'),analyzeOnly:true});
  assert.equal(p.status,200);assert.equal(p.json().changeSet.changes.length,0);assert.equal(p.json().plan.estimatedCalls,0);
 });
+
+test('profile history exposes metadata only; owner, source session and TTL remain enforced',async t=>{
+ let clock=1000;const h=harness({now:()=>clock,ttlMs:5000});t.after(h.dispose);
+ const a={'x-form-fill-owner':'e'.repeat(64),'x-form-fill-session':'session-A'},b={...a,'x-form-fill-session':'session-B'};
+ const p=(await h.request('/preview',{base64:bytes.toString('base64'),filename:'合成.xlsx',sessionId:'session-A',originWorkspaceId:'workspace-A'},a)).json();
+ const history=(await h.request('/history',undefined,b)).json();assert.equal(history.length,1);assert.equal(history[0].originSessionId,'session-A');assert.equal(history[0].originWorkspaceId,'workspace-A');assert.equal(history[0].readOnly,true);
+ assert.deepEqual(Object.keys(history[0]).sort(),['id','filename','title','status','created','updatedAt','expiresAt','originSessionId','originWorkspaceId','confirmed','readOnly'].sort());
+ assert.deepEqual((await h.request('/tasks',undefined,b)).json(),[]);
+ for(const path of ['/task/'+p.id,'/grid/'+p.id,'/download/'+p.id+'/report'])assert.equal((await h.request(path,undefined,b)).status,404);
+ assert.equal((await h.request('/discard',{id:p.id,expectedRevision:p.revision},b)).status,404);
+ await assert.rejects(h.enrich(p.id,{},p.revision,{sessionId:'session-B'}),/来源会话/);
+ assert.deepEqual((await h.request('/history',undefined,{'x-form-fill-owner':'f'.repeat(64)})).json(),[]);
+ assert.equal((await h.request('/history')).status,403);
+ assert.equal((await h.request('/task/'+p.id,undefined,a)).status,200);
+ clock=6001;assert.deepEqual((await h.request('/history',undefined,b)).json(),[]);
+});
+
+test('real progress observations terminate and cannot overwrite confirmed state',async t=>{
+ let clock=1000;const h=harness({now:()=>clock});t.after(h.dispose);
+ const p=(await h.request('/preview',{base64:bytes.toString('base64')})).json();
+ const {createMockProvider}=await import('qcc-form-fill-provider');const provider=createMockProvider();const lookup=provider.lookup;provider.lookup=async(...args)=>{clock+=1000;return lookup(...args)};
+ await h.enrich(p.id,provider,p.revision);
+ const done=(await h.request('/task/'+p.id)).json();assert.equal(done.presentation.ended,true);assert.ok(done.presentation.elapsedMs>0);assert.ok(done.presentation.outcomes.data>0);assert.equal(done.presentation.currentAction,'处理结束');assert.equal(done.presentation.percent,100);
+ await h.request('/confirm',{id:p.id,expectedRevision:done.revision,confirmChangeSetId:done.changeSet.changeSetId});await assert.rejects(h.enrich(p.id,provider),/已确认/);
+ assert.equal((await h.request('/task/'+p.id)).json().confirmed,true);
+});

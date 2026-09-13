@@ -134,7 +134,7 @@ window.__ModuleLoader__.load({
    function WorkbenchTab({scope,store,tab,visible}){
     const id=scope.sessionId,frame=React.useRef(null),ready=React.useRef(false);
     const [view,setView]=React.useState(()=>views.get(id)||{id,step:'import'});
-    const [src]=React.useState(()=>'/form-fill/?session='+encodeURIComponent(id)+(sessionTasks.has(id)?'#task='+sessionTasks.get(id):''));
+    const [src]=React.useState(()=>'/form-fill/?workspace='+encodeURIComponent(ctx.workspaces?.list?.getSnapshot?.().items?.find(w=>w.sessionIds?.includes(id))?.workspaceId||'')+'&session='+encodeURIComponent(id)+(sessionTasks.has(id)?'#task='+sessionTasks.get(id):''));
     React.useEffect(()=>{
      const update=()=>{const next=views.get(id);if(next)setView(next)};viewListeners.add(update);
      const detach=sidebar?.attach(scope,store,tab);return()=>{viewListeners.delete(update);detach?.()};
@@ -148,6 +148,7 @@ window.__ModuleLoader__.load({
     React.useEffect(()=>{
      const receive=async event=>{
       if(event.origin!==location.origin||event.source!==frame.current?.contentWindow)return;
+      if(event.data?.type==='ff-open-origin'){const target=event.data.sessionId;const known=ctx.workspaces?.list?.getSnapshot?.().items?.some(w=>w.sessionIds?.includes(target));try{if(current()!==id||!owned(target)||!known||typeof ctx.sessions.open!=='function')throw Error('来源会话不可用');await ctx.sessions.open(target)}catch{frame.current?.contentWindow?.postMessage({type:'ff-origin-unavailable'},location.origin)}return}
       if(event.data?.type==='ff-capabilities'){frame.current.contentWindow.postMessage({type:'ff-capabilities-result',mappingDraft:2},location.origin);return}
       if(event.data?.type==='ff-view'&&ready.current&&['import','rules','identity','preview','download','history'].includes(event.data.step)){views.set(view.id,{id:view.id,step:event.data.step});return}
       if(event.data?.type==='ff-wizard-state'){if(!event.data.open&&event.data.focusComposer)setTimeout(()=>{if(current()===view.id)document.querySelector('[data-composer-card] textarea, [data-composer-card] [contenteditable=true]')?.focus()},0);return}

@@ -1,7 +1,7 @@
 import { parseWorkbook } from 'form-fill-core';
 
 const retained = new Set(['no-data','user-excluded','formula-preserved','hidden-or-merged','hidden-row','hidden-sheet','sheet-excluded','protected-source-range','placeholder-needs-confirmation']);
-export function taskPresentation(task) {
+export function taskPresentation(task,now=Date.now()) {
   const items=task.preview.changeSet.incomplete;
   const failures=Math.max(task.state==='failed'?1:0,items.filter(i=>i.reason==='provider-error').length);
   const review=items.filter(i=>i.reason!=='provider-error'&&!retained.has(i.reason)).length;
@@ -26,6 +26,7 @@ export function taskPresentation(task) {
     }
   }
   const date=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(task.created)).replace('/', '-');
-  return {title:(task.filename||'未命名表格').replace(/\.xlsx$/i,'')+'｜'+subjects.size+' 家企业｜'+date,status,running,ended,percent,completed,total,failures,review,noData};
+  const elapsedMs=task.progress?.startedAt!==undefined?Math.max(0,(running?now:task.progress.endedAt||task.updatedAt)-task.progress.startedAt):0;
+  return {currentAction:task.progress?.currentAction||'尚未执行',recentItem:task.progress?.recentItem||'',elapsedMs,outcomes:task.progress?.outcomes||{},filled:task.preview.changeSet.changes.length,title:(task.filename||'未命名表格').replace(/\.xlsx$/i,'')+'｜'+subjects.size+' 家企业｜'+date,status,running,ended,percent,completed,total,failures,review,noData};
 }
 export const isResultExplanation = item => retained.has(item.reason);

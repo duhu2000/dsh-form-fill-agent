@@ -1,7 +1,8 @@
+import { providerOutcome } from './provider-outcome.js';
 import { createFormFillHandler } from './http.js';
 import { createCatalogProvider, CATALOG_TOOL_DOMAINS, runtimeToolNames, REGISTRATION_TOOL, ENTITY_TOOL } from 'qcc-form-fill-provider';
 import { randomUUID } from 'node:crypto';
-import { join } from 'node:path';
+import { profileTaskDirectory } from './profile-storage.js';
 import { renderEnrichmentResult } from './diagnostics.js';
 export { previewBytes, previewFile, writeCopy } from './workflow.js';
 export const name = 'form-fill-agent';
@@ -9,7 +10,7 @@ export const inject = [];
 export function apply(ctx, config = {}) {
   ctx.inject(['webServer'], scope => {
     let toolService;
-    const taskDirectory = config.taskDirectory ?? (process.env.DSH_HOME ? join(process.env.DSH_HOME, 'form-fill-tasks') : undefined);
+    const taskDirectory = config.taskDirectory ?? profileTaskDirectory(import.meta.url);
     const service = createFormFillHandler({ basePath: '/form-fill', getPort: () => scope.webServer.port, taskDirectory, ttlMs: 86400000, getQccStatus: () => ['mcp__qcc-company__','mcp__company__','mcp__qcc_company__'].some(p => toolService?.get?.(p + REGISTRATION_TOOL)) });
     scope.inject?.(['tools'], toolScope => {
       const tools = toolScope.tools;
@@ -24,7 +25,7 @@ export function apply(ctx, config = {}) {
         },
         async execute(args, execution) {
           if (!execution?.agent || !execution?.token) throw Error('需要 Agent-owned 工具执行上下文');
-          const runtimeSources=new Map();
+          const runtimeSources=new Map();let transportOutcome;
           const provider = createCatalogProvider({ availableTools:Object.keys(CATALOG_TOOL_DOMAINS).filter(name=>runtimeToolNames(name).some(n=>tools.get(n))), enableEntitySearch: ['mcp__qcc-company__','mcp__company__','mcp__qcc_company__'].some(p=>tools.get(p+ENTITY_TOOL)), callTool: async (name, arguments_, { signal }) => {
             if (!Object.hasOwn(CATALOG_TOOL_DOMAINS,name)) throw Error('不支持的 QCC 工具');
             const names = runtimeToolNames(name);
@@ -32,10 +33,10 @@ export function apply(ctx, config = {}) {
             if (!selected) throw Error('请先连接企查查企业数据 MCP');
             runtimeSources.set(name,selected);
             const result = await tools.execute({ name: selected, arguments: arguments_, signal, callId: randomUUID(), rootCallId: execution.rootCallId, parent: execution.token, agent: execution.agent });
-            return result?.isError ? { isError: true } : result?.value;
+            const raw=result?.value;const observed=providerOutcome(raw);if(observed==='no-permission')transportOutcome=observed;return result?.isError ? { isError: true } : raw;
           } });
-          const lookup=provider.lookup.bind(provider);provider.lookup=async(...input)=>{const result=await lookup(...input);for(const value of Object.values(result.values||{})){const match=/^qcc:\/\/([^/]+)\//.exec(value.source||'');if(match&&runtimeSources.has(match[1]))value.source=value.source.replace('qcc://'+match[1]+'/', 'qcc://'+runtimeSources.get(match[1])+'/')}return result};
-          return service.enrich(args.taskId, provider, args.expectedRevision,{retryOnly:args.mode==='retry'});
+          const lookup=provider.lookup.bind(provider);provider.lookup=async(...input)=>{transportOutcome=undefined;const result=await lookup(...input);if(transportOutcome)result.outcome=transportOutcome;for(const value of Object.values(result.values||{})){const match=/^qcc:\/\/([^/]+)\//.exec(value.source||'');if(match&&runtimeSources.has(match[1]))value.source=value.source.replace('qcc://'+match[1]+'/', 'qcc://'+runtimeSources.get(match[1])+'/')}return result};
+          return service.enrich(args.taskId, provider, args.expectedRevision,{retryOnly:args.mode==='retry',sessionId:execution.agent.session?.id});
         },
       });
       toolScope.effect?.(() => () => disposeTool?.());
