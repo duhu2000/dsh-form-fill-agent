@@ -5,6 +5,35 @@ import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../packages/dsh-form-fill-agent/lib/client.js',import.meta.url),'utf8');
 let module;vm.runInNewContext(source,{crypto:{randomUUID:()=> 'synthetic-id'},window:{__ModuleLoader__:{load:d=>module=d}}});
 const {createSidebarAdapter}=module.factory(()=>({}));
+const {installSubmittedWorkbenchBridge}=module.factory(()=>({}));
+test('accepted task opens once, never on draft/failure/repeated settlement or other Session',()=>{
+ const a='session-dsh-form-fill-agent-a',b='session-dsh-form-fill-agent-b';let current=a;const listeners=new Set(),pending=[],opened=[];
+ const original=function(input){pending.push(input);return 'handle'};
+ const faces={[a]:{beginSubmission:original},[b]:{beginSubmission:original}};
+ const sessions={list:{getSnapshot:()=>({current}),subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}},binding:id=>({session:faces[id]})};
+ const dispose=installSubmittedWorkbenchBridge(sessions,(...args)=>opened.push(args));
+ assert.equal(opened.length,0);let callback=0;
+ const input={text:'form_fill_enrich taskId=12345678-1234-1234-1234-123456789abc，expectedRevision=1',onRetire:()=>callback++};
+ assert.equal(faces[a].beginSubmission(input),'handle');assert.equal(opened.length,0);
+ pending[0].onRetire({reason:'failed'});assert.equal(opened.length,0);
+ faces[a].beginSubmission(input);pending[1].onRetire({reason:'observed'});assert.deepEqual(opened,[[a,'preview']]);
+ pending[1].onRetire({reason:'observed'});faces[a].beginSubmission(input);pending[2].onRetire({reason:'observed'});assert.equal(opened.length,1);
+ faces[a].beginSubmission({...input,text:input.text.replace('Revision=1','Revision=2')});
+ current=b;for(const listener of listeners)listener();pending[3].onRetire({reason:'observed'});assert.equal(opened.length,1);
+ current=a;for(const listener of listeners)listener();pending[3].onRetire({reason:'observed'});assert.equal(opened.length,1);
+ current=b;for(const listener of listeners)listener();
+ faces[b].beginSubmission(input);pending[4].onRetire({reason:'observed'});assert.equal(opened.length,2);
+ faces[b].beginSubmission({...input,text:input.text.replace('Revision=1','Revision=2')});dispose();pending[5].onRetire({reason:'observed'});assert.equal(opened.length,2);
+ assert.equal(faces[a].beginSubmission,original);assert.equal(faces[b].beginSubmission,original);assert.equal(listeners.size,0);assert.ok(callback>0);
+});
+test('late or replaced binding is observed without turning reveal errors into submission errors',()=>{
+ const id='session-dsh-form-fill-agent-late';let face;const listeners=new Set();let input;
+ const sessions={list:{getSnapshot:()=>({current:id}),subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}},binding:()=>({session:face})};
+ const dispose=installSubmittedWorkbenchBridge(sessions,()=>{throw Error('missing companion')});
+ const original=value=>{input=value};face={beginSubmission:original};for(const fn of listeners)fn();
+ face.beginSubmission({text:'start'});assert.doesNotThrow(()=>input.onRetire({reason:'observed'}));
+ const old=face;face={beginSubmission:original};for(const fn of listeners)fn();assert.equal(old.beginSubmission,original);assert.notEqual(face.beginSubmission,original);dispose();assert.equal(face.beginSubmission,original);
+});
 const id='dsh-form-fill-agent:workbench';
 function fixture(){
  let descriptor,active='A';const listeners=new Set(),states=new Map(),closed=[];

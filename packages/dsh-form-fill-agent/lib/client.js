@@ -28,6 +28,35 @@ window.__ModuleLoader__.load({
     dispose(){if(disposed)return;disposed=true;unsubscribe();pending.clear();targets.clear();for(const scope of opened.values())service.closeTab(SIDEBAR_TAB,scope);opened.clear();unregister();}
    };
   }
+  // Admission, not draft changes or runtime polling, owns automatic reveal.
+  function installSubmittedWorkbenchBridge(sessions,reveal){
+   let active,activeFace,stop=()=>{},disposed=false;const seen=new Set();
+   const owned=id=>typeof id==='string'&&id.startsWith('session-dsh-form-fill-agent-');
+   const admitted=(id,text,identity)=>{
+    if(disposed||!owned(id))return;
+    const task=String(text||'').match(/taskId=([a-f0-9-]{36})/i)?.[1];
+    const revision=String(text||'').match(/expectedRevision=(\d+)/)?.[1];
+    const key=task&&revision?`${id}:${task}:${revision}`:identity;
+    if(seen.has(key))return;seen.add(key);
+    if(sessions.list.getSnapshot().current!==id)return;
+    // openPanel reports companion errors through the visible manual fallback.
+    try{reveal(id,'preview')}catch{}
+   };
+   const connect=()=>{
+    const id=sessions?.list?.getSnapshot?.()?.current,face=owned(id)?sessions.binding?.(id)?.session:undefined;
+    if(id===active&&face===activeFace)return;
+    stop();stop=()=>{};active=id;activeFace=face;if(!owned(id))return;
+    if(typeof face?.beginSubmission==='function'){
+     const original=face.beginSubmission;
+     const wrapped=function(input){const identity={};return original.call(this,{...input,onRetire:settlement=>{
+      try{input.onRetire?.(settlement)}finally{if(settlement.reason==='observed')admitted(id,input.text,identity)}
+     }})};
+     face.beginSubmission=wrapped;stop=()=>{if(face.beginSubmission===wrapped)face.beginSubmission=original};
+    }
+   };
+   connect();const unsubscribe=sessions?.list?.subscribe?.(connect);
+   return()=>{disposed=true;stop();unsubscribe?.();seen.clear()};
+  }
   function apply(ctx) {
    let React, portal;
    try { React=require('react');portal=require('react-dom').createPortal; } catch {}
@@ -205,10 +234,11 @@ window.__ModuleLoader__.load({
     try{const adapter=createSidebarAdapter(scope.betterSidebar,props=>h(WorkbenchTab,{...props,key:props.scope.sessionId}),icon());sidebar=adapter;sidebarError='';const disconnect=()=>{if(sidebar===adapter)sidebar=undefined;adapter.dispose()};scope.effect?.(()=>disconnect);disposers.push(disconnect)}catch(error){sidebarError=error.message}
    };
    if(ctx.inject)ctx.inject(['betterSidebar'],connect);else if(ctx.betterSidebar)connect(ctx);
+   disposers.push(installSubmittedWorkbenchBridge(ctx.sessions,openPanel));
    register('conversation.input.dock',Menu);
    register('conversation.input.overlay',props=>owned(props.sessionId)?h('div',{className:'ff-ui','data-ff-theme':theme()},h('button',{className:'ff-prompt',type:'button',onClick:()=>openPanel(props.sessionId,'wizard')},icon('spark'),'提示词生成')):null);
    ctx.effect?.(()=>()=>{activePlugin=false;for(const dispose of disposers)dispose();viewListeners.clear();views.clear();sessionTasks.clear();lastDrafts.clear()});
   }
-  return {createSidebarAdapter,name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
+  return {createSidebarAdapter,installSubmittedWorkbenchBridge,name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
  }
 });
