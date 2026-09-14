@@ -38,10 +38,10 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
  assert.equal(await page.getByRole('button',{name:'导入表格',exact:true}).count(),0);
- await page.getByRole('link',{name:'AI填表',exact:true}).click();
+ await page.getByRole('link',{name:'AI 填表',exact:true}).click();
  await page.getByRole('button',{name:'导入表格',exact:true}).waitFor();
  await page.locator('.ff-hero h1').waitFor();
- assert.equal(await page.locator('.ff-hero h1').innerText(),'AI填表智能体');
+ assert.equal(await page.locator('.ff-hero h1').innerText(),'AI 填表智能体');
  assert.ok(await page.locator('[data-form-fill-top]').evaluate(e=>e.nextElementSibling.dataset.slot==='sidebar.workspaces'));
  assert.equal(await page.locator('.headlineText').isVisible(),false);
  for(const dark of [false,true])for(const width of [320,390,640,1440]){

@@ -43,7 +43,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
   const local=urls.find(u=>new URL(u).port===String(port)&&u.includes('?'))||origin;
   await page.goto(local);
   // No authentication URL, storage state or raw host output is written to disk.
-  await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
+  await page.getByRole('link',{name:'AI 填表',exact:true}).waitFor();
   const prepared=await page.evaluate(async ({path,alpha})=>{
    const method=alpha?'workspace/create':'workspace.create',payload=alpha?{args:{request:{path}}}:{path};
    const response=await fetch('/api/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'client-request',rpcId:crypto.randomUUID(),method,payload})});
@@ -63,15 +63,15 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN]){
    await page.getByRole('button',{name:'解析数据',exact:true}).click();
    await page.getByText('已核对清单，下一步：字段映射与规则',{exact:true}).waitFor();
   }
-  await page.getByRole('link',{name:'AI填表',exact:true}).waitFor();
-  await page.getByRole('link',{name:'AI填表',exact:true}).click();
+  await page.getByRole('link',{name:'AI 填表',exact:true}).waitFor();
+  await page.getByRole('link',{name:'AI 填表',exact:true}).click();
   phase='owned-session';
   if(process.env.LEGACY_TARBALL)assert.equal(await page.getByRole('region',{name:'数据清洗补全工作台',exact:true}).count(),0);
   await page.getByRole('button',{name:'导入表格',exact:true}).waitFor();
   phase='hero-brand';
   await page.locator('.ff-hero h1').waitFor();
   if(process.env.LEGACY_TARBALL){assert.equal(await page.getByRole('button',{name:'导入名单',exact:true}).count(),0);assert.equal(await page.locator('[data-form-fill-top]').count(),1);}
-  assert.equal(await page.locator('.ff-hero h1').innerText(),'AI填表智能体');
+  assert.equal(await page.locator('.ff-hero h1').innerText(),'AI 填表智能体');
   assert.ok(await page.locator('[data-form-fill-top]').evaluate(e=>!!(e.compareDocumentPosition(document.querySelector('[data-slot="sidebar.workspaces"]'))&Node.DOCUMENT_POSITION_FOLLOWING)));
   if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'native-'+version+'-home.png')})}
   await page.getByRole('button',{name:'导入表格',exact:true}).click();

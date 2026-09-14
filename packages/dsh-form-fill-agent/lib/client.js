@@ -20,7 +20,7 @@ window.__ModuleLoader__.load({
      return state;
     });
    };
-   const unregister=service.registerTab({id:SIDEBAR_TAB,title:'AI填表',icon,order:20,single:true,hidden:true,component});
+   const unregister=service.registerTab({id:SIDEBAR_TAB,title:'AI 填表',icon,order:20,single:true,hidden:true,component});
    const unsubscribe=service.subscribeState(flush);
    return {
     open(scope){if(disposed)throw Error(SIDEBAR_HELP);if(!service.isTabEnabled(SIDEBAR_TAB))throw Error('AI填表 Tab 已禁用，请在 Better Sidebar 设置中启用。');opened.set(scope.sessionId,scope);pending.add(scope.sessionId);service.openTab({type:SIDEBAR_TAB},scope);flush();},
@@ -64,9 +64,9 @@ window.__ModuleLoader__.load({
     if(result!==id)throw Error('宿主不支持独立业务会话');
     await ctx.sessions.open(id);
    }
-   const launcher=()=>h('a',{className:'ff-launcher',href:'/form-fill/',target:'_blank',rel:'noopener noreferrer','aria-label':'AI填表',onClick:async e=>{
+   const launcher=()=>h('a',{className:'ff-launcher',href:'/form-fill/',target:'_blank',rel:'noopener noreferrer','aria-label':'AI 填表',onClick:async e=>{
     if(!ctx.sessions?.create)return;e.preventDefault();try{await start()}catch{window.open('/form-fill/','_blank','noopener')}
-   }},icon(),h('span',null,'AI填表'));
+   }},icon(),h('span',null,'AI 填表'));
    function Sidebar(){
     const [mount,setMount]=React.useState(null);
     React.useEffect(()=>{
@@ -100,19 +100,36 @@ window.__ModuleLoader__.load({
     const [mount,setMount]=React.useState(null);
     React.useEffect(()=>{
      if(!owned(sessionId))return;
-     let mount,original,previous;
+     let mount,original,previous,disposed=false;
+     const release=()=>{
+      mount?.remove();mount=undefined;
+      if(original?.style.display==='none')original.style.display=previous;
+      original=undefined;setMount(null);
+     };
      const sync=()=>{
-      if(mount?.isConnected)return;
+      if(disposed)return;
+      if(!activePlugin||current()!==sessionId){if(mount||original)release();return;}
       const marker=[...document.querySelectorAll('[data-form-fill-session]')].find(n=>n.dataset.formFillSession===sessionId);
       const hero=marker?.closest('[data-phase="hero"]'),title=hero?.querySelector('[class*="headlineText"]');
-      if(!title||!['探索未至之境','Into the Unknown'].includes(title.textContent.trim()))return;
+      // This only replaces the host welcome brand, never a user-owned Session title.
+      if(!title||!['探索未至之境','Into the Unknown'].includes(title.textContent.trim())){if(mount||original)release();return;}
+      if(mount?.isConnected&&original===title.parentElement)return;
+      if(mount||original)release();
       original=title.parentElement;previous=original.style.display;original.style.display='none';
       mount=document.createElement('div');mount.className='ff-ui ff-hero';mount.dataset.ffTheme=theme();original.before(mount);setMount(mount);
      };
-     sync();const timer=setInterval(sync,200);return()=>{clearInterval(timer);mount?.remove();if(original?.style.display==='none')original.style.display=previous;setMount(null)};
+     const marker=[...document.querySelectorAll('[data-form-fill-session]')].find(n=>n.dataset.formFillSession===sessionId);
+     const scope=marker?.closest('[data-slot="conversation"]')||marker?.closest('[data-phase="hero"]');
+     const observer=new MutationObserver(sync);
+     if(scope)observer.observe(scope,{childList:true,subtree:true,characterData:true});
+     const unsubscribe=ctx.sessions.list.subscribe?.(sync);
+     const dispose=()=>{if(disposed)return;disposed=true;observer.disconnect();if(typeof unsubscribe==='function')unsubscribe();release();};
+     disposers.push(dispose);sync();
+     return()=>{dispose();const index=disposers.indexOf(dispose);if(index>=0)disposers.splice(index,1);};
     },[sessionId]);
-    return mount?portal(h(React.Fragment,null,h('div',{className:'ff-brand ff-hero-brand'},mark(),h('h1',null,'AI填表智能体')),h('p',null,'上传已有表格，核对字段映射，确认后生成新副本。')),mount):null;
+    return mount?portal(h('div',{className:'ff-brand ff-hero-brand'},mark(),h('h1',null,'AI 填表智能体')),mount):null;
    }
+
    function Menu({sessionId}){
     const ref=React.useRef(null),[mount,setMount]=React.useState(null),[error,setError]=React.useState('');
     React.useEffect(()=>{const report=message=>setError(message||'');viewListeners.add(report);return()=>viewListeners.delete(report)},[]);
