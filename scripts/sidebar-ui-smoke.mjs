@@ -44,7 +44,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.getByRole('link',{name:'AI填表',exact:true}).click();
+ await page.getByRole('link',{name:'AI 填表',exact:true}).click();
  const menu=page.getByRole('navigation',{name:'AI填表快捷菜单'});
  await menu.waitFor();assert.equal(await page.locator('iframe').count(),0);
  await menu.getByRole('button',{name:'导入表格',exact:true}).click();
@@ -75,7 +75,7 @@ try{
   await page.screenshot({path:'/tmp/ff-sidebar-'+(dark?'dark':'light')+'-'+width+'.png'});
  }
  await page.evaluate(()=>probe.dispose());assert.equal(await page.locator('iframe').count(),0);assert.ok(await page.getByRole('button',{name:'Files',exact:true}).count());
- await page.goto('http://127.0.0.1:'+server.address().port+'/?missing');await page.getByRole('link',{name:'AI填表',exact:true}).click();await menu.getByRole('button',{name:'导入表格',exact:true}).click();
+ await page.goto('http://127.0.0.1:'+server.address().port+'/?missing');await page.getByRole('link',{name:'AI 填表',exact:true}).click();await menu.getByRole('button',{name:'导入表格',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'安装或升级'}).waitFor();assert.equal(await page.locator('iframe').count(),0);
  assert.deepEqual(errors,[]);console.log('PASS real sidebar service/state, singleton, Files, collapse, close/reopen, no mutation, theme/width, cleanup, missing dependency');
 }finally{await browser.close();server.close();service.dispose()}
