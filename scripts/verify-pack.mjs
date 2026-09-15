@@ -13,7 +13,8 @@ for (const name of ['qcc-field-contracts', 'form-fill-core', 'qcc-form-fill-prov
   const cwd = join(root, 'packages', name);
   const pack = JSON.parse(execFileSync(npmCommand, [...npmPrefix, 'pack', '--ignore-scripts', '--json', '--pack-destination', destination], { cwd, encoding: 'utf8' }))[0];
   assert.ok(pack.files.length > 2);
-  assert.ok(pack.unpackedSize < 200000);
+  // UX-49 adds the native draft lifecycle/guards only to the main package.
+  assert.ok(pack.unpackedSize < (name === 'dsh-form-fill-agent' ? 210000 : 200000));
   {
     assert.ok(pack.files.some(file => file.path === 'README.md'), 'Published package must include README.md');
     assert.ok((await readFile(join(cwd, 'README.md'), 'utf8')).includes('## 安装'), 'Published README must explain installation');

@@ -57,6 +57,57 @@ window.__ModuleLoader__.load({
    connect();const unsubscribe=sessions?.list?.subscribe?.(connect);
    return()=>{disposed=true;stop();unsubscribe?.();seen.clear()};
   }
+  const INITIAL_TEMPLATE_ID='dsh-initial-draft/form-fill/1';
+  const INITIAL_TEMPLATE_TEXT='请帮我填写企业信息表。请上传 Excel 模板，说明主体定位列和需要填写的字段；也可点击左上角「提示词生成」设置填写规则。例如：按“企业名称”定位，只填空白单元格，补充统一社会信用代码、法定代表人和注册地址，并生成新文件。';
+  // Full text equality is the collision-free fingerprint; never trim/normalize user edits.
+  function createInitialDraftController({current,shell,storage,subscribeCurrent,defer=fn=>Promise.resolve().then(fn)}){
+   const entries=new Map();let disposed=false;
+   const key=id=>INITIAL_TEMPLATE_ID+':'+id;
+   const persist=(id,entry)=>{try{storage.setItem(key(id),JSON.stringify({state:entry.state,templateId:INITIAL_TEMPLATE_ID,fingerprint:INITIAL_TEMPLATE_TEXT,untouched:entry.untouched}));return true}catch{return false}};
+   const snapshot=face=>{
+    const state=face?.state?.getSnapshot?.(),editor=face?.editor;
+    if(!state||typeof state.draft!=='string'||!Array.isArray(state.imageIds)||!Number.isSafeInteger(state.draftRev)||typeof editor?.isComposing!=='function'||typeof editor?.getRootElement!=='function'||typeof editor?.update!=='function')return null;
+    return {draft:state.draft,rev:state.draftRev,empty:state.draft===''&&state.imageIds.length===0&&state.phase==='plain'&&Array.isArray(state.occurrences)&&state.occurrences.length===0,ready:!!editor.getRootElement(),composing:editor.isComposing()};
+   };
+   const skip=(id,e)=>{e.state='skipped';e.untouched=false;persist(id,e)};
+   return {
+    // Called only after this entry's create succeeds, before the asynchronous open.
+    arm(id){
+     if(disposed||!id?.startsWith('session-dsh-form-fill-agent-')||entries.has(id))return;
+     try{if(storage.getItem(key(id)))return}catch{return}
+     let face;try{face=shell(id)}catch{return}
+     const first=snapshot(face),e={state:'unseen',face,first,untouched:false};entries.set(id,e);
+     if(!first||!first.empty||first.composing||typeof face?.setDraft!=='function'||typeof face.state.subscribe!=='function'||!persist(id,e)){skip(id,e);return}
+     let visited=current()===id;
+     e.sessionOff=subscribeCurrent?.(()=>{if(current()===id)visited=true;else if(visited&&e.state==='unseen')skip(id,e)});
+     e.off=face.state.subscribe(()=>{
+      const next=snapshot(face);
+      if(e.writing)return;
+      if(e.state==='unseen'&&(!next||next.rev!==first.rev||!next.empty||next.composing))skip(id,e);
+      if(e.state==='initialized'&&next?.rev!==e.seedRev){e.untouched=false;persist(id,e)}
+     });
+    },
+    async attempt(id){
+     const e=entries.get(id);if(disposed||e?.state!=='unseen')return false;
+     const before=snapshot(e.face);
+     if(current()!==id||!before||!before.empty||before.composing||before.rev!==e.first.rev){skip(id,e);return false}
+     if(!before.ready)return false;
+     // All asynchronous work precedes this second snapshot and synchronous public write.
+     return defer(()=>{
+      const after=snapshot(e.face);
+      if(disposed||e.state!=='unseen')return false;
+      if(current()!==id||!after?.ready||!after.empty||after.composing||after.rev!==before.rev){skip(id,e);return false}
+      e.state='initialized';e.untouched=true;
+      if(!persist(id,e)){skip(id,e);return false}
+      try{e.writing=true;e.face.editor.update(()=>e.face.setDraft(INITIAL_TEMPLATE_TEXT),{discrete:true,tag:'skip-dom-selection'});e.seedRev=snapshot(e.face)?.rev;if(snapshot(e.face)?.draft!==INITIAL_TEMPLATE_TEXT){skip(id,e);return false}return true}
+      catch{skip(id,e);return false}finally{e.writing=false}
+     });
+    },
+    expire(id){const e=entries.get(id);if(e?.state==='unseen')skip(id,e)},
+    isTemplate(id,text){const e=entries.get(id);return e?.state==='initialized'&&e.untouched&&text===INITIAL_TEMPLATE_TEXT&&snapshot(e.face)?.rev===e.seedRev},
+    dispose(){disposed=true;for(const [id,e] of entries){if(e.state==='unseen')skip(id,e);e.off?.();e.sessionOff?.()}entries.clear()}
+   };
+  }
   function apply(ctx) {
    let React, portal;
    try { React=require('react');portal=require('react-dom').createPortal; } catch {}
@@ -70,6 +121,9 @@ window.__ModuleLoader__.load({
    const theme=()=>document.documentElement.hasAttribute('data-ds-dark-theme')?'dark':getComputedStyle(document.documentElement).colorScheme==='light'?'light':matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
    if(typeof document!=='undefined'&&document.head?.append){const css=document.createElement('link');css.rel='stylesheet';css.href='/form-fill/brand.css';css.dataset.formFillStyle='true';document.head.append(css);disposers.push(()=>css.remove())}
    const current=()=>ctx.sessions?.list?.getSnapshot?.().current;
+   let draftStorage;try{draftStorage=window.sessionStorage}catch{}
+   const initialDraft=createInitialDraftController({current,subscribeCurrent:fn=>ctx.sessions?.list?.subscribe?.(fn),shell:id=>ctx.conversation?.input?.shell?.(id),storage:draftStorage});
+   disposers.push(()=>initialDraft.dispose());
    function register(name,component){ctx.slots.inject(name,()=>ctx.slots.register({name,id:'form-fill-agent',order:120},component))}
    function openPanel(id,step='import'){
     if(!activePlugin||!owned(id))return;
@@ -91,7 +145,15 @@ window.__ModuleLoader__.load({
     const id=prefix+crypto.randomUUID();
     const result=await ctx.sessions.create({workspaceId:workspace.workspaceId,sessionId:id});
     if(result!==id)throw Error('宿主不支持独立业务会话');
+    initialDraft.arm(id);
     await ctx.sessions.open(id);
+    // Input mounting is bounded; any user edit or Session switch consumes eligibility.
+    if(ctx.conversation?.input?.shell)for(let i=0;i<20&&activePlugin;i++){
+     if(await initialDraft.attempt(id))break;
+     if(current()!==id)break;
+     await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    initialDraft.expire(id);
    }
    const launcher=()=>h('a',{className:'ff-launcher',href:'/form-fill/',target:'_blank',rel:'noopener noreferrer','aria-label':'AI 填表',onClick:async e=>{
     if(!ctx.sessions?.create)return;e.preventDefault();try{await start()}catch{window.open('/form-fill/','_blank','noopener')}
@@ -211,6 +273,7 @@ window.__ModuleLoader__.load({
        let draft=readDraft();if(typeof draft!=='string')throw Error('cannot read draft');
        const mode=event.data.mode;
        const prior=lastDrafts.get(view.id),unchanged=draft===prior?.value;
+       if(initialDraft.isTemplate(view.id,draft))draft='';
        if(draft.trim()&&!unchanged&&(!['replace','append'].includes(mode)||event.data.expectedDraft!==draft)){
         frame.current.contentWindow.postMessage({type:'ff-draft-conflict',draft},location.origin);return;
        }
@@ -239,6 +302,6 @@ window.__ModuleLoader__.load({
    register('conversation.input.overlay',props=>owned(props.sessionId)?h('div',{className:'ff-ui','data-ff-theme':theme()},h('button',{className:'ff-prompt',type:'button',onClick:()=>openPanel(props.sessionId,'wizard')},icon('spark'),'提示词生成')):null);
    ctx.effect?.(()=>()=>{activePlugin=false;for(const dispose of disposers)dispose();viewListeners.clear();views.clear();sessionTasks.clear();lastDrafts.clear()});
   }
-  return {createSidebarAdapter,installSubmittedWorkbenchBridge,name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
+  return {createSidebarAdapter,installSubmittedWorkbenchBridge,createInitialDraftController,INITIAL_TEMPLATE_ID,INITIAL_TEMPLATE_TEXT,name:'form-fill-agent',inject:['slots','sessions','workspaces','conversation'],apply};
  }
 });
