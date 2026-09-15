@@ -25,6 +25,11 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   dependencies[name]='file:'+join(root,'artifacts',name+'-'+version+'.tgz');
  }
  await writeFile(join(profile,'package.json'),JSON.stringify({name:'synthetic-native-test',version:'0.0.0',private:true,type:'module',dependencies,dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app',...(process.env.CONTEXT_VERSION?['dsh-context']:[]),...(sidebarVersion?['dsh-better-sidebar']:[]),'dsh-form-fill-agent']}}}));
+ if(process.env.UX49_FOUR==='1'){
+  const file=join(profile,'package.json'),manifest=JSON.parse(await readFile(file));
+  Object.assign(manifest.dependencies,{'dsh-data-cleaning-agent':'0.9.15','dsh-pre-duediligence':'0.1.35','dsh-tender-workbench':'0.5.11'});
+  manifest.dsh.profile.bundles.push('dsh-data-cleaning-agent','dsh-pre-duediligence','dsh-tender-workbench');await writeFile(file,JSON.stringify(manifest));
+ }
  if(process.env.TOOL_PROBE==='1'){
   const probe=join(home,'tool-probe');await mkdir(probe);
   await writeFile(join(probe,'package.json'),JSON.stringify({name:'ff-synthetic-tool-probe',version:'0.0.0',type:'module',main:'index.js',dsh:{bundle:{patch:'./cordis.patch.yml'}}}));
@@ -34,11 +39,15 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
  }
  if(process.env.LEGACY_TARBALL){const file=join(profile,'package.json'),manifest=JSON.parse(await readFile(file));manifest.dependencies['dsh-data-cleaning-agent']='file:'+resolve(process.env.LEGACY_TARBALL);manifest.dsh.profile.bundles.push('dsh-data-cleaning-agent');await writeFile(file,JSON.stringify(manifest));}
  try{execFileSync('npm',['install','--ignore-scripts','--legacy-peer-deps','--no-audit','--no-fund'],{cwd:profile,stdio:'pipe'})}catch(error){await rm(join(profile,'node_modules'),{recursive:true,force:true});throw error}
- if(process.env.LEGACY_TARBALL){
+ if(process.env.LEGACY_TARBALL||process.env.UX49_PROBE){
   // Test-only SDK probe in the temporary installed copy; production tarball stays unchanged.
   const file=join(profile,'node_modules/dsh-form-fill-agent/lib/client.js'),source=await readFile(file,'utf8');
   assert.ok(source.includes('function apply(ctx) {'));
-  await writeFile(file,source.replace('function apply(ctx) {','function apply(ctx) { window.__coinstallProbe={current:()=>ctx.sessions.list.getSnapshot().current,open:id=>ctx.sessions.open(id),draft:id=>ctx.conversation.input.shell(id).state.getSnapshot().draft,setDraft:(id,value)=>ctx.conversation.input.shell(id).setDraft(value)};'));
+  await writeFile(file,source.replace('function apply(ctx) {','function apply(ctx) { window.__coinstallProbe={current:()=>ctx.sessions.list.getSnapshot().current,open:id=>ctx.sessions.open(id),snapshot:id=>ctx.conversation.input.shell(id).state.getSnapshot(),draft:id=>ctx.conversation.input.shell(id).state.getSnapshot().draft,setDraft:(id,value)=>ctx.conversation.input.shell(id).setDraft(value)};'));
+ }
+ if(process.env.UX49_PROBE){
+  const file=join(profile,'node_modules/dsh-form-fill-agent/lib/client.js');let source=await readFile(file,'utf8');
+  source=source.replace('try{e.writing=true;', 'try{const focusBefore=document.activeElement;e.writing=true;').replace('e.seedRev=snapshot', 'window.__ux49FocusPreserved=document.activeElement===focusBefore;e.seedRev=snapshot');await writeFile(file,source);
  }
  const installedClient=await readFile(join(profile,'node_modules/dsh-form-fill-agent/lib/client.js'),'utf8');
  assert.doesNotMatch(installedClient,/dsh-client-runtime\/client|conversationEvents/);
@@ -56,6 +65,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   await page.addLocatorHandler(page.getByRole('button',{name:'继续',exact:true}),async locator=>locator.click());
   await page.addLocatorHandler(page.getByRole('button',{name:'稍后配置',exact:true}),async locator=>locator.click());
   page.on('console',msg=>{if(msg.type()==='error')console.log('Browser error:',msg.text().replace(/https?:\/\/\S+/g,'[url]').slice(0,500))});
+  const businessRequests=[];page.on('request',request=>{if(request.method()==='POST'&&/session[./](?:prompt|submit)|form-fill\/(?:preview|enrich|confirm|configure)|tools[./]execute/i.test(request.url()))businessRequests.push(new URL(request.url()).pathname)});
   const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message.replace(/https?:\/\/\S+/g,'[url]').slice(0,500)));
   const urls=output.match(/http:\/\/(?:127\.0\.0\.1|localhost):\d+[^\s\x1b]*/g)||[];
   const local=urls.find(u=>new URL(u).port===String(port)&&u.includes('?'))||origin;
@@ -96,6 +106,38 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   phase='owned-session';
   if(process.env.LEGACY_TARBALL)assert.equal(await page.getByRole('region',{name:'数据清洗补全工作台',exact:true}).count(),0);
   await page.getByRole('button',{name:'导入表格',exact:true}).waitFor();
+  if(process.env.UX49_PROBE){
+   phase='UX49-initial-draft';
+   const expected='请帮我填写企业信息表。请上传 Excel 模板，说明主体定位列和需要填写的字段；也可点击左上角「提示词生成」设置填写规则。例如：按“企业名称”定位，只填空白单元格，补充统一社会信用代码、法定代表人和注册地址，并生成新文件。';
+   await page.waitForFunction(text=>window.__coinstallProbe.draft(window.__coinstallProbe.current())===text,expected);
+   assert.equal(await page.evaluate(()=>window.__ux49FocusPreserved),true,'native draft must not steal focus');
+   const a=await page.evaluate(()=>window.__coinstallProbe.current());
+   assert.equal(await page.locator('.ff-tab-content').count(),0);
+   const composer=page.locator('[data-composer-card] [contenteditable="true"]').first();
+   assert.equal(await composer.innerText(),expected);
+   if(process.env.FORM_FILL_SCREENSHOTS){await mkdir(process.env.FORM_FILL_SCREENSHOTS,{recursive:true});await page.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'ux49-native-draft.png')})}
+   await composer.fill('用户自己的填写要求');await page.waitForTimeout(1000);await page.reload();await page.waitForFunction(()=>window.__coinstallProbe?.draft(window.__coinstallProbe.current())==='用户自己的填写要求');
+   await composer.click();await composer.press('Meta+A');await composer.press('Backspace');await page.waitForFunction(()=>window.__coinstallProbe.draft(window.__coinstallProbe.current())==='');await page.waitForTimeout(1000);await page.reload();await page.waitForFunction(()=>window.__coinstallProbe?.draft(window.__coinstallProbe.current())==='');
+   await page.getByRole('link',{name:'AI 填表',exact:true}).click();await page.waitForFunction(text=>window.__coinstallProbe.draft(window.__coinstallProbe.current())===text,expected);
+   const b=await page.evaluate(()=>window.__coinstallProbe.current());assert.notEqual(a,b);
+   await page.evaluate(id=>window.__coinstallProbe.open(id),a);assert.equal(await page.evaluate(id=>window.__coinstallProbe.draft(id),a),'');
+   assert.equal(await page.locator('.ff-tab-content').count(),0);
+   await page.getByRole('button',{name:/^(新会话|新建会话|New Session)$/i}).first().click();await page.waitForFunction(()=>!document.querySelector('.ff-hero'));
+   assert.equal(await page.evaluate(()=>window.__coinstallProbe.draft(window.__coinstallProbe.current())),'');
+   if(process.env.UX49_FOUR==='1'){
+    for(const [role,name] of [['button','数据清洗补全'],['button','访前尽调'],['button','新建招投标会话']]){
+     await page.getByRole(role,{name,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.ff-hero'));
+     const other=await page.evaluate(()=>window.__coinstallProbe.current());assert.ok(!other.startsWith('session-dsh-form-fill-agent-'));
+     assert.notEqual(await page.evaluate(id=>window.__coinstallProbe.draft(id),other),expected);
+     await page.evaluate(id=>window.__coinstallProbe.setDraft(id,'跨产品用户草稿'),other);
+     await page.evaluate(id=>window.__coinstallProbe.open(id),a);assert.equal(await page.evaluate(id=>window.__coinstallProbe.draft(id),a),'');
+     await page.evaluate(id=>window.__coinstallProbe.open(id),other);assert.equal(await page.evaluate(id=>window.__coinstallProbe.draft(id),other),'跨产品用户草稿');
+    }
+   }
+   const standalone=await context.newPage();await standalone.goto(origin+'/form-fill/');assert.equal(await standalone.locator('[data-composer-card]').count(),0);assert.equal(await standalone.getByText(expected,{exact:true}).count(),0);
+   if(process.env.FORM_FILL_SCREENSHOTS)await standalone.screenshot({path:join(process.env.FORM_FILL_SCREENSHOTS,'ux49-standalone.png')});await standalone.close();
+   assert.deepEqual(pageErrors,[]);assert.deepEqual(businessRequests,[]);console.log(JSON.stringify({UX49:'PASS',fourPluginRoles:process.env.UX49_FOUR==='1'?'PASS':'not-run',focusPreserved:true,hostVersion:version,editableDraft:true,modifiedRefresh:true,clearRefresh:true,AB:true,normalSession:true,standaloneNoFakeComposer:true,panels:0,submitted:0,providerCalls:0}));continue;
+  }
   phase='hero-brand';
   await page.locator('.ff-hero h1').waitFor();
   if(process.env.LEGACY_TARBALL){assert.equal(await page.getByRole('button',{name:'导入名单',exact:true}).count(),0);assert.equal(await page.locator('[data-form-fill-top]').count(),1);}
@@ -158,7 +200,7 @@ for(const entry of [process.env.DSH_RC_BIN,process.env.DSH_ALPHA_BIN].filter(Boo
   await page.getByRole('button',{name:/^(折叠侧边栏|Collapse sidebar)$/}).click();
   await menu.getByRole('button',{name:'字段设置',exact:true}).click();
   await frame.locator('#mapping').waitFor();
-  await page.locator('[title="AI填表"]').getByRole('button',{name:/^(关闭|Close)$/}).click();
+  await page.locator('[title="AI 填表"]').getByRole('button',{name:/^(关闭|Close)$/}).click();
   await page.waitForFunction(()=>document.querySelectorAll('.ff-tab-content').length===0);
   await menu.getByRole('button',{name:'填写预览',exact:true}).click();
   await frame.locator('#summary').waitFor();

@@ -7,7 +7,16 @@ import { renderEnrichmentResult } from './diagnostics.js';
 export { previewBytes, previewFile, writeCopy } from './workflow.js';
 export const name = 'form-fill-agent';
 export const inject = [];
+export const INITIAL_GUIDANCE_POLICY = 'AI填表业务边界：仅支持上传的 Excel 模板，按用户明确的主体定位列补充已确认字段；只填空白，保留公式和格式，生成新文件。首页初始引导是示例，不是已上传文件、已识别列或查询授权。若用户直接发送引导、仍含未补全的【】占位符、未上传 Excel 或未说明主体定位列，请用中文先询问缺失信息，不创建任务，不调用 form_fill_enrich、Provider、MCP、OCR 或其他业务工具。已有真实任务与已保存定位映射时可沿用任务信息，不重复询问。不得宣传 Word、覆盖源模板或外部写回。';
+export function initialGuidanceSection(context) {
+  return context?.agent?.session?.id?.startsWith('session-dsh-form-fill-agent-') ? INITIAL_GUIDANCE_POLICY : '';
+}
 export function apply(ctx, config = {}) {
+  ctx.inject(['systemPrompt'], scope => {
+    if(typeof scope.systemPrompt?.section!=='function')return;
+    const dispose = scope.systemPrompt.section({name:'dsh-form-fill-agent/initial-guidance',order:120,text:initialGuidanceSection});
+    scope.effect?.(() => () => dispose?.());
+  });
   ctx.inject(['webServer'], scope => {
     let toolService;
     const taskDirectory = config.taskDirectory ?? profileTaskDirectory(import.meta.url);
@@ -17,7 +26,7 @@ export function apply(ctx, config = {}) {
       toolService = tools;
       const disposeTool = tools.register({
         name: 'form_fill_enrich',
-        description: 'Use QCC to fill an uploaded AI填表 task. Invoke only when the user requests QCC enrichment. Returns counts and a preview link; the user confirms cell changes in the workbench.',
+        description: 'Use QCC to fill an uploaded AI填表 task. Invoke only for a real uploaded Excel task with a saved entity locating column and explicit user enrichment request. If these are missing or the message is an unfilled guidance/example, ask for the Excel template and locating column without calling tools. Returns counts and a preview link; the user confirms cell changes in the workbench.',
         parameters: { type: 'object', additionalProperties: false, properties: { taskId: { type: 'string' }, expectedRevision: { type: 'integer' }, mode:{type:'string',enum:['all','retry']} }, required: ['taskId'] },
         output: {
           schema: { type: 'object', properties: { taskId: { type: 'string' }, filled: { type: 'integer' }, incomplete: { type: 'integer' }, diagnostics:{type:'object'}, previewPath: { type: 'string' } }, required: ['taskId','filled','incomplete','previewPath'] },
