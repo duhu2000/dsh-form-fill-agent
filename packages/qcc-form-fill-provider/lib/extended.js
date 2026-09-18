@@ -1,3 +1,4 @@
+import {PROFILE_CORE_FIELDS} from './core-fields.js';
 import {QCC_FIELD_CATALOG} from './catalog.js';
 import * as project from './projections.js';
 import {createQccProvider,decodeRegistration} from './qcc.js';
@@ -22,7 +23,7 @@ export const ADDITIONAL_FIELDS=Object.freeze([{key:'related_risk_disciplinary_li
 export function runtimeToolNames(tool){const domain=CATALOG_TOOL_DOMAINS[tool];return domain?['mcp__qcc-'+domain+'__','mcp__'+domain+'__','mcp__qcc_'+domain+'__'].map(p=>p+tool):[]}
 export function createCatalogProvider({callTool,availableTools=[],enableEntitySearch=false,timeoutMs=120000,now=()=>new Date().toISOString()}={}){
  const registration=createQccProvider({callTool,enableEntitySearch,timeoutMs,now});let calls=0;
- const groups=[...QCC_FIELD_CATALOG,ACTUAL_CONTROLLER_GROUP,...SNAPSHOT_GROUPS].filter(g=>definitions[g.sourceTool]&&availableTools.includes(g.sourceTool)).map(g=>g.sourceTool==='get_company_related_risk_scan'?{...g,fields:[...g.fields,...ADDITIONAL_FIELDS.map(f=>({id:f.key,label:f.label}))]}:g);
+ const groups=[...QCC_FIELD_CATALOG.map(g=>g.id==='company_profile'?{...g,fields:[...g.fields,...PROFILE_CORE_FIELDS.map(f=>({id:f.key,label:f.label}))]}:g),ACTUAL_CONTROLLER_GROUP,...SNAPSHOT_GROUPS].filter(g=>definitions[g.sourceTool]&&availableTools.includes(g.sourceTool)).map(g=>g.sourceTool==='get_company_related_risk_scan'?{...g,fields:[...g.fields,...ADDITIONAL_FIELDS.map(f=>({id:f.key,label:f.label}))]}:g);
  return {
   id:'qcc-catalog',version:PROVIDER_VERSION,mode:'qcc',
   capabilities:[...registration.capabilities,...groups.map(g=>({id:'qcc-'+g.sourceTool,fields:g.fields.map(f=>f.id),paid:true,maxCallsPerLookup:2}))],

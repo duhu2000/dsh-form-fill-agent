@@ -1,10 +1,12 @@
-export const PROVIDER_VERSION = '0.2.2';
+export const PROVIDER_VERSION = '0.2.3';
+import {CORE_FIELDS} from './core-fields.js';
 import {ADDITIONAL_FIELDS} from './extended.js';
 import {SNAPSHOT_GROUPS} from './snapshot-fields.js';
 export {SNAPSHOT_GROUPS} from './snapshot-fields.js';
 import {QCC_FIELD_CATALOG} from './catalog.js';
 export {createCatalogProvider,CATALOG_TOOL_DOMAINS,runtimeToolNames} from './extended.js';
 export {QCC_FIELD_CATALOG} from './catalog.js';
+export const RUNTIME_FIELD_GROUPS=QCC_FIELD_CATALOG.map(g=>g.id==='company_registration'||g.id==='company_profile'?{...g,fields:[...g.fields,...CORE_FIELDS.filter(f=>g.id==='company_registration'?['地区信息','国标行业'].includes(f.sourcePath.split('.')[0]):!['地区信息','国标行业'].includes(f.sourcePath.split('.')[0])).map(f=>({id:f.key,label:f.label}))]}:g);
 import { EXTRA_FIELDS } from './fields.js';
 import { ACTUAL_CONTROLLER_GROUP } from 'qcc-field-contracts';
 export { ACTUAL_CONTROLLER_GROUP, projectActualController } from 'qcc-field-contracts';
@@ -19,6 +21,7 @@ export const FIELD_CATALOG = Object.freeze([
   { key: 'business_status', label: '经营状态', aliases: ['登记状态','reg_status'], type: 'string' },
   { key: 'registration_authority', label: '登记机关', aliases: [], type: 'string' },
   ...EXTRA_FIELDS,
+  ...CORE_FIELDS,
   ...QCC_FIELD_CATALOG.slice(1).flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[]}))),
   ...ADDITIONAL_FIELDS,
   ...SNAPSHOT_GROUPS.flatMap(g=>g.fields.map(f=>({key:f.id,label:f.label,aliases:[],type:'string',selectionNote:g.selectionNote}))),

@@ -1,3 +1,4 @@
+import {REGISTRATION_CORE_FIELDS,projectCoreField,industryDisplay} from './core-fields.js';
 import { PROVIDER_VERSION, FIELD_CATALOG } from './index.js';
 export const REGISTRATION_TOOL = 'get_company_registration_info';
 import { SOURCE_FIELDS as fields } from './fields.js';
@@ -31,10 +32,10 @@ export function createQccProvider({ callTool, timeoutMs = 30000, enableEntitySea
   let calls = 0;
   return {
     id: 'qcc-registration', version: PROVIDER_VERSION, mode: 'qcc',
-    capabilities: [{ id: 'qcc-registration', fields: Object.keys(fields), paid: true, ...(enableEntitySearch ? {maxCallsPerLookup:2} : {}) }],
+    capabilities: [{ id: 'qcc-registration', fields: [...Object.keys(fields),...REGISTRATION_CORE_FIELDS.map(f=>f.key)], paid: true, ...(enableEntitySearch ? {maxCallsPerLookup:2} : {}) }],
     get calls() { return calls; },
     async lookup(request, {signal} = {}) {
-      if (request.capability !== 'qcc-registration' || !Array.isArray(request.fields) || request.fields.some(f => !Object.hasOwn(fields, f))) return { status: 'error', code: 'invalid-request' };
+      if (request.capability !== 'qcc-registration' || !Array.isArray(request.fields) || request.fields.some(f => !Object.hasOwn(fields, f) && !REGISTRATION_CORE_FIELDS.some(field=>field.key===f))) return { status: 'error', code: 'invalid-request' };
       const searchKey = request.anchor?.company_name??request.anchor?.credit_no;
       // Ambiguous/abbreviated entities need a separate user selection, never a guessed name.
       if (!isCompleteAnchor(searchKey) && !enableEntitySearch) return { status: 'ambiguous', code: 'entity-selection-required' };
@@ -63,6 +64,12 @@ export function createQccProvider({ callTool, timeoutMs = 30000, enableEntitySea
         const acquiredAt = now();
         const values = {};
         for (const key of request.fields) {
+          const coreField=REGISTRATION_CORE_FIELDS.find(f=>f.key===key);
+          if(coreField || key==='industry_category'){
+            const value=coreField?projectCoreField(data,coreField):industryDisplay(data.国标行业,['门类','大类','中类','小类']);
+            if(value.trim())values[key]={value,source:'qcc://'+REGISTRATION_TOOL+'/'+(coreField?.sourcePath||'国标行业'),acquiredAt,confidence:1};
+            continue;
+          }
           const sourceField = fields[key].find(f => typeof data[f] === 'string' && data[f].trim());
           if (sourceField) values[key] = { value: data[sourceField], source: 'qcc://' + REGISTRATION_TOOL + '/' + sourceField, acquiredAt, confidence: 1 };
         }
