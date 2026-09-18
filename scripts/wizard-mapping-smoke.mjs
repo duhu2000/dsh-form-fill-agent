@@ -78,7 +78,7 @@ try{
  const taskTitle=await page.evaluate(()=>current.presentation.title);
  assert.match(taskTitle,/合成向导｜60 家企业/);
  await page.locator('#history-tab').click();
- await page.locator('#history-list button').filter({hasText:taskTitle}).waitFor();
+ await page.locator('#history-list strong').filter({hasText:taskTitle}).waitFor();
  await page.locator('#current-tab').click();
  await page.locator('[data-step="rules"]').click();
  await page.reload();await page.locator('[data-step="rules"]').click();

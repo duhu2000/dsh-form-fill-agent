@@ -1,3 +1,4 @@
+import {PROFILE_CORE_FIELDS,projectCoreField,industryDisplay,coreFieldText} from './core-fields.js';
 import {SELF_RISK_FACTORS,RELATED_RISK_FACTORS,RELATED_RISK_KEY_FACTORS,RISK_FACTOR_CATALOG_VERSION} from './catalog.js';
 const isRecord=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 class QccBridgeError extends Error { constructor(code,message){super(message);this.code=code;} }
@@ -7,10 +8,11 @@ export function mapProfileFields(value) {
   }
   if (value.无匹配项 !== undefined) return {};
   return {
-    // 工具只返回“企查查行业”这一最细层级展示值，不得猜测为一级或二级行业。
-    qcc_industry: String(value.企查查行业 ?? ''),
-    company_profile: String(value.企业简介 ?? value.简介 ?? ''),
-    industry_chain_overview: String(value.产业链概览 ?? ''),
+    // Preserve legacy flat text without assigning it to an inferred level.
+    qcc_industry: industryDisplay(value.企查查行业,['一级','二级','三级','四级']),
+    ...Object.fromEntries(PROFILE_CORE_FIELDS.map(f=>[f.key,projectCoreField(value,f)])),
+    company_profile: coreFieldText(value.企业简介 ?? value.简介),
+    industry_chain_overview: coreFieldText(value.产业链概览),
   };
 }
 
